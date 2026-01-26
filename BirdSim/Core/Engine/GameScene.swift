@@ -115,6 +115,34 @@ class GameScene: SKScene {
             }
         }
         
+        if let player = self.childNode(withName: "movingCircle"),
+           let portal = self.childNode(withName: miniGame2){
+            //2. Calculate the distance between them using the Pythagorean theorem
+            let dx = player.position.x - portal.position.x
+            let dy = player.position.y - portal.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            //3. If distance is less then 200 pixels, trigger the game
+            
+            if distance < 200 {
+                miniGame2IsInRange = true
+            }
+        }
+        
+        if let player = self.childNode(withName: "movingCircle"),
+           let portal = self.childNode(withName: miniGame3){
+            //2. Calculate the distance between them using the Pythagorean theorem
+            let dx = player.position.x - portal.position.x
+            let dy = player.position.y - portal.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            //3. If distance is less then 200 pixels, trigger the game
+            
+            if distance < 200 {
+                miniGame3IsInRange = true
+            }
+        }
+        
 
         
         
@@ -185,15 +213,15 @@ class GameScene: SKScene {
                 transitionToPredatorGame()
                 viewModel?.controlsAreVisable = false
                 return
-            } else if node.name == miniGame1 {
+            } else if node.name == miniGame1, miniGame1IsInRange == true {
                 print("minigame 1 tapped")
                 transitionToMinigame1()
                 viewModel?.controlsAreVisable = false
-            } else if node.name == miniGame2 {
+            } else if node.name == miniGame2, miniGame2IsInRange == true {
                 print("minigame 2 tapped")
                 transitionToMinigame2()
                 viewModel?.controlsAreVisable = false
-            } else if node.name == miniGame3 {
+            } else if node.name == miniGame3, miniGame3IsInRange == true {
                 print("minigame 3 tapped")
                 transitionToMinigame3()
                 viewModel?.controlsAreVisable = false
