@@ -10,33 +10,51 @@ import GameController
 
 class GameScene: SKScene {
     
-    let miniGame1: String = "miniGame1"
-    let miniGame2: String = "miniGame2"
-    let miniGame3: String = "miniGame3"
-    let miniGame4: String = "miniGame4"
+    private var hasInitializedWorld = false
     
-    var viewModel: MainGameViewModel?
+    let worldNode = SKNode()
+    let overlayNode = SKNode()
+    
+    let predator: String = "predatorNode"
+    let miniGame1: String = "miniGameNode1"
+    let miniGame2: String = "miniGameNode2"
+    let miniGame3: String = "miniGameNode3"
+    
+    var miniGame1IsInRange: Bool = false
+    var miniGame2IsInRange: Bool = false
+    var miniGame3IsInRange: Bool = false
+    
+    
+   weak var viewModel: MainGameViewModel?
     
     var lastUpdateTime: TimeInterval = 0
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var circleSpeed: CGFloat = 400.0
     
-    override func didChangeSize(_ oldSize: CGSize) {
-        super.didChangeSize(oldSize)
-        setupBackground()
-    }
-    
     override func didMove(to view: SKView) {
-        setupTestCircle()
-        setupMiniGame1Spot()
-        setupMiniGame2Spot()
-        setupMiniGame3Spot()
-        setupMiniGame4Spot()
+        
+        if !hasInitializedWorld {
+            setupBackground()
+            setupTestCircle()
+            setupPredator()
+            setupMiniGame1Spot()
+            setupMiniGame2Spot()
+            setupMiniGame3Spot()
+            hasInitializedWorld = true
+            
+            viewModel?.mainScene = self
+        } else {
+            if viewModel?.mainScene == nil {
+                viewModel?.mainScene = self
+            }
+        }
         // setupVirtualController()
         self.camera = cameraNode
-        self.addChild(cameraNode)
-        cameraNode.setScale(1.25)
+        if cameraNode.parent == nil {
+            self.addChild(cameraNode)
+            cameraNode.setScale(1.25)
+        }
         restoreReturnStateIfNeeded()
     }
     
@@ -77,26 +95,68 @@ class GameScene: SKScene {
         // mapFrame.zPosition = 1000
         // addChild(mapFrame)
     }
-    //    func setupVirtualController() {
-    //        let controllerConfig = GCVirtualController.Configuration()
-    //        controllerConfig.elements = [GCInputLeftThumbstick, GCInputButtonA, GCInputButtonB]
-    //
-    //        let vc = GCVirtualController(configuration: controllerConfig)
-    //        self.virtualController = vc
-    //
-    //        // Connect using the current API (no completion handler)
-    //        vc.connect()
-    //
-    //        // If the controller is available, configure handlers now
-    //        if vc.controller?.extendedGamepad != nil {
-    //            self.configureGamepadHandlers()
-    //        }
-    //    }
-    
-    
     
     
     override func update(_ currentTime: TimeInterval) {
+        
+        //1. Get the player and the target node(Predator Attack Radius)
+        if let player = self.childNode(withName: "movingCircle"),
+           let portal = self.childNode(withName: predator){
+            //2. Calculate the distance between them using the Pythagorean theorem
+            let dx = player.position.x - portal.position.x
+            let dy = player.position.y - portal.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            //3. If distance is less then 200 pixels, trigger the game
+            
+            if distance < 200 {
+                transitionToPredatorGame()
+                viewModel?.controlsAreVisable = false
+            }
+        }
+        if let player = self.childNode(withName: "movingCircle"),
+           let portal = self.childNode(withName: miniGame1){
+            //2. Calculate the distance between them using the Pythagorean theorem
+            let dx = player.position.x - portal.position.x
+            let dy = player.position.y - portal.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            //3. If distance is less then 200 pixels, trigger the game
+            
+            if distance < 200 {
+                miniGame1IsInRange = true
+            }
+        }
+        
+        if let player = self.childNode(withName: "movingCircle"),
+           let portal = self.childNode(withName: miniGame2){
+            //2. Calculate the distance between them using the Pythagorean theorem
+            let dx = player.position.x - portal.position.x
+            let dy = player.position.y - portal.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            //3. If distance is less then 200 pixels, trigger the game
+            
+            if distance < 200 {
+                miniGame2IsInRange = true
+            }
+        }
+        
+        if let player = self.childNode(withName: "movingCircle"),
+           let portal = self.childNode(withName: miniGame3){
+            //2. Calculate the distance between them using the Pythagorean theorem
+            let dx = player.position.x - portal.position.x
+            let dy = player.position.y - portal.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            //3. If distance is less then 200 pixels, trigger the game
+            
+            if distance < 200 {
+                miniGame3IsInRange = true
+            }
+        }
+        
+
         
         
         // Compute delta time and clamp to avoid large spikes causing visible jumps
@@ -137,6 +197,7 @@ class GameScene: SKScene {
             inputPoint = CGPoint(x: CGFloat(xValue), y: CGFloat(yValue))
         }
         
+        
         // Convert to vector components and clamp to unit circle
         var dx = inputPoint.x
         var dy = inputPoint.y
@@ -161,22 +222,22 @@ class GameScene: SKScene {
         
         // check is any of the touched nodes is in our minigame spot
         for node in touchedNodes {
-            if node.name == miniGame1 {
-                print("minigame tapped")
-                transitionToMinigame1()
+            if node.name == predator {
+                print("predator tapped")
+                transitionToPredatorGame()
                 viewModel?.controlsAreVisable = false
                 return
-            } else if node.name == miniGame2 {
+            } else if node.name == miniGame1, miniGame1IsInRange == true {
+                print("minigame 1 tapped")
+                transitionToMinigame1()
+                viewModel?.controlsAreVisable = false
+            } else if node.name == miniGame2, miniGame2IsInRange == true {
                 print("minigame 2 tapped")
                 transitionToMinigame2()
                 viewModel?.controlsAreVisable = false
-            } else if node.name == miniGame3 {
+            } else if node.name == miniGame3, miniGame3IsInRange == true {
                 print("minigame 3 tapped")
                 transitionToMinigame3()
-                viewModel?.controlsAreVisable = false
-            } else if node.name == miniGame4 {
-                print("minigame 4 tapped")
-                transitionToMinigame4()
                 viewModel?.controlsAreVisable = false
             }
             
@@ -260,32 +321,8 @@ extension GameScene {
         }
     }
     
-    
-    func configureGamepadHandlers() {
-        guard let gamepad = virtualController?.controller?.extendedGamepad else { return }
-        
-        
-        if viewModel!.isFlying {
-            
-        } else {
-            
-        }
-        
-        
-        // Button A: make the circle bigger when pressed
-        gamepad.buttonA.pressedChangedHandler = { [weak self] _, _, pressed in
-            guard let self = self, pressed else { return }
-            self.adjustCircleScale(by: 0.4)
-        }
-        
-        // Button B: make the circle smaller when pressed
-        gamepad.buttonB.pressedChangedHandler = { [weak self] _, _, pressed in
-            guard let self = self, pressed else { return }
-            self.adjustCircleScale(by: -0.4)
-        }
-    }
-    
     func setupTestCircle() {
+        if self.childNode(withName: "movingCircle") != nil { return }
         let radius: CGFloat = 30
         let circle = SKShapeNode(circleOfRadius: radius)
         circle.fillColor = .red
@@ -298,34 +335,56 @@ extension GameScene {
         self.addChild(circle)
     }
     
-    func setupMiniGame1Spot() {
+    func setupPredator() {
+        if self.childNode(withName: predator) != nil { return }
+        
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.midX, y: frame.midY)
-        spot.name = miniGame1
+        spot.name = predator
+        
+        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
+        let moveLeft = moveRight.reversed()
+        let sequence = SKAction.sequence([moveRight, moveLeft])
+        let repeatForever = SKAction.repeatForever(sequence)
+        spot.run(repeatForever)
         addChild(spot)
         
     }
     
-    func setupMiniGame2Spot() {
+    func setupMiniGame1Spot() {
+        if self.childNode(withName: miniGame1) != nil { return }
         let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.minX, y: frame.minY)
+        spot.name = miniGame1
+        addChild(spot)
+    }
+    func setupMiniGame2Spot() {
+        if self.childNode(withName: miniGame2) != nil { return }
+        let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
+        spot.position = CGPoint(x: frame.minX, y: frame.maxY)
         spot.name = miniGame2
         addChild(spot)
     }
     func setupMiniGame3Spot() {
-        let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: frame.minX, y: frame.maxY)
+        if self.childNode(withName: miniGame3) != nil { return }
+        let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
+        spot.position = CGPoint(x: frame.maxX, y: frame.minY)
         spot.name = miniGame3
         addChild(spot)
     }
-    func setupMiniGame4Spot() {
-        let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: frame.maxX, y: frame.minY)
-        spot.name = miniGame4
-        addChild(spot)
+    
+    
+    
+    func transitionToPredatorGame() {
+        guard let view = self.view else { return }
+        saveReturnState()
+        let minigameScene = PredatorGame(size: view.bounds.size)
+        minigameScene.scaleMode = .resizeFill
+        minigameScene.mainViewModel = self.viewModel
+        
+        let transition = SKTransition.fade(withDuration: 0.5)
+        view.presentScene(minigameScene, transition: transition)
     }
-    
-    
     
     func transitionToMinigame1() {
         guard let view = self.view else { return }
@@ -353,17 +412,6 @@ extension GameScene {
         guard let view = self.view else { return }
         saveReturnState()
         let minigameScene = MiniGameScene3(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.mainViewModel = self.viewModel
-        
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
-    }
-    
-    func transitionToMinigame4() {
-        guard let view = self.view else { return }
-        saveReturnState()
-        let minigameScene = MiniGameScene4(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.mainViewModel = self.viewModel
         

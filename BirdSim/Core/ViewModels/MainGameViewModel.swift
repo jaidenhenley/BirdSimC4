@@ -7,6 +7,7 @@
 
 import Combine
 import SwiftUI
+import SpriteKit
 
 class MainGameViewModel: ObservableObject {
     @Published var joystickVelocity: CGPoint = .zero
@@ -15,5 +16,6 @@ class MainGameViewModel: ObservableObject {
     @Published var controlsAreVisable: Bool = true
     @Published var savedPlayerPosition: CGPoint?
     @Published var savedCameraPosition: CGPoint?
+    @Published var mainScene: GameScene?
     
 }

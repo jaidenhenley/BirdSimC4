@@ -7,11 +7,11 @@
 
 import SpriteKit
 
-class MiniGameScene1: SKScene {
+class PredatorGame: SKScene {
     var mainViewModel: MainGameViewModel?
     
     override func didMove(to view: SKView) {
-        backgroundColor = .systemBlue
+        backgroundColor = .red
         
         let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
         backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -32,13 +32,21 @@ class MiniGameScene1: SKScene {
         for node in touchedNodes {
             if node.name == "Back Button" {
                 guard let view = self.view else { return }
-                let mapScene = GameScene(size: view.bounds.size)
-                mapScene.scaleMode = .resizeFill
-                mapScene.viewModel = self.mainViewModel
-                mainViewModel?.joystickVelocity = .zero
-                mainViewModel?.controlsAreVisable = true
-                let transition = SKTransition.crossFade(withDuration: 0.5)
-                view.presentScene(mapScene, transition: transition)
+                // Reuse the existing main scene if available, otherwise create and register one
+                if let existing = mainViewModel?.mainScene {
+                    mainViewModel?.joystickVelocity = .zero
+                    mainViewModel?.controlsAreVisable = true
+                    let transition = SKTransition.crossFade(withDuration: 0.5)
+                    view.presentScene(existing, transition: transition)
+                } else {
+                    let mapScene = GameScene(size: view.bounds.size)
+                    mapScene.scaleMode = .resizeFill
+                    mapScene.viewModel = self.mainViewModel
+                    mainViewModel?.joystickVelocity = .zero
+                    mainViewModel?.controlsAreVisable = true
+                    let transition = SKTransition.crossFade(withDuration: 0.5)
+                    view.presentScene(mapScene, transition: transition)
+                }
             }
         }
     }
