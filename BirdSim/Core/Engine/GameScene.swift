@@ -77,23 +77,6 @@ class GameScene: SKScene {
         // mapFrame.zPosition = 1000
         // addChild(mapFrame)
     }
-    //    func setupVirtualController() {
-    //        let controllerConfig = GCVirtualController.Configuration()
-    //        controllerConfig.elements = [GCInputLeftThumbstick, GCInputButtonA, GCInputButtonB]
-    //
-    //        let vc = GCVirtualController(configuration: controllerConfig)
-    //        self.virtualController = vc
-    //
-    //        // Connect using the current API (no completion handler)
-    //        vc.connect()
-    //
-    //        // If the controller is available, configure handlers now
-    //        if vc.controller?.extendedGamepad != nil {
-    //            self.configureGamepadHandlers()
-    //        }
-    //    }
-    
-    
     
     
     override func update(_ currentTime: TimeInterval) {
