@@ -184,6 +184,7 @@ class GameScene: SKScene {
             inputPoint = CGPoint(x: CGFloat(xValue), y: CGFloat(yValue))
         }
         
+        
         // Convert to vector components and clamp to unit circle
         var dx = inputPoint.x
         var dy = inputPoint.y
@@ -346,9 +347,17 @@ extension GameScene {
     }
     
     func setupPredator() {
+        
+        
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.midX, y: frame.midY)
         spot.name = predator
+        
+        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
+        let moveLeft = moveRight.reversed()
+        let sequence = SKAction.sequence([moveRight, moveLeft])
+        let repeatForever = SKAction.repeatForever(sequence)
+        spot.run(repeatForever)
         addChild(spot)
         
     }
