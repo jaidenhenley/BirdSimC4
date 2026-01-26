@@ -1,17 +1,17 @@
 //
-//  Minigame1.swift
+//  MiniGameScene3.swift
 //  BirdSimulator
 //
-//  Created by Jaiden Henley on 1/22/26.
+//  Created by Jaiden Henley on 1/26/26.
 //
 
 import SpriteKit
 
-class MiniGameScene1: SKScene {
+class MiniGameScene2: SKScene {
     var mainViewModel: MainGameViewModel?
     
     override func didMove(to view: SKView) {
-        backgroundColor = .systemBlue
+        backgroundColor = .green
         
         let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
         backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -43,4 +43,3 @@ class MiniGameScene1: SKScene {
         }
     }
 }
-

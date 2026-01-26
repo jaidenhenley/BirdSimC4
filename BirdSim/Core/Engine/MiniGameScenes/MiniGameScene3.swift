@@ -15,7 +15,7 @@
 
 import SpriteKit
 
-class MiniGameScene4: SKScene {
+class MiniGameScene3: SKScene {
     var mainViewModel: MainGameViewModel?
     
     override func didMove(to view: SKView) {

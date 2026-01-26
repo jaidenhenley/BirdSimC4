@@ -7,11 +7,11 @@
 
 import SpriteKit
 
-class MiniGameScene2: SKScene {
+class MiniGameScene1: SKScene {
     var mainViewModel: MainGameViewModel?
     
     override func didMove(to view: SKView) {
-        backgroundColor = .red
+        backgroundColor = .blue
         
         let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
         backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
