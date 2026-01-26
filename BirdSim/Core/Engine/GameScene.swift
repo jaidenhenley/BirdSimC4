@@ -10,6 +10,11 @@ import GameController
 
 class GameScene: SKScene {
     
+    private var hasInitializedWorld = false
+    
+    let worldNode = SKNode()
+    let overlayNode = SKNode()
+    
     let predator: String = "predatorNode"
     let miniGame1: String = "miniGameNode1"
     let miniGame2: String = "miniGameNode2"
@@ -33,11 +38,15 @@ class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
-        setupTestCircle()
-        setupPredator()
-        setupMiniGame1Spot()
-        setupMiniGame2Spot()
-        setupMiniGame3Spot()
+        
+        if !hasInitializedWorld {
+            setupTestCircle()
+            setupPredator()
+            setupMiniGame1Spot()
+            setupMiniGame2Spot()
+            setupMiniGame3Spot()
+            hasInitializedWorld = true
+        }
         // setupVirtualController()
         self.camera = cameraNode
         self.addChild(cameraNode)
@@ -334,6 +343,7 @@ extension GameScene {
     }
     
     func setupTestCircle() {
+        if self.childNode(withName: "movingCircle") != nil { return }
         let radius: CGFloat = 30
         let circle = SKShapeNode(circleOfRadius: radius)
         circle.fillColor = .red
@@ -347,7 +357,7 @@ extension GameScene {
     }
     
     func setupPredator() {
-        
+        if self.childNode(withName: predator) != nil { return }
         
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -363,18 +373,21 @@ extension GameScene {
     }
     
     func setupMiniGame1Spot() {
+        if self.childNode(withName: miniGame1) != nil { return }
         let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.minX, y: frame.minY)
         spot.name = miniGame1
         addChild(spot)
     }
     func setupMiniGame2Spot() {
+        if self.childNode(withName: miniGame2) != nil { return }
         let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.minX, y: frame.maxY)
         spot.name = miniGame2
         addChild(spot)
     }
     func setupMiniGame3Spot() {
+        if self.childNode(withName: miniGame3) != nil { return }
         let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: frame.maxX, y: frame.minY)
         spot.name = miniGame3
