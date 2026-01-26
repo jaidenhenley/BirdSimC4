@@ -20,7 +20,7 @@ class MiniGameScene1: SKScene {
         backLabel.name = "Back Button"
         backLabel.zPosition = 10
         addChild(backLabel)
-    
+
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
