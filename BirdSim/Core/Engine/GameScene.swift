@@ -25,32 +25,36 @@ class GameScene: SKScene {
     var miniGame3IsInRange: Bool = false
     
     
-    var viewModel: MainGameViewModel?
+   weak var viewModel: MainGameViewModel?
     
     var lastUpdateTime: TimeInterval = 0
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var circleSpeed: CGFloat = 400.0
     
-    override func didChangeSize(_ oldSize: CGSize) {
-        super.didChangeSize(oldSize)
-        setupBackground()
-    }
-    
     override func didMove(to view: SKView) {
         
         if !hasInitializedWorld {
+            setupBackground()
             setupTestCircle()
             setupPredator()
             setupMiniGame1Spot()
             setupMiniGame2Spot()
             setupMiniGame3Spot()
             hasInitializedWorld = true
+            
+            viewModel?.mainScene = self
+        } else {
+            if viewModel?.mainScene == nil {
+                viewModel?.mainScene = self
+            }
         }
         // setupVirtualController()
         self.camera = cameraNode
-        self.addChild(cameraNode)
-        cameraNode.setScale(1.25)
+        if cameraNode.parent == nil {
+            self.addChild(cameraNode)
+            cameraNode.setScale(1.25)
+        }
         restoreReturnStateIfNeeded()
     }
     
@@ -314,31 +318,6 @@ extension GameScene {
             cameraNode.position = camPos
         } else if let circle = self.childNode(withName: "movingCircle") {
             cameraNode.position = circle.position
-        }
-    }
-    
-    
-    func configureGamepadHandlers() {
-        guard let gamepad = virtualController?.controller?.extendedGamepad else { return }
-        
-        
-        if viewModel!.isFlying {
-            
-        } else {
-            
-        }
-        
-        
-        // Button A: make the circle bigger when pressed
-        gamepad.buttonA.pressedChangedHandler = { [weak self] _, _, pressed in
-            guard let self = self, pressed else { return }
-            self.adjustCircleScale(by: 0.4)
-        }
-        
-        // Button B: make the circle smaller when pressed
-        gamepad.buttonB.pressedChangedHandler = { [weak self] _, _, pressed in
-            guard let self = self, pressed else { return }
-            self.adjustCircleScale(by: -0.4)
         }
     }
     
