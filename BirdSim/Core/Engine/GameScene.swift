@@ -129,6 +129,7 @@ class GameScene: SKScene {
             if distance < 200, predatorHit == false {
                 transitionToPredatorGame()
                 predatorHit = true
+                startPredatorTimer()
                 viewModel?.controlsAreVisable = false
             }
         }
@@ -369,6 +370,21 @@ extension GameScene {
         spot.run(repeatForever)
         addChild(spot)
         
+    }
+    
+    func startPredatorTimer() {
+        self.removeAction(forKey: "predatorCooldown")
+        
+        let wait = SKAction.wait(forDuration: 5.0) //adjust timer here for predator cooldown
+        let reset = SKAction.run {
+            self.predatorHit = false
+        }
+        
+        let sequence = SKAction.sequence([
+            wait,reset
+        ])
+        self.run(sequence, withKey: "predatorCooldown")
+    
     }
     
     func setupMiniGame1Spot() {
