@@ -216,14 +216,14 @@ class GameScene: SKScene {
         
         updatePlayerPosition(deltaTime: deltaTime)
         
-        if let circle = self.childNode(withName: "userBird") {
-            updateCameraFollow(target: circle.position, deltaTime: deltaTime)
+        if let player = self.childNode(withName: "userBird") {
+            updateCameraFollow(target: player.position, deltaTime: deltaTime)
             clampCameraToMap()
         }
     }
     
     func updatePlayerPosition(deltaTime: CGFloat) {
-        guard let circle = self.childNode(withName: "userBird") else { return }
+        guard let player = self.childNode(withName: "userBird") else { return }
         
         // Prefer SwiftUI joystick via view model (CGPoint normalized to [-1, 1])
         var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
@@ -246,8 +246,8 @@ class GameScene: SKScene {
         }
         
         let velocity = CGVector(dx: dx * circleSpeed, dy: dy * circleSpeed)
-        circle.position.x += velocity.dx * deltaTime
-        circle.position.y += velocity.dy * deltaTime
+        player.position.x += velocity.dx * deltaTime
+        player.position.y += velocity.dy * deltaTime
         
         // Smoothly rotate the bird to face movement direction
         let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
@@ -259,14 +259,14 @@ class GameScene: SKScene {
             let desired = target + assetOrientationOffset
 
             // Shortest-angle interpolation
-            let current = circle.zRotation
+            let current = player.zRotation
             let deltaAngle = atan2(sin(desired - current), cos(desired - current))
 
             // Turn rate in radians per second; higher is snappier
             let turnRate: CGFloat = 10.0
             let step = min(1.0, turnRate * deltaTime)
 
-            circle.zRotation = current + deltaAngle * step
+            player.zRotation = current + deltaAngle * step
         }
     }
     
@@ -361,31 +361,31 @@ extension GameScene {
 
 extension GameScene {
     func saveReturnState() {
-        if let circle = self.childNode(withName: "userBird") {
-            viewModel?.savedPlayerPosition = circle.position
+        if let player = self.childNode(withName: "userBird") {
+            viewModel?.savedPlayerPosition = player.position
         }
         viewModel?.savedCameraPosition = cameraNode.position
     }
     func restoreReturnStateIfNeeded() {
         if let pos = viewModel?.savedPlayerPosition,
-           let circle = self.childNode(withName: "userBird") {
-            circle.position = pos
+           let player = self.childNode(withName: "userBird") {
+            player.position = pos
         }
         if let camPos = viewModel?.savedCameraPosition {
             cameraNode.position = camPos
-        } else if let circle = self.childNode(withName: "userBird") {
-            cameraNode.position = circle.position
+        } else if let player = self.childNode(withName: "userBird") {
+            cameraNode.position = player.position
         }
     }
     
     func setupUserBird() {
         if self.childNode(withName: "userBird") != nil { return }
-        let circle = SKSpriteNode(imageNamed: "Bird_Flying_Open")
-        circle.position = CGPoint(x: 200, y: 400)
-        circle.zPosition = 10
-        circle.name = "userBird"
+        let player = SKSpriteNode(imageNamed: "Bird_Flying_Open")
+        player.position = CGPoint(x: 200, y: 400)
+        player.zPosition = 10
+        player.name = "userBird"
         
-        self.addChild(circle)
+        self.addChild(player)
     }
     
   
