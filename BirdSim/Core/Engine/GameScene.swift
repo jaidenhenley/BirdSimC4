@@ -13,6 +13,8 @@ class GameScene: SKScene {
     let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
     private var hasInitializedWorld = false
+    private var lastUpdateTime: TimeInterval = 0
+    private var healthAccumulator: CGFloat = 0
     
     let worldNode = SKNode()
     let overlayNode = SKNode()
@@ -30,7 +32,6 @@ class GameScene: SKScene {
     
     weak var viewModel: MainGameViewModel?
     
-    var lastUpdateTime: TimeInterval = 0
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var circleSpeed: CGFloat = 400.0
@@ -116,7 +117,36 @@ class GameScene: SKScene {
             miniGame3IsInRange = false
         
         
-        //1. Get the player and the target node(Predator Attack Radius)
+        
+        //Initialize last update time on the first frame
+        if lastUpdateTime == 0 {
+            lastUpdateTime = currentTime
+        }
+        
+        //Calculate how much time has passed since last frame
+        let rawDelta: CGFloat
+        if lastUpdateTime == 0 {
+            rawDelta = 1.0 / 60.0 // assume one frame on first update
+        } else {
+            rawDelta = CGFloat(currentTime - lastUpdateTime)
+        }
+        
+        // Clamp delta between ~8ms (120fps) and ~33ms (30fps)
+        let deltaTime = min(max(rawDelta, 1.0/120.0), 1.0/30.0)
+        lastUpdateTime = currentTime
+        
+        // Smooth, frame-based health drain (1% per second by default)
+        if var health = viewModel?.health, health > 0 {
+            let drainPerSecond: CGFloat = 0.01 // 1%/sec
+            let drainThisFrame = drainPerSecond * deltaTime
+            health = max(0, health - drainThisFrame)
+            if health != viewModel?.health {
+                viewModel?.health = health
+            }
+        }
+        
+        
+        // Get the player and the target node(Predator Attack Radius)
         if let player = self.childNode(withName: "userBird"),
            let portal = self.childNode(withName: predator){
             //2. Calculate the distance between them using the Pythagorean theorem
@@ -124,7 +154,7 @@ class GameScene: SKScene {
             let dy = player.position.y - portal.position.y
             let distance = sqrt(dx*dx + dy*dy)
             
-            //3. If distance is less then 200 pixels, trigger the game
+            // If distance is less then 200 pixels, trigger the game
             
             if distance < 200, predatorHit == false {
                 transitionToPredatorGame()
@@ -140,7 +170,7 @@ class GameScene: SKScene {
             let dy = player.position.y - portal.position.y
             let distance = sqrt(dx*dx + dy*dy)
             
-            //3. If distance is less then 200 pixels, trigger the game
+            // If distance is less then 200 pixels, trigger the game
             
             if distance < 200 {
                 miniGame1IsInRange = true
@@ -155,7 +185,7 @@ class GameScene: SKScene {
             let dy = player.position.y - portal.position.y
             let distance = sqrt(dx*dx + dy*dy)
             
-            //3. If distance is less then 200 pixels, trigger the game
+            // If distance is less then 200 pixels, trigger the game
             
             if distance < 200 {
                 miniGame2IsInRange = true
@@ -165,12 +195,12 @@ class GameScene: SKScene {
         
         if let player = self.childNode(withName: "userBird"),
            let portal = self.childNode(withName: miniGame3){
-            //2. Calculate the distance between them using the Pythagorean theorem
+            // Calculate the distance between them using the Pythagorean theorem
             let dx = player.position.x - portal.position.x
             let dy = player.position.y - portal.position.y
             let distance = sqrt(dx*dx + dy*dy)
             
-            //3. If distance is less then 200 pixels, trigger the game
+            // If distance is less then 200 pixels, trigger the game
             
             if distance < 200 {
                 miniGame3IsInRange = true
@@ -178,19 +208,6 @@ class GameScene: SKScene {
             }
         }
         interactionLabel.text = currentMessage
-        
-        
-        // Compute delta time and clamp to avoid large spikes causing visible jumps
-        let rawDelta: CGFloat
-        if lastUpdateTime == 0 {
-            rawDelta = 1.0 / 60.0 // assume one frame on first update
-        } else {
-            rawDelta = CGFloat(currentTime - lastUpdateTime)
-        }
-        lastUpdateTime = currentTime
-        
-        // Clamp delta between ~8ms (120fps) and ~33ms (30fps)
-        let deltaTime = min(max(rawDelta, 1.0/120.0), 1.0/30.0)
         
         if let delta = viewModel?.pendingScaleDelta, delta != 0 {
             adjustCircleScale(by: delta)

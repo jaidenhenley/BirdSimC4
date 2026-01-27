@@ -17,5 +17,6 @@ class MainGameViewModel: ObservableObject {
     @Published var savedPlayerPosition: CGPoint?
     @Published var savedCameraPosition: CGPoint?
     @Published var mainScene: GameScene?
+    @Published var health: CGFloat = 1
     
 }

@@ -20,7 +20,7 @@ struct MainGameView: View {
                     scene.scaleMode = .resizeFill
                     scene.viewModel = viewModel
                 }
-            DrainingHealthBarView()
+            DrainingHealthBarView(viewModel: viewModel)
                 .padding()
             if viewModel.controlsAreVisable {
                 HStack {
