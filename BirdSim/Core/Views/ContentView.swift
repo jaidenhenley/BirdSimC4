@@ -8,8 +8,15 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var gameStarted: Bool = false
+    
     var body: some View {
-        MainGameView(viewModel: MainGameViewModel())
+        if !gameStarted {
+            StartGameView(gameStarted: $gameStarted)
+        } else {
+            MainGameView(viewModel: MainGameViewModel())
+        }
+        
     }
 }
 
