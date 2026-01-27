@@ -10,6 +10,8 @@ import GameController
 
 class GameScene: SKScene {
     
+    let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    
     private var hasInitializedWorld = false
     
     let worldNode = SKNode()
@@ -25,7 +27,7 @@ class GameScene: SKScene {
     var miniGame3IsInRange: Bool = false
     
     
-   weak var viewModel: MainGameViewModel?
+    weak var viewModel: MainGameViewModel?
     
     var lastUpdateTime: TimeInterval = 0
     var virtualController: GCVirtualController?
@@ -55,6 +57,14 @@ class GameScene: SKScene {
             self.addChild(cameraNode)
             cameraNode.setScale(1.25)
         }
+        if interactionLabel.parent == nil {
+            interactionLabel.fontSize = 24
+            interactionLabel.fontColor = .white
+            interactionLabel.position = CGPoint(x: 0, y: -200) // Lower center of screen
+            interactionLabel.zPosition = 1000
+            cameraNode.addChild(interactionLabel)
+        }
+        
         restoreReturnStateIfNeeded()
     }
     
@@ -98,6 +108,12 @@ class GameScene: SKScene {
     
     
     override func update(_ currentTime: TimeInterval) {
+        // A. Start with an empty message
+            var currentMessage = ""
+            miniGame1IsInRange = false
+            miniGame2IsInRange = false
+            miniGame3IsInRange = false
+        
         
         //1. Get the player and the target node(Predator Attack Radius)
         if let player = self.childNode(withName: "movingCircle"),
@@ -125,6 +141,7 @@ class GameScene: SKScene {
             
             if distance < 200 {
                 miniGame1IsInRange = true
+                currentMessage = "Play MiniGame 1" // Set message here
             }
         }
         
@@ -139,6 +156,7 @@ class GameScene: SKScene {
             
             if distance < 200 {
                 miniGame2IsInRange = true
+                currentMessage = "Play MiniGame 2" // Set message here
             }
         }
         
@@ -153,10 +171,10 @@ class GameScene: SKScene {
             
             if distance < 200 {
                 miniGame3IsInRange = true
+                currentMessage = "Play MiniGame 3" // Set message here
             }
         }
-        
-
+        interactionLabel.text = currentMessage
         
         
         // Compute delta time and clamp to avoid large spikes causing visible jumps
@@ -240,7 +258,6 @@ class GameScene: SKScene {
                 transitionToMinigame3()
                 viewModel?.controlsAreVisable = false
             }
-            
         }
     }
     
