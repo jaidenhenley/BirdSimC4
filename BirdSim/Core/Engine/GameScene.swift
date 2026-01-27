@@ -25,6 +25,7 @@ class GameScene: SKScene {
     var miniGame1IsInRange: Bool = false
     var miniGame2IsInRange: Bool = false
     var miniGame3IsInRange: Bool = false
+    var predatorHit: Bool = false
     
     
     weak var viewModel: MainGameViewModel?
@@ -125,8 +126,10 @@ class GameScene: SKScene {
             
             //3. If distance is less then 200 pixels, trigger the game
             
-            if distance < 200 {
+            if distance < 200, predatorHit == false {
                 transitionToPredatorGame()
+                predatorHit = true
+                startPredatorTimer()
                 viewModel?.controlsAreVisable = false
             }
         }
@@ -345,13 +348,14 @@ extension GameScene {
         circle.fillColor = .red
         circle.strokeColor = .blue
         circle.lineWidth = 2
-        circle.position = CGPoint(x: 0, y: 0)
+        circle.position = CGPoint(x: 200, y: 300)
         circle.name = "movingCircle"
         circle.zPosition = 10
         
         self.addChild(circle)
     }
     
+  
     func setupPredator() {
         if self.childNode(withName: predator) != nil { return }
         
@@ -366,6 +370,21 @@ extension GameScene {
         spot.run(repeatForever)
         addChild(spot)
         
+    }
+    
+    func startPredatorTimer() {
+        self.removeAction(forKey: "predatorCooldown")
+        
+        let wait = SKAction.wait(forDuration: 5.0) //adjust timer here for predator cooldown
+        let reset = SKAction.run {
+            self.predatorHit = false
+        }
+        
+        let sequence = SKAction.sequence([
+            wait,reset
+        ])
+        self.run(sequence, withKey: "predatorCooldown")
+    
     }
     
     func setupMiniGame1Spot() {
