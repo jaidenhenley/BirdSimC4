@@ -20,6 +20,8 @@ struct MainGameView: View {
                     scene.scaleMode = .resizeFill
                     scene.viewModel = viewModel
                 }
+            DrainingHealthBarView()
+                .padding()
             if viewModel.controlsAreVisable {
                 HStack {
                     JoystickView(viewModel: viewModel)
