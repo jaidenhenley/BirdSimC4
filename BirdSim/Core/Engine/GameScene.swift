@@ -231,6 +231,26 @@ class GameScene: SKScene {
         let velocity = CGVector(dx: dx * circleSpeed, dy: dy * circleSpeed)
         circle.position.x += velocity.dx * deltaTime
         circle.position.y += velocity.dy * deltaTime
+        
+        // Smoothly rotate the bird to face movement direction
+        let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
+        if speed > 0.001 {
+            // Angle from velocity vector
+            let target = atan2(velocity.dy, velocity.dx)
+            // If your sprite artwork faces up instead of right, add an offset:
+            let assetOrientationOffset: CGFloat = -(.pi / 2) // change to 0 if asset faces right
+            let desired = target + assetOrientationOffset
+
+            // Shortest-angle interpolation
+            let current = circle.zRotation
+            let deltaAngle = atan2(sin(desired - current), cos(desired - current))
+
+            // Turn rate in radians per second; higher is snappier
+            let turnRate: CGFloat = 10.0
+            let step = min(1.0, turnRate * deltaTime)
+
+            circle.zRotation = current + deltaAngle * step
+        }
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
