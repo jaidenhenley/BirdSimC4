@@ -39,7 +39,7 @@ class GameScene: SKScene {
         
         if !hasInitializedWorld {
             setupBackground()
-            setupTestCircle()
+            setupUserBird()
             setupPredator()
             setupMiniGame1Spot()
             setupMiniGame2Spot()
@@ -117,7 +117,7 @@ class GameScene: SKScene {
         
         
         //1. Get the player and the target node(Predator Attack Radius)
-        if let player = self.childNode(withName: "movingCircle"),
+        if let player = self.childNode(withName: "userBird"),
            let portal = self.childNode(withName: predator){
             //2. Calculate the distance between them using the Pythagorean theorem
             let dx = player.position.x - portal.position.x
@@ -133,7 +133,7 @@ class GameScene: SKScene {
                 viewModel?.controlsAreVisable = false
             }
         }
-        if let player = self.childNode(withName: "movingCircle"),
+        if let player = self.childNode(withName: "userBird"),
            let portal = self.childNode(withName: miniGame1){
             //2. Calculate the distance between them using the Pythagorean theorem
             let dx = player.position.x - portal.position.x
@@ -148,7 +148,7 @@ class GameScene: SKScene {
             }
         }
         
-        if let player = self.childNode(withName: "movingCircle"),
+        if let player = self.childNode(withName: "userBird"),
            let portal = self.childNode(withName: miniGame2){
             //2. Calculate the distance between them using the Pythagorean theorem
             let dx = player.position.x - portal.position.x
@@ -163,7 +163,7 @@ class GameScene: SKScene {
             }
         }
         
-        if let player = self.childNode(withName: "movingCircle"),
+        if let player = self.childNode(withName: "userBird"),
            let portal = self.childNode(withName: miniGame3){
             //2. Calculate the distance between them using the Pythagorean theorem
             let dx = player.position.x - portal.position.x
@@ -199,14 +199,14 @@ class GameScene: SKScene {
         
         updatePlayerPosition(deltaTime: deltaTime)
         
-        if let circle = self.childNode(withName: "movingCircle") {
+        if let circle = self.childNode(withName: "userBird") {
             updateCameraFollow(target: circle.position, deltaTime: deltaTime)
             clampCameraToMap()
         }
     }
     
     func updatePlayerPosition(deltaTime: CGFloat) {
-        guard let circle = self.childNode(withName: "movingCircle") else { return }
+        guard let circle = self.childNode(withName: "userBird") else { return }
         
         // Prefer SwiftUI joystick via view model (CGPoint normalized to [-1, 1])
         var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
@@ -231,6 +231,26 @@ class GameScene: SKScene {
         let velocity = CGVector(dx: dx * circleSpeed, dy: dy * circleSpeed)
         circle.position.x += velocity.dx * deltaTime
         circle.position.y += velocity.dy * deltaTime
+        
+        // Smoothly rotate the bird to face movement direction
+        let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
+        if speed > 0.001 {
+            // Angle from velocity vector
+            let target = atan2(velocity.dy, velocity.dx)
+            // If your sprite artwork faces up instead of right, add an offset:
+            let assetOrientationOffset: CGFloat = -(.pi / 2) // change to 0 if asset faces right
+            let desired = target + assetOrientationOffset
+
+            // Shortest-angle interpolation
+            let current = circle.zRotation
+            let deltaAngle = atan2(sin(desired - current), cos(desired - current))
+
+            // Turn rate in radians per second; higher is snappier
+            let turnRate: CGFloat = 10.0
+            let step = min(1.0, turnRate * deltaTime)
+
+            circle.zRotation = current + deltaAngle * step
+        }
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -324,33 +344,29 @@ extension GameScene {
 
 extension GameScene {
     func saveReturnState() {
-        if let circle = self.childNode(withName: "movingCircle") {
+        if let circle = self.childNode(withName: "userBird") {
             viewModel?.savedPlayerPosition = circle.position
         }
         viewModel?.savedCameraPosition = cameraNode.position
     }
     func restoreReturnStateIfNeeded() {
         if let pos = viewModel?.savedPlayerPosition,
-           let circle = self.childNode(withName: "movingCircle") {
+           let circle = self.childNode(withName: "userBird") {
             circle.position = pos
         }
         if let camPos = viewModel?.savedCameraPosition {
             cameraNode.position = camPos
-        } else if let circle = self.childNode(withName: "movingCircle") {
+        } else if let circle = self.childNode(withName: "userBird") {
             cameraNode.position = circle.position
         }
     }
     
-    func setupTestCircle() {
-        if self.childNode(withName: "movingCircle") != nil { return }
-        let radius: CGFloat = 30
-        let circle = SKShapeNode(circleOfRadius: radius)
-        circle.fillColor = .red
-        circle.strokeColor = .blue
-        circle.lineWidth = 2
-        circle.position = CGPoint(x: 200, y: 300)
-        circle.name = "movingCircle"
+    func setupUserBird() {
+        if self.childNode(withName: "userBird") != nil { return }
+        let circle = SKSpriteNode(imageNamed: "Bird_Flying_Open")
+        circle.position = CGPoint(x: 200, y: 400)
         circle.zPosition = 10
+        circle.name = "userBird"
         
         self.addChild(circle)
     }
@@ -456,7 +472,7 @@ extension GameScene {
     }
     
     func adjustCircleScale(by delta: CGFloat) {
-        guard let circle = self.childNode(withName: "movingCircle") as? SKShapeNode else { return }
+        guard let circle = self.childNode(withName: "userBird") as? SKShapeNode else { return }
         
         let targetScale = max(0.7, min(1.1, circle.xScale + delta))
         
