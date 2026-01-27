@@ -15,6 +15,7 @@ class GameScene: SKScene {
     private var hasInitializedWorld = false
     private var lastUpdateTime: TimeInterval = 0
     private var healthAccumulator: CGFloat = 0
+    private var lastAppliedIsFlying: Bool = false
     
     let worldNode = SKNode()
     let overlayNode = SKNode()
@@ -34,7 +35,8 @@ class GameScene: SKScene {
     
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
-    var circleSpeed: CGFloat = 400.0
+    var playerSpeed: CGFloat = 400.0
+    var birdImage: String = "Bird_Ground"
     
     override func didMove(to view: SKView) {
         
@@ -214,11 +216,46 @@ class GameScene: SKScene {
             viewModel?.pendingScaleDelta = 0
         }
         
+        
+        if let vm = viewModel {
+            if vm.isFlying != lastAppliedIsFlying {
+                lastAppliedIsFlying = vm.isFlying
+                applyBirdState(isFlying: vm.isFlying)
+            }
+        }
+        
         updatePlayerPosition(deltaTime: deltaTime)
         
         if let player = self.childNode(withName: "userBird") {
             updateCameraFollow(target: player.position, deltaTime: deltaTime)
             clampCameraToMap()
+        }
+    }
+    
+    func applyBirdState(isFlying: Bool) {
+        // Adjust movement speed
+        playerSpeed = isFlying ? 650.0 : 400.0
+        birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground"
+
+        // Update existing sprite's texture (or create it if missing)
+        if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
+            let texture = SKTexture(imageNamed: birdImage)
+            bird.texture = texture
+            bird.size = texture.size()
+
+            // Optional: subtle visual cue (scale)
+            let targetScale: CGFloat = isFlying ? 1.1 : 1.0
+            let action = SKAction.scale(to: targetScale, duration: 0.2)
+            action.timingMode = .easeInEaseOut
+            bird.run(action)
+        } else {
+            setupUserBird()
+            if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
+                let targetScale: CGFloat = isFlying ? 1.1 : 1.0
+                let action = SKAction.scale(to: targetScale, duration: 0.2)
+                action.timingMode = .easeInEaseOut
+                bird.run(action)
+            }
         }
     }
     
@@ -245,7 +282,7 @@ class GameScene: SKScene {
             dy /= mag
         }
         
-        let velocity = CGVector(dx: dx * circleSpeed, dy: dy * circleSpeed)
+        let velocity = CGVector(dx: dx * playerSpeed, dy: dy * playerSpeed)
         player.position.x += velocity.dx * deltaTime
         player.position.y += velocity.dy * deltaTime
         
@@ -380,7 +417,8 @@ extension GameScene {
     
     func setupUserBird() {
         if self.childNode(withName: "userBird") != nil { return }
-        let player = SKSpriteNode(imageNamed: "Bird_Flying_Open")
+        
+        let player = SKSpriteNode(imageNamed: birdImage)
         player.position = CGPoint(x: 200, y: 400)
         player.zPosition = 10
         player.name = "userBird"
