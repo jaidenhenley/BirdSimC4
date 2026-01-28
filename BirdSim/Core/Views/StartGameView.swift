@@ -9,16 +9,21 @@ import SwiftUI
 
 struct StartGameView: View {
     @Binding var gameStarted: Bool
+    @Binding var scene: GameScene
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.red.ignoresSafeArea()
                 VStack {
                     Button("Start Game") {
-                        gameStarted = true
+                        startGame()
                     }
                 }
             }
         }
+    }
+    func startGame() {
+        gameStarted = true
+        scene.resetGame()
     }
 }

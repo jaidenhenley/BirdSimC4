@@ -19,7 +19,7 @@ struct MainGameView: View {
     var body: some View {
         
         if !viewModel.gameStarted {
-            StartGameView(gameStarted: $viewModel.gameStarted)
+            StartGameView(gameStarted: $viewModel.gameStarted, scene: $scene)
         } else if viewModel.showGameOver {
             EndGameView(viewModel: viewModel)
         } else {

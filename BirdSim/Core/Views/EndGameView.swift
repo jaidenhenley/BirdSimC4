@@ -21,6 +21,7 @@ struct EndGameView: View {
 
                 Button("Back to Start") {
                     withAnimation {
+                        viewModel.mainScene = nil
                         viewModel.showGameOver = false
                         viewModel.gameStarted = false
                         viewModel.controlsAreVisable = true
