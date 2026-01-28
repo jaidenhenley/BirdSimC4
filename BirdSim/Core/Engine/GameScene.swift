@@ -10,6 +10,8 @@ import GameController
 
 class GameScene: SKScene {
     
+    weak var viewModel: MainGameViewModel?
+    
     let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
     private var hasInitializedWorld = false
@@ -30,9 +32,6 @@ class GameScene: SKScene {
     var miniGame3IsInRange: Bool = false
     var predatorHit: Bool = false
     
-    
-    weak var viewModel: MainGameViewModel?
-    
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var playerSpeed: CGFloat = 400.0
@@ -47,6 +46,12 @@ class GameScene: SKScene {
             setupMiniGame1Spot()
             setupMiniGame2Spot()
             setupMiniGame3Spot()
+            
+            spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
+            spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
+            spawnItem(at: CGPoint(x: -600, y: 100), type: "stick")
+            spawnItem(at: CGPoint(x: -400, y: 300), type: "leaf")
+            
             hasInitializedWorld = true
             
             viewModel?.mainScene = self
@@ -209,6 +214,24 @@ class GameScene: SKScene {
                 currentMessage = "Play MiniGame 3" // Set message here
             }
         }
+        
+        // Check if any item is near for UI prompt only
+        if let player = self.childNode(withName: "userBird") {
+            var foundNearbyItem = false
+            for node in children where node.name == "stick" && viewModel?.isFlying == false || node.name == "leaf" && viewModel?.isFlying == false {
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance < 200 {
+                    foundNearbyItem = true
+                    break
+                }
+            }
+            if foundNearbyItem {
+                currentMessage = "PickUp Item"
+            }
+        }
+        
         interactionLabel.text = currentMessage
         
         if let delta = viewModel?.pendingScaleDelta, delta != 0 {
@@ -355,7 +378,36 @@ class GameScene: SKScene {
         guard let touch = touches.first else { return }
         // get location of touch in scene
         let location = touch.location(in: self)
+    
+        // Handle item taps: validate distance on tap
+        for node in nodes(at: location) where node.name == "stick" {
+            let largerHitArea = node.frame.insetBy(dx: -20, dy: -20)
+            if largerHitArea.contains(location),
+               let player = self.childNode(withName: "userBird") {
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance < 200 {
+                    pickupItem(node)
+                    return
+                }
+            }
+        }
+        for node in nodes(at: location) where node.name == "leaf" {
+            let largerHitArea = node.frame.insetBy(dx: -20, dy: -20)
+            if largerHitArea.contains(location),
+               let player = self.childNode(withName: "userBird") {
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance < 200 {
+                    pickupItem(node)
+                    return
+                }
+            }
+        }
         
+        // handles tapped areas for minigames
         // find all nodes in the location
         let touchedNodes = nodes(at: location)
         
@@ -398,6 +450,32 @@ class GameScene: SKScene {
 }
 
 extension GameScene {
+    
+    func spawnItem(at position: CGPoint, type: String) {
+        let item = SKSpriteNode(imageNamed: type)
+        item.position = position
+        item.name = type
+        item.setScale(0.5)
+        
+        self.addChild(item)
+    }
+    
+    func pickupItem(_ node: SKNode) {
+        guard let name = node.name else { return }
+        
+        // Update ViewModel
+        viewModel?.collectItem(name)
+        
+        let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 0.2)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+        let remove = SKAction.removeFromParent()
+        
+        node.run(SKAction.sequence([
+            moveUp, fadeOut, remove
+        ]))
+        
+        print("Bird tapped a \(name)")
+    }
     
     func clampCameraToMap() {
         guard let camera = camera,

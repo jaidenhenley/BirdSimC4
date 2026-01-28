@@ -18,5 +18,15 @@ class MainGameViewModel: ObservableObject {
     @Published var savedCameraPosition: CGPoint?
     @Published var mainScene: GameScene?
     @Published var health: CGFloat = 1
+    @Published var showInventory: Bool = false
+    @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0]
+    
+    func collectItem(_ name: String) {
+            // Standardize to lowercase to match node names
+            let key = name.lowercased()
+            if inventory.keys.contains(key) {
+                inventory[key, default: 0] += 1
+            }
+        }
     
 }
