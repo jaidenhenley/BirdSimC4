@@ -18,6 +18,7 @@ class MainGameViewModel: ObservableObject {
     @Published var savedCameraPosition: CGPoint?
     @Published var mainScene: GameScene?
     @Published var health: CGFloat = 1
+    @Published var showInventory: Bool = false
     @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0]
     
     func collectItem(_ name: String) {

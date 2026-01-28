@@ -20,24 +20,55 @@ struct MainGameView: View {
                     scene.scaleMode = .resizeFill
                     scene.viewModel = viewModel
                 }
+            
             DrainingHealthBarView(viewModel: viewModel)
                 .padding()
+            
             if viewModel.controlsAreVisable {
-                HStack {
-                    JoystickView(viewModel: viewModel)
-                        .padding(.all, 100)
+                VStack {
                     
-                    Spacer()
-                    
-                    FlyButtonView(viewModel: viewModel)
-                        .padding(.all, 100)
+                    HStack {
+                        Spacer()
+                        
+                        Button{
+                            viewModel.showInventory = true
+                        } label: {
+                            Image(systemName: "bag.fill")
+                                .font(.largeTitle)
+                                .padding()
+                                .background(Circle().fill(.ultraThinMaterial))
+                        }
+                        .padding()
                     }
-            } else {
-                
+                    
+                    Spacer ()
+                    
+                    HStack {
+                        JoystickView(viewModel: viewModel)
+                            .padding(.all, 100)
+                        
+                        Spacer()
+                        
+                        FlyButtonView(viewModel: viewModel)
+                            .padding(.all, 100)
+                    }
                 }
             }
+            
+            if viewModel.showInventory {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        viewModel.showInventory = false
+                    }
+                
+                InventoryView(viewModel: viewModel)
+                    .transition(.scale.combined(with: .opacity))
+            }
         }
+        .animation(.spring, value: viewModel.showInventory)
     }
+}
 
 
 #Preview {

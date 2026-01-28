@@ -48,6 +48,9 @@ class GameScene: SKScene {
             setupMiniGame3Spot()
             
             spawnItem(at: CGPoint(x: 400, y: 100), type: "stick")
+            spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
+            spawnItem(at: CGPoint(x: -600, y: 100), type: "stick")
+            spawnItem(at: CGPoint(x: -400, y: 300), type: "stick")
             
             hasInitializedWorld = true
             
@@ -211,6 +214,24 @@ class GameScene: SKScene {
                 currentMessage = "Play MiniGame 3" // Set message here
             }
         }
+        
+        // Check if any stick is near for UI prompt only
+        if let player = self.childNode(withName: "userBird") {
+            var foundNearbyStick = false
+            for node in children where node.name == "stick" {
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance < 200 {
+                    foundNearbyStick = true
+                    break
+                }
+            }
+            if foundNearbyStick {
+                currentMessage = "PickUp Item"
+            }
+        }
+        
         interactionLabel.text = currentMessage
         
         if let delta = viewModel?.pendingScaleDelta, delta != 0 {
@@ -357,12 +378,20 @@ class GameScene: SKScene {
         guard let touch = touches.first else { return }
         // get location of touch in scene
         let location = touch.location(in: self)
-        
-        //handles picking up items in inventory
-        let tappedNode = self.atPoint(location)
-        
-        if tappedNode.name == "stick" {
-            pickupItem(tappedNode)
+    
+        // Handle item taps: validate distance on tap (Option B)
+        for node in nodes(at: location) where node.name == "stick" {
+            let largerHitArea = node.frame.insetBy(dx: -20, dy: -20)
+            if largerHitArea.contains(location),
+               let player = self.childNode(withName: "userBird") {
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance < 200 {
+                    pickupItem(node)
+                    return
+                }
+            }
         }
         
         // handles tapped areas for minigames
