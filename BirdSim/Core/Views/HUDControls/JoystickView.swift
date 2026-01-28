@@ -13,14 +13,14 @@ struct JoystickView: View {
     @State private var isDragging = false
     
     
-    let radius: CGFloat = 80
+    let radius: CGFloat
     
     
     var body: some View {
         ZStack {
             Circle() // Background
                 .fill(.white.opacity(0.3))
-                .frame(width: radius * 2, height: radius * 2)
+                
             
             Circle() // Thumbstick
                 .fill(.white.opacity(0.8))
@@ -55,5 +55,7 @@ struct JoystickView: View {
             
             
         }
+        .frame(width: radius * 2, height: radius * 2)
+        .contentShape(Circle())
     }
 }
