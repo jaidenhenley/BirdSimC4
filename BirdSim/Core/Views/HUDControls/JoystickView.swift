@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct JoystickView: View {
-    @ObservedObject var viewModel: MainGameViewModel
+    @ObservedObject var viewModel: MainGameView.ViewModel
     @State private var fingerLocation: CGPoint = .zero
     @State private var isDragging = false
     

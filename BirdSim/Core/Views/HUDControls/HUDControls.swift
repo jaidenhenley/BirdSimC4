@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HUDControls: View {
-    @ObservedObject var viewModel: MainGameViewModel
+    @ObservedObject var viewModel: MainGameView.ViewModel
 
     var body: some View {
         GeometryReader { proxy in
@@ -45,8 +45,4 @@ struct HUDControls: View {
             .ignoresSafeArea(edges: .bottom)
         }
     }
-}
-
-#Preview {
-    HUDControls(viewModel: MainGameViewModel())
 }

@@ -9,8 +9,7 @@ import SwiftUI
 import Combine
 
 struct DrainingHealthBarView: View {
-    @ObservedObject var viewModel: MainGameViewModel
-    
+    @ObservedObject var viewModel: MainGameView.ViewModel
     var body: some View {
         VStack(spacing: 10) {
             
@@ -37,6 +36,3 @@ struct DrainingHealthBarView: View {
     }
 }
 
-#Preview {
-    DrainingHealthBarView(viewModel: MainGameViewModel())
-}

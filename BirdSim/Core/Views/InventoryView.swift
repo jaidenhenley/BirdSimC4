@@ -20,7 +20,7 @@ struct VisualEffectBlur: UIViewRepresentable {
 }
 
 struct InventoryView: View {
-    @ObservedObject var viewModel: MainGameViewModel
+    @ObservedObject var viewModel: MainGameView.ViewModel
     var body: some View {
         VStack {
             Text("Bird Inventory")
@@ -60,8 +60,4 @@ struct InventoryView: View {
         .cornerRadius(20)
         .shadow(radius: 20)
     }
-}
-
-#Preview {
-    InventoryView(viewModel: MainGameViewModel())
 }
