@@ -43,15 +43,8 @@ struct MainGameView: View {
                     
                     Spacer ()
                     
-                    HStack {
-                        JoystickView(viewModel: viewModel)
-                            .padding(.all, 100)
-                        
-                        Spacer()
-                        
-                        FlyButtonView(viewModel: viewModel)
-                            .padding(.all, 100)
-                    }
+                    HUDControls(viewModel: viewModel)
+                        .padding(60)
                 }
             }
             

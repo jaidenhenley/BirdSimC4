@@ -179,7 +179,7 @@ class GameScene: SKScene {
             
             // If distance is less then 200 pixels, trigger the game
             
-            if distance < 200 {
+            if distance < 200, viewModel?.isFlying == false {
                 miniGame1IsInRange = true
                 currentMessage = "Play MiniGame 1" // Set message here
             }
@@ -194,7 +194,7 @@ class GameScene: SKScene {
             
             // If distance is less then 200 pixels, trigger the game
             
-            if distance < 200 {
+            if distance < 200, viewModel?.isFlying == false {
                 miniGame2IsInRange = true
                 currentMessage = "Play MiniGame 2" // Set message here
             }
@@ -209,7 +209,7 @@ class GameScene: SKScene {
             
             // If distance is less then 200 pixels, trigger the game
             
-            if distance < 200 {
+            if distance < 200, viewModel?.isFlying == false {
                 miniGame3IsInRange = true
                 currentMessage = "Play MiniGame 3" // Set message here
             }
@@ -254,6 +254,7 @@ class GameScene: SKScene {
         }
         
         updatePlayerPosition(deltaTime: deltaTime)
+        clampPlayerToMap()
         
         if let player = self.childNode(withName: "userBird") {
             updateCameraFollow(target: player.position, deltaTime: deltaTime)
@@ -502,6 +503,22 @@ extension GameScene {
         pos.x = max(mapRect.minX + halfWidth, min(pos.x, mapRect.maxX - halfWidth))
         pos.y = max(mapRect.minY + halfHeight, min(pos.y, mapRect.maxY - halfHeight))
         camera.position = pos
+    }
+    
+    func clampPlayerToMap() {
+        guard let player = self.childNode(withName: "userBird"),
+                let background = self.childNode(withName: "background") as? SKSpriteNode else { return }
+        
+        let halfWidth = background.size.width / 2
+        let halfHeight = background.size.height / 2
+        
+        let minX = background.position.x - halfWidth
+        let maxX = background.position.x + halfWidth
+        let minY = background.position.y - halfHeight
+        let maxY = background.position.y + halfHeight
+        
+        player.position.x = max(minX, min(player.position.x, maxX))
+        player.position.y = max(minY, min(player.position.y, maxY))
     }
     
     func updateCameraFollow(target: CGPoint, deltaTime: CGFloat) {

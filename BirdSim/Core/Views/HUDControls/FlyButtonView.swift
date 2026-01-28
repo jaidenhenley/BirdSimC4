@@ -27,6 +27,8 @@ struct FlyButtonView: View {
                         .rotationEffect(.degrees(viewModel.isFlying ? 180 : 0))
                 }
             }
+            .contentShape(Circle())
+            .shadow(radius: 4)
         }
 }
 

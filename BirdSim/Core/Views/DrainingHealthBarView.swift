@@ -14,7 +14,7 @@ struct DrainingHealthBarView: View {
     var body: some View {
         VStack(spacing: 10) {
             
-
+    
             ZStack(alignment: .leading){
                 // Background (Gray track)
                 VStack{
