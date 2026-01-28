@@ -15,6 +15,7 @@ class GameScene: SKScene {
     private var hasInitializedWorld = false
     private var lastUpdateTime: TimeInterval = 0
     private var healthAccumulator: CGFloat = 0
+    private var lastAppliedIsFlying: Bool = false
     
     let worldNode = SKNode()
     let overlayNode = SKNode()
@@ -34,7 +35,8 @@ class GameScene: SKScene {
     
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
-    var circleSpeed: CGFloat = 400.0
+    var playerSpeed: CGFloat = 400.0
+    var birdImage: String = "Bird_Ground"
     
     override func didMove(to view: SKView) {
         
@@ -111,10 +113,10 @@ class GameScene: SKScene {
     
     override func update(_ currentTime: TimeInterval) {
         // A. Start with an empty message
-            var currentMessage = ""
-            miniGame1IsInRange = false
-            miniGame2IsInRange = false
-            miniGame3IsInRange = false
+        var currentMessage = ""
+        miniGame1IsInRange = false
+        miniGame2IsInRange = false
+        miniGame3IsInRange = false
         
         
         
@@ -214,16 +216,95 @@ class GameScene: SKScene {
             viewModel?.pendingScaleDelta = 0
         }
         
+        
+        if let vm = viewModel {
+            if vm.isFlying != lastAppliedIsFlying {
+                lastAppliedIsFlying = vm.isFlying
+                applyBirdState(isFlying: vm.isFlying)
+            }
+        }
+        
         updatePlayerPosition(deltaTime: deltaTime)
         
-        if let circle = self.childNode(withName: "userBird") {
-            updateCameraFollow(target: circle.position, deltaTime: deltaTime)
+        if let player = self.childNode(withName: "userBird") {
+            updateCameraFollow(target: player.position, deltaTime: deltaTime)
             clampCameraToMap()
         }
     }
     
+    func applyBirdState(isFlying: Bool) {
+        // Adjust movement speed
+        playerSpeed = isFlying ? 650.0 : 400.0
+        birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground"
+        
+        // Cross-fade to the new texture
+        crossFadeBirdTexture(to: birdImage, duration: 0.15)
+        
+        // Subtle scale pulse around the target scale
+        if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
+            let finalScale: CGFloat = isFlying ? 1.1 : 1.0
+            let pulseUp = SKAction.scale(to: finalScale * 1.06, duration: 0.08)
+            pulseUp.timingMode = .easeOut
+            let pulseDown = SKAction.scale(to: finalScale, duration: 0.12)
+            pulseDown.timingMode = .easeIn
+            bird.run(SKAction.sequence([pulseUp, pulseDown]), withKey: "statePulse")
+        }
+    }
+    
+    func crossFadeBirdTexture(to imageName: String, duration: TimeInterval = 0.15) {
+        // If the bird doesn't exist yet, create it with the target texture
+        guard let existing = self.childNode(withName: "userBird") as? SKSpriteNode else {
+            let node = SKSpriteNode(imageNamed: imageName)
+            node.name = "userBird"
+            node.zPosition = 10
+            addChild(node)
+            return
+        }
+        
+        // Avoid work if the texture already matches
+        if let tex = existing.texture, tex.description.contains(imageName) {
+            return
+        }
+        
+        let newTexture = SKTexture(imageNamed: imageName)
+        SKTexture.preload([newTexture]) { [weak self] in
+            guard let self = self,
+                  let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+            DispatchQueue.main.async {
+                // Remove any previous temp overlay
+                self.childNode(withName: "userBird_crossfade_temp")?.removeFromParent()
+                
+                // Create an overlay sprite with the new texture, matching the bird's transform
+                let overlay = SKSpriteNode(texture: newTexture)
+                overlay.name = "userBird_crossfade_temp"
+                overlay.position = bird.position
+                overlay.zPosition = bird.zPosition + 1
+                overlay.zRotation = bird.zRotation
+                overlay.anchorPoint = bird.anchorPoint
+                overlay.xScale = bird.xScale
+                overlay.yScale = bird.yScale
+                overlay.alpha = 0
+                self.addChild(overlay)
+                
+                let fadeIn = SKAction.fadeIn(withDuration: duration)
+                let fadeOut = SKAction.fadeOut(withDuration: duration)
+                
+                bird.run(fadeOut, withKey: "crossfadeOut")
+                overlay.run(fadeIn, completion: { [weak self] in
+                    guard let self = self,
+                          let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+                    bird.texture = newTexture
+                    bird.size = newTexture.size()
+                    bird.alpha = 1.0
+                    overlay.removeFromParent()
+                })
+            }
+        }
+    }
+
+    
     func updatePlayerPosition(deltaTime: CGFloat) {
-        guard let circle = self.childNode(withName: "userBird") else { return }
+        guard let player = self.childNode(withName: "userBird") else { return }
         
         // Prefer SwiftUI joystick via view model (CGPoint normalized to [-1, 1])
         var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
@@ -245,9 +326,9 @@ class GameScene: SKScene {
             dy /= mag
         }
         
-        let velocity = CGVector(dx: dx * circleSpeed, dy: dy * circleSpeed)
-        circle.position.x += velocity.dx * deltaTime
-        circle.position.y += velocity.dy * deltaTime
+        let velocity = CGVector(dx: dx * playerSpeed, dy: dy * playerSpeed)
+        player.position.x += velocity.dx * deltaTime
+        player.position.y += velocity.dy * deltaTime
         
         // Smoothly rotate the bird to face movement direction
         let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
@@ -259,14 +340,14 @@ class GameScene: SKScene {
             let desired = target + assetOrientationOffset
 
             // Shortest-angle interpolation
-            let current = circle.zRotation
+            let current = player.zRotation
             let deltaAngle = atan2(sin(desired - current), cos(desired - current))
 
             // Turn rate in radians per second; higher is snappier
             let turnRate: CGFloat = 10.0
             let step = min(1.0, turnRate * deltaTime)
 
-            circle.zRotation = current + deltaAngle * step
+            player.zRotation = current + deltaAngle * step
         }
     }
     
@@ -361,31 +442,32 @@ extension GameScene {
 
 extension GameScene {
     func saveReturnState() {
-        if let circle = self.childNode(withName: "userBird") {
-            viewModel?.savedPlayerPosition = circle.position
+        if let player = self.childNode(withName: "userBird") {
+            viewModel?.savedPlayerPosition = player.position
         }
         viewModel?.savedCameraPosition = cameraNode.position
     }
     func restoreReturnStateIfNeeded() {
         if let pos = viewModel?.savedPlayerPosition,
-           let circle = self.childNode(withName: "userBird") {
-            circle.position = pos
+           let player = self.childNode(withName: "userBird") {
+            player.position = pos
         }
         if let camPos = viewModel?.savedCameraPosition {
             cameraNode.position = camPos
-        } else if let circle = self.childNode(withName: "userBird") {
-            cameraNode.position = circle.position
+        } else if let player = self.childNode(withName: "userBird") {
+            cameraNode.position = player.position
         }
     }
     
     func setupUserBird() {
         if self.childNode(withName: "userBird") != nil { return }
-        let circle = SKSpriteNode(imageNamed: "Bird_Flying_Open")
-        circle.position = CGPoint(x: 200, y: 400)
-        circle.zPosition = 10
-        circle.name = "userBird"
         
-        self.addChild(circle)
+        let player = SKSpriteNode(imageNamed: birdImage)
+        player.position = CGPoint(x: 200, y: 400)
+        player.zPosition = 10
+        player.name = "userBird"
+        
+        self.addChild(player)
     }
     
   

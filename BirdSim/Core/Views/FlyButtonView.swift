@@ -11,12 +11,9 @@ struct FlyButtonView: View {
     @ObservedObject var viewModel: MainGameViewModel
 
         var body: some View {
-            Button(action: {
-                // 2. Animate the change
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    viewModel.isFlying.toggle()
-                }
-            }) {
+            Button {
+                viewModel.isFlying.toggle()
+            } label: {
                 ZStack {
                     Circle()
                         .fill(Color(.systemGray6)) // background color
@@ -27,7 +24,7 @@ struct FlyButtonView: View {
                         .font(.system(size: 30))
                         .bold()
                         .foregroundStyle(.black)
-                        .rotationEffect(.degrees(viewModel.isFlying ? 0 : 180))
+                        .rotationEffect(.degrees(viewModel.isFlying ? 180 : 0))
                 }
             }
         }
