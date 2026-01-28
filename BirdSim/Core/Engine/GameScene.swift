@@ -387,7 +387,7 @@ class GameScene: SKScene {
                 let dx = player.position.x - node.position.x
                 let dy = player.position.y - node.position.y
                 let distance = sqrt(dx*dx + dy*dy)
-                if distance < 200 {
+                if distance < 200, viewModel?.isFlying == false {
                     pickupItem(node)
                     return
                 }
@@ -400,7 +400,7 @@ class GameScene: SKScene {
                 let dx = player.position.x - node.position.x
                 let dy = player.position.y - node.position.y
                 let distance = sqrt(dx*dx + dy*dy)
-                if distance < 200 {
+                if distance < 200, viewModel?.isFlying == false {
                     pickupItem(node)
                     return
                 }
