@@ -218,7 +218,7 @@ class GameScene: SKScene {
         // Check if any item is near for UI prompt only
         if let player = self.childNode(withName: "userBird") {
             var foundNearbyItem = false
-            for node in children where node.name == "stick" || node.name == "leaf" {
+            for node in children where node.name == "stick" && viewModel?.isFlying == false || node.name == "leaf" && viewModel?.isFlying == false {
                 let dx = player.position.x - node.position.x
                 let dy = player.position.y - node.position.y
                 let distance = sqrt(dx*dx + dy*dy)
