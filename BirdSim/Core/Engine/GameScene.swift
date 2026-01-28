@@ -215,20 +215,26 @@ class GameScene: SKScene {
             }
         }
         
-        // Check if any item is near for UI prompt only
-        if let player = self.childNode(withName: "userBird") {
-            var foundNearbyItem = false
-            for node in children where node.name == "stick" && viewModel?.isFlying == false || node.name == "leaf" && viewModel?.isFlying == false {
+        // Check for closest nearby item (UI prompt only)
+        if let player = self.childNode(withName: "userBird"),
+           viewModel?.isFlying == false {
+
+            var closestItem: SKNode?
+            var closestDistance: CGFloat = .greatestFiniteMagnitude
+
+            for node in children where node.name == "stick" || node.name == "leaf" {
                 let dx = player.position.x - node.position.x
                 let dy = player.position.y - node.position.y
-                let distance = sqrt(dx*dx + dy*dy)
-                if distance < 200 {
-                    foundNearbyItem = true
-                    break
+                let distance = sqrt(dx * dx + dy * dy)
+
+                if distance < 200 && distance < closestDistance {
+                    closestDistance = distance
+                    closestItem = node
                 }
             }
-            if foundNearbyItem {
-                currentMessage = "PickUp Item"
+
+            if let item = closestItem, let itemName = item.name {
+                currentMessage = "Pick up \(itemName.capitalized)"
             }
         }
         
@@ -387,7 +393,7 @@ class GameScene: SKScene {
                 let dx = player.position.x - node.position.x
                 let dy = player.position.y - node.position.y
                 let distance = sqrt(dx*dx + dy*dy)
-                if distance < 200 {
+                if distance < 200, viewModel?.isFlying == false {
                     pickupItem(node)
                     return
                 }
@@ -400,7 +406,7 @@ class GameScene: SKScene {
                 let dx = player.position.x - node.position.x
                 let dy = player.position.y - node.position.y
                 let distance = sqrt(dx*dx + dy*dy)
-                if distance < 200 {
+                if distance < 200, viewModel?.isFlying == false {
                     pickupItem(node)
                     return
                 }
