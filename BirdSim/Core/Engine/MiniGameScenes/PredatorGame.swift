@@ -9,6 +9,8 @@ import SpriteKit
 class PredatorGame: SKScene {
     var viewModel: MainGameView.ViewModel?
     
+    var dismissAction: (() -> Void)?
+    
     override func didMove(to view: SKView) {
         backgroundColor = .red
         
@@ -56,21 +58,18 @@ class PredatorGame: SKScene {
                     view.presentScene(mapScene, transition: transition)
                 }
             } else if node.name == "End Button" {
-                guard let view = self.view else { return }
-                transitionToEndGameScene()
+                triggerGameOver()
+                
+                print("endGame")
                 
                 
             }
         }
     }
-    func transitionToEndGameScene() {
-        guard let view = self.view else { return }
-        let minigameScene = EndGameScene(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
+    
+    func triggerGameOver() {
+        dismissAction?()
     }
-
+ 
 }
 

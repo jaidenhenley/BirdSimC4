@@ -25,6 +25,8 @@ extension MainGameView {
         @Published var health: CGFloat = 1
         @Published var showInventory: Bool = false
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0]
+        @Published var gameStarted: Bool = false
+        @Published var showGameOver: Bool = false
         
         func collectItem(_ name: String) {
                 // Standardize to lowercase to match node names
@@ -44,6 +46,6 @@ protocol GameDelegate {
 
 extension MainGameView: GameDelegate {
     func dismissGame() {
-        gameStarted = false
+        viewModel.gameStarted = false
     }
 }
