@@ -633,6 +633,12 @@ extension GameScene {
         let minigameScene = PredatorGame(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
+        minigameScene.dismissAction = { [weak self] in
+            DispatchQueue.main.async {
+                self?.viewModel?.showGameOver = true
+                self?.viewModel?.controlsAreVisable = false
+            }
+        }
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)

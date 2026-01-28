@@ -8,11 +8,33 @@
 import SwiftUI
 
 struct EndGameView: View {
+    @ObservedObject var viewModel: MainGameView.ViewModel
+
     var body: some View {
-        Text("End Game")
+        ZStack {
+            Color.black.opacity(0.7).ignoresSafeArea()
+            VStack(spacing: 20) {
+                Text("Game Over")
+                    .font(.largeTitle)
+                    .bold()
+                    .foregroundStyle(.white)
+
+                Button("Back to Start") {
+                    withAnimation {
+                        viewModel.showGameOver = false
+                        viewModel.gameStarted = false
+                        viewModel.controlsAreVisable = true
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Capsule().fill(.ultraThinMaterial))
+            }
+            .padding()
+        }
     }
 }
 
 #Preview {
-    EndGameView()
+    EndGameView(viewModel: MainGameView.ViewModel())
 }
