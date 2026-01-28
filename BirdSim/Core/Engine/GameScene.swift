@@ -10,7 +10,7 @@ import GameController
 
 class GameScene: SKScene {
     
-    weak var viewModel: MainGameViewModel?
+    weak var viewModel: MainGameView.ViewModel?
     
     let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
@@ -632,7 +632,7 @@ extension GameScene {
         saveReturnState()
         let minigameScene = PredatorGame(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
-        minigameScene.mainViewModel = self.viewModel
+        minigameScene.viewModel = self.viewModel
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
@@ -643,7 +643,7 @@ extension GameScene {
         saveReturnState()
         let minigameScene = MiniGameScene1(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
-        minigameScene.mainViewModel = self.viewModel
+        minigameScene.viewModel = self.viewModel
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
@@ -654,7 +654,7 @@ extension GameScene {
         saveReturnState()
         let minigameScene = MiniGameScene2(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
-        minigameScene.mainViewModel = self.viewModel
+        minigameScene.viewModel = self.viewModel
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
@@ -665,7 +665,7 @@ extension GameScene {
         saveReturnState()
         let minigameScene = MiniGameScene3(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
-        minigameScene.mainViewModel = self.viewModel
+        minigameScene.viewModel = self.viewModel
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)

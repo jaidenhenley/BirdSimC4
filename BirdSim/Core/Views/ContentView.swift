@@ -14,7 +14,7 @@ struct ContentView: View {
         if !gameStarted {
             StartGameView(gameStarted: $gameStarted)
         } else {
-            MainGameView(viewModel: MainGameViewModel())
+            MainGameView(viewModel: MainGameView.ViewModel())
         }
         
     }

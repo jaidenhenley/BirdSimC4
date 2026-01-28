@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FlyButtonView: View {
-    @ObservedObject var viewModel: MainGameViewModel
+    @ObservedObject var viewModel: MainGameView.ViewModel
 
         var body: some View {
             Button {
@@ -28,8 +28,4 @@ struct FlyButtonView: View {
             .contentShape(Circle())
             .shadow(radius: 4)
         }
-}
-
-#Preview {
-    FlyButtonView(viewModel: MainGameViewModel())
 }
