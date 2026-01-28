@@ -21,10 +21,12 @@ struct MainGameView: View {
                     scene.viewModel = viewModel
                 }
             
-            DrainingHealthBarView(viewModel: viewModel)
-                .padding()
+         
             
             if viewModel.controlsAreVisable {
+                DrainingHealthBarView(viewModel: viewModel)
+                    .padding()
+                
                 VStack {
                     
                     HStack {

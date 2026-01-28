@@ -6,12 +6,20 @@
 //
 
 import SpriteKit
-
 class PredatorGame: SKScene {
     var viewModel: MainGameView.ViewModel?
     
     override func didMove(to view: SKView) {
         backgroundColor = .red
+        
+        let endLabel = SKLabelNode(text: "End Game")
+        endLabel.position = CGPoint(x: frame.midX + 50, y: frame.midY + 50)
+        endLabel.fontColor = .white
+        endLabel.fontSize = 28
+        endLabel.name = "End Button"
+        endLabel.zPosition = 10
+        addChild(endLabel)
+        
         
         let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
         backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -47,8 +55,22 @@ class PredatorGame: SKScene {
                     let transition = SKTransition.crossFade(withDuration: 0.5)
                     view.presentScene(mapScene, transition: transition)
                 }
+            } else if node.name == "End Button" {
+                guard let view = self.view else { return }
+                transitionToEndGameScene()
+                
+                
             }
         }
     }
+    func transitionToEndGameScene() {
+        guard let view = self.view else { return }
+        let minigameScene = EndGameScene(size: view.bounds.size)
+        minigameScene.scaleMode = .resizeFill
+        
+        let transition = SKTransition.fade(withDuration: 0.5)
+        view.presentScene(minigameScene, transition: transition)
+    }
+
 }
 
