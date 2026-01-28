@@ -8,7 +8,7 @@
 import SpriteKit
 import SwiftUI
 struct MainGameView: View {
-    @StateObject var viewModel: MainGameViewModel
+    @StateObject var viewModel: ViewModel
     @State private var scene = GameScene()
     
     
@@ -65,5 +65,5 @@ struct MainGameView: View {
 
 
 #Preview {
-    MainGameView(viewModel: MainGameViewModel())
+    MainGameView(viewModel: MainGameView.ViewModel())
 }

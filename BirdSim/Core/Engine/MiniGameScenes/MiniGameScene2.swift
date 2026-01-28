@@ -8,7 +8,7 @@
 import SpriteKit
 
 class MiniGameScene2: SKScene {
-    var mainViewModel: MainGameViewModel?
+    var viewModel: MainGameView.ViewModel?
     
     override func didMove(to view: SKView) {
         backgroundColor = .green
@@ -33,17 +33,17 @@ class MiniGameScene2: SKScene {
             if node.name == "Back Button" {
                 guard let view = self.view else { return }
                 // Reuse the existing main scene if available, otherwise create and register one
-                if let existing = mainViewModel?.mainScene {
-                    mainViewModel?.joystickVelocity = .zero
-                    mainViewModel?.controlsAreVisable = true
+                if let existing = viewModel?.mainScene {
+                    viewModel?.joystickVelocity = .zero
+                    viewModel?.controlsAreVisable = true
                     let transition = SKTransition.crossFade(withDuration: 0.5)
                     view.presentScene(existing, transition: transition)
                 } else {
                     let mapScene = GameScene(size: view.bounds.size)
                     mapScene.scaleMode = .resizeFill
-                    mapScene.viewModel = self.mainViewModel
-                    mainViewModel?.joystickVelocity = .zero
-                    mainViewModel?.controlsAreVisable = true
+                    mapScene.viewModel = self.viewModel
+                    viewModel?.joystickVelocity = .zero
+                    viewModel?.controlsAreVisable = true
                     let transition = SKTransition.crossFade(withDuration: 0.5)
                     view.presentScene(mapScene, transition: transition)
                 }

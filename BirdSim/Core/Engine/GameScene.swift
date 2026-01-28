@@ -10,7 +10,7 @@ import GameController
 
 class GameScene: SKScene {
     
-    weak var viewModel: MainGameViewModel?
+    weak var viewModel: MainGameView.ViewModel?
     
     let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
