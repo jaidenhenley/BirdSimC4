@@ -113,10 +113,10 @@ class GameScene: SKScene {
     
     override func update(_ currentTime: TimeInterval) {
         // A. Start with an empty message
-            var currentMessage = ""
-            miniGame1IsInRange = false
-            miniGame2IsInRange = false
-            miniGame3IsInRange = false
+        var currentMessage = ""
+        miniGame1IsInRange = false
+        miniGame2IsInRange = false
+        miniGame3IsInRange = false
         
         
         
@@ -236,28 +236,72 @@ class GameScene: SKScene {
         // Adjust movement speed
         playerSpeed = isFlying ? 650.0 : 400.0
         birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground"
-
-        // Update existing sprite's texture (or create it if missing)
+        
+        // Cross-fade to the new texture
+        crossFadeBirdTexture(to: birdImage, duration: 0.15)
+        
+        // Subtle scale pulse around the target scale
         if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
-            let texture = SKTexture(imageNamed: birdImage)
-            bird.texture = texture
-            bird.size = texture.size()
-
-            // Optional: subtle visual cue (scale)
-            let targetScale: CGFloat = isFlying ? 1.1 : 1.0
-            let action = SKAction.scale(to: targetScale, duration: 0.2)
-            action.timingMode = .easeInEaseOut
-            bird.run(action)
-        } else {
-            setupUserBird()
-            if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
-                let targetScale: CGFloat = isFlying ? 1.1 : 1.0
-                let action = SKAction.scale(to: targetScale, duration: 0.2)
-                action.timingMode = .easeInEaseOut
-                bird.run(action)
+            let finalScale: CGFloat = isFlying ? 1.1 : 1.0
+            let pulseUp = SKAction.scale(to: finalScale * 1.06, duration: 0.08)
+            pulseUp.timingMode = .easeOut
+            let pulseDown = SKAction.scale(to: finalScale, duration: 0.12)
+            pulseDown.timingMode = .easeIn
+            bird.run(SKAction.sequence([pulseUp, pulseDown]), withKey: "statePulse")
+        }
+    }
+    
+    func crossFadeBirdTexture(to imageName: String, duration: TimeInterval = 0.15) {
+        // If the bird doesn't exist yet, create it with the target texture
+        guard let existing = self.childNode(withName: "userBird") as? SKSpriteNode else {
+            let node = SKSpriteNode(imageNamed: imageName)
+            node.name = "userBird"
+            node.zPosition = 10
+            addChild(node)
+            return
+        }
+        
+        // Avoid work if the texture already matches
+        if let tex = existing.texture, tex.description.contains(imageName) {
+            return
+        }
+        
+        let newTexture = SKTexture(imageNamed: imageName)
+        SKTexture.preload([newTexture]) { [weak self] in
+            guard let self = self,
+                  let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+            DispatchQueue.main.async {
+                // Remove any previous temp overlay
+                self.childNode(withName: "userBird_crossfade_temp")?.removeFromParent()
+                
+                // Create an overlay sprite with the new texture, matching the bird's transform
+                let overlay = SKSpriteNode(texture: newTexture)
+                overlay.name = "userBird_crossfade_temp"
+                overlay.position = bird.position
+                overlay.zPosition = bird.zPosition + 1
+                overlay.zRotation = bird.zRotation
+                overlay.anchorPoint = bird.anchorPoint
+                overlay.xScale = bird.xScale
+                overlay.yScale = bird.yScale
+                overlay.alpha = 0
+                self.addChild(overlay)
+                
+                let fadeIn = SKAction.fadeIn(withDuration: duration)
+                let fadeOut = SKAction.fadeOut(withDuration: duration)
+                
+                bird.run(fadeOut, withKey: "crossfadeOut")
+                overlay.run(fadeIn, completion: { [weak self] in
+                    guard let self = self,
+                          let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+                    bird.texture = newTexture
+                    bird.size = newTexture.size()
+                    bird.alpha = 1.0
+                    overlay.removeFromParent()
+                })
             }
         }
     }
+
     
     func updatePlayerPosition(deltaTime: CGFloat) {
         guard let player = self.childNode(withName: "userBird") else { return }

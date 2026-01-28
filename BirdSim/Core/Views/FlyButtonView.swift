@@ -24,7 +24,7 @@ struct FlyButtonView: View {
                         .font(.system(size: 30))
                         .bold()
                         .foregroundStyle(.black)
-                        .rotationEffect(.degrees(viewModel.isFlying ? 0 : 180))
+                        .rotationEffect(.degrees(viewModel.isFlying ? 180 : 0))
                 }
             }
         }
