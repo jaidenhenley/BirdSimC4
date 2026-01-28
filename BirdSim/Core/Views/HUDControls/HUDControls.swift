@@ -19,8 +19,8 @@ struct HUDControls: View {
 
             let joystickDiameter = max(isiPad ? 140 : 100,
                                        base * (isiPad ? 0.22 : 0.16))
-            let buttonSize = max(isiPad ? 64 : 48,
-                                 base * (isiPad ? 0.12 : 0.08))
+            let buttonSize = max(isiPad ? 64 : 64,
+                                 base * (isiPad ? 0.12 : 0.055))
 
             ZStack {
                 VStack {
