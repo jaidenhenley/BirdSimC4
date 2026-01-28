@@ -10,6 +10,8 @@ import GameController
 
 class GameScene: SKScene {
     
+    weak var viewModel: MainGameViewModel?
+    
     let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
     private var hasInitializedWorld = false
@@ -30,9 +32,6 @@ class GameScene: SKScene {
     var miniGame3IsInRange: Bool = false
     var predatorHit: Bool = false
     
-    
-    weak var viewModel: MainGameViewModel?
-    
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var playerSpeed: CGFloat = 400.0
@@ -47,6 +46,9 @@ class GameScene: SKScene {
             setupMiniGame1Spot()
             setupMiniGame2Spot()
             setupMiniGame3Spot()
+            
+            spawnItem(at: CGPoint(x: 400, y: 100), type: "stick")
+            
             hasInitializedWorld = true
             
             viewModel?.mainScene = self
@@ -356,6 +358,14 @@ class GameScene: SKScene {
         // get location of touch in scene
         let location = touch.location(in: self)
         
+        //handles picking up items in inventory
+        let tappedNode = self.atPoint(location)
+        
+        if tappedNode.name == "stick" {
+            pickupItem(tappedNode)
+        }
+        
+        // handles tapped areas for minigames
         // find all nodes in the location
         let touchedNodes = nodes(at: location)
         
@@ -398,6 +408,32 @@ class GameScene: SKScene {
 }
 
 extension GameScene {
+    
+    func spawnItem(at position: CGPoint, type: String) {
+        let item = SKSpriteNode(imageNamed: type)
+        item.position = position
+        item.name = type
+        item.setScale(0.5)
+        
+        self.addChild(item)
+    }
+    
+    func pickupItem(_ node: SKNode) {
+        guard let name = node.name else { return }
+        
+        // Update ViewModel
+        viewModel?.collectItem(name)
+        
+        let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 0.2)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+        let remove = SKAction.removeFromParent()
+        
+        node.run(SKAction.sequence([
+            moveUp, fadeOut, remove
+        ]))
+        
+        print("Bird tapped a \(name)")
+    }
     
     func clampCameraToMap() {
         guard let camera = camera,
