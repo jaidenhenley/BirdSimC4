@@ -10,7 +10,13 @@ import SwiftUI
 struct MainGameView: View {
     @StateObject var viewModel: ViewModel
     @State private var scene = GameScene()
+    @Binding var gameStarted: Bool
     
+    
+    protocol GameDelegate: AnyObject {
+        func dismissGame()
+    }
+
     
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -67,5 +73,5 @@ struct MainGameView: View {
 
 
 #Preview {
-    MainGameView(viewModel: MainGameView.ViewModel())
+    MainGameView(viewModel: MainGameView.ViewModel(), gameStarted: .constant(false))
 }

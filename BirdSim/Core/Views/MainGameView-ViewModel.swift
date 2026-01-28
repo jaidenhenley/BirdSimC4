@@ -12,6 +12,8 @@ import SpriteKit
 
 extension MainGameView {
     
+    
+  
     class ViewModel: ObservableObject {
         @Published var joystickVelocity: CGPoint = .zero
         @Published var pendingScaleDelta: CGFloat = 0
@@ -36,3 +38,12 @@ extension MainGameView {
     
 }
 
+protocol GameDelegate {
+    func dismissGame()
+}
+
+extension MainGameView: GameDelegate {
+    func dismissGame() {
+        gameStarted = false
+    }
+}
