@@ -573,7 +573,7 @@ extension GameScene {
     func startPredatorTimer() {
         self.removeAction(forKey: "predatorCooldown")
         
-        let wait = SKAction.wait(forDuration: 5.0) //adjust timer here for predator cooldown
+        let wait = SKAction.wait(forDuration: 50.0) //adjust timer here for predator cooldown
         let reset = SKAction.run {
             self.predatorHit = false
         }
