@@ -149,7 +149,6 @@ class GameScene: SKScene {
         if checkDistance(to: predatorMini, threshold: 200), !predatorHit {
             transitionToPredatorGame()
             predatorHit = true
-            startPredatorTimer()
             viewModel?.controlsAreVisable = false
         }
         
@@ -435,7 +434,7 @@ extension GameScene {
         setupBackground()
         setupUserBird()
         self.predatorHit = false
-        setupPredator()
+        setupPredator(at: nextPredatorSpawnPoint())
         setupBuildNestSpot()
         setupFeedUserBirdSpot()
         setupFeedBabyBirdSpot()
@@ -573,9 +572,17 @@ extension GameScene {
     func startPredatorTimer() {
         self.removeAction(forKey: "predatorCooldown")
         
-        let wait = SKAction.wait(forDuration: 50.0) //adjust timer here for predator cooldown
-        let reset = SKAction.run {
+        let wait = SKAction.wait(forDuration: 5.0) //adjust timer here for predator cooldown
+        let reset = SKAction.run { [weak self] in
+            guard let self = self else {
+                return
+            }
             self.predatorHit = false
+            
+            if self.childNode(withName: self.predatorMini) == nil {
+                let spawnPoint = self.nextPredatorSpawnPoint()
+                self.setupPredator(at: spawnPoint)
+            }
         }
         
         let sequence = SKAction.sequence([
@@ -585,11 +592,26 @@ extension GameScene {
     
     }
     
-    func setupPredator() {
+    func nextPredatorSpawnPoint() -> CGPoint {
+        let randomPoints: [CGPoint] = [
+            CGPoint(x: 120, y: 150),
+            CGPoint(x: -300, y: 200),
+            CGPoint(x: 800, y: -100),
+            CGPoint(x: -500, y: -200)
+
+
+
+        ]
+        
+        return randomPoints.randomElement() ?? CGPoint(x: 120, y: 150)
+    }
+    
+    func setupPredator(at position: CGPoint? = nil) {
         if self.childNode(withName: predatorMini) != nil { return }
         
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 120, y: 150)
+        
+        spot.position = position ?? CGPoint(x: 120, y: 150)
         spot.name = predatorMini
         
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
@@ -649,6 +671,8 @@ extension GameScene {
     func transitionToPredatorGame() {
         guard let view = self.view else { return }
         saveReturnState()
+        self.childNode(withName: predatorMini)?.removeFromParent()
+        startPredatorTimer()
         let minigameScene = PredatorGame(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
