@@ -22,14 +22,16 @@ class GameScene: SKScene {
     let worldNode = SKNode()
     let overlayNode = SKNode()
     
-    let predator: String = "predatorNode"
-    let miniGame1: String = "miniGameNode1"
-    let miniGame2: String = "miniGameNode2"
-    let miniGame3: String = "miniGameNode3"
+    let predatorMini: String = "predatorMini"
+    let buildNestMini: String = "buildNestMini"
+    let feedUserBirdMini: String = "feedUserBirdMini"
+    let feedBabyBirdMini: String = "feedBabyBirdMini"
+    let leaveIslandMini: String = "leaveIslandMini"
     
-    var miniGame1IsInRange: Bool = false
-    var miniGame2IsInRange: Bool = false
-    var miniGame3IsInRange: Bool = false
+    var buildNestMiniIsInRange: Bool = false
+    var feedUserBirdMiniIsInRange: Bool = false
+    var feedBabyBirdMiniIsInRange: Bool = false
+    var leaveIslandMiniIsInRange: Bool = false
     var predatorHit: Bool = false
     
     var virtualController: GCVirtualController?
@@ -109,9 +111,11 @@ class GameScene: SKScene {
     
     override func update(_ currentTime: TimeInterval) {
         var currentMessage = ""
-        miniGame1IsInRange = false
-        miniGame2IsInRange = false
-        miniGame3IsInRange = false
+        buildNestMiniIsInRange = false
+        feedUserBirdMiniIsInRange = false
+        feedBabyBirdMiniIsInRange = false
+        leaveIslandMiniIsInRange = false
+        
         
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
@@ -142,7 +146,7 @@ class GameScene: SKScene {
         }
         
         // Predator check
-        if checkDistance(to: predator, threshold: 200), !predatorHit {
+        if checkDistance(to: predatorMini, threshold: 200), !predatorHit {
             transitionToPredatorGame()
             predatorHit = true
             startPredatorTimer()
@@ -151,15 +155,19 @@ class GameScene: SKScene {
         
         // Minigame checks
         if viewModel?.isFlying == false {
-            if checkDistance(to: miniGame1) {
-                miniGame1IsInRange = true
-                currentMessage = "Play MiniGame 1"
-            } else if checkDistance(to: miniGame2) {
-                miniGame2IsInRange = true
-                currentMessage = "Play MiniGame 2"
-            } else if checkDistance(to: miniGame3) {
-                miniGame3IsInRange = true
-                currentMessage = "Play MiniGame 3"
+            if checkDistance(to: buildNestMini) {
+                buildNestMiniIsInRange = true
+                currentMessage = "Tap to build a nest"
+            } else if checkDistance(to: feedUserBirdMini) {
+                feedUserBirdMiniIsInRange = true
+                currentMessage = "Tap to feed"
+            } else if checkDistance(to: feedBabyBirdMini) {
+                feedBabyBirdMiniIsInRange = true
+                currentMessage = "Tap to feed baby bird"
+            } else if checkDistance(to: leaveIslandMini) {
+                leaveIslandMiniIsInRange = true
+                currentMessage = "Tap to leave island"
+                
             } else {
                 // Check for closest item only if no minigame is in range
                 var closestItem: SKNode?
@@ -368,22 +376,21 @@ class GameScene: SKScene {
         
         // check is any of the touched nodes is in our minigame spot
         for node in touchedNodes {
-            if node.name == predator {
-                print("predator tapped")
+            if node.name == predatorMini {
                 transitionToPredatorGame()
                 viewModel?.controlsAreVisable = false
                 return
-            } else if node.name == miniGame1, miniGame1IsInRange == true {
-                print("minigame 1 tapped")
-                transitionToMinigame1()
+            } else if node.name == buildNestMini, buildNestMiniIsInRange == true {
+                transitionToBuildNestScene()
                 viewModel?.controlsAreVisable = false
-            } else if node.name == miniGame2, miniGame2IsInRange == true {
-                print("minigame 2 tapped")
-                transitionToMinigame2()
+            } else if node.name == feedUserBirdMini, feedUserBirdMiniIsInRange == true {
+                transitionToFeedUserScene()
                 viewModel?.controlsAreVisable = false
-            } else if node.name == miniGame3, miniGame3IsInRange == true {
-                print("minigame 3 tapped")
-                transitionToMinigame3()
+            } else if node.name == feedBabyBirdMini, feedBabyBirdMiniIsInRange == true {
+                transitionToFeedBabyScene()
+                viewModel?.controlsAreVisable = false
+            } else if node.name == leaveIslandMini, leaveIslandMiniIsInRange == true {
+                transitionToLeaveIslandMini()
                 viewModel?.controlsAreVisable = false
             }
         }
@@ -424,9 +431,10 @@ extension GameScene {
         setupUserBird()
         self.predatorHit = false
         setupPredator()
-        setupMiniGame1Spot()
-        setupMiniGame2Spot()
-        setupMiniGame3Spot()
+        setupBuildNestSpot()
+        setupFeedUserBirdSpot()
+        setupFeedBabyBirdSpot()
+        setupLeaveIslandSpot()
         
         spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
         spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
@@ -573,11 +581,11 @@ extension GameScene {
     }
     
     func setupPredator() {
-        if self.childNode(withName: predator) != nil { return }
+        if self.childNode(withName: predatorMini) != nil { return }
         
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: 120, y: 150)
-        spot.name = predator
+        spot.name = predatorMini
         
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
         let moveLeft = moveRight.reversed()
@@ -586,32 +594,52 @@ extension GameScene {
         spot.run(repeatForever)
         addChild(spot)
     }
+    
+    func setupLeaveIslandSpot() {
+        if self.childNode(withName: leaveIslandMini) != nil { return }
+        let spot = SKSpriteNode(color: .systemCyan, size: CGSize(width: 50, height: 50))
+        spot.position = CGPoint(x: 200, y: -450)
+        spot.name = leaveIslandMini
+        addChild(spot)
+    }
 
-    func setupMiniGame1Spot() {
-        if self.childNode(withName: miniGame1) != nil { return }
+    func setupBuildNestSpot() {
+        if self.childNode(withName: buildNestMini) != nil { return }
         let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: -200, y: -150)
-        spot.name = miniGame1
+        spot.name = buildNestMini
         addChild(spot)
     }
 
-    func setupMiniGame2Spot() {
-        if self.childNode(withName: miniGame2) != nil { return }
+    func setupFeedUserBirdSpot() {
+        if self.childNode(withName: feedUserBirdMini) != nil { return }
         let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: -200, y: 150)
-        spot.name = miniGame2
+        spot.name = feedUserBirdMini
         addChild(spot)
     }
 
-    func setupMiniGame3Spot() {
-        if self.childNode(withName: miniGame3) != nil { return }
+    func setupFeedBabyBirdSpot() {
+        if self.childNode(withName: feedBabyBirdMini) != nil { return }
         let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
         spot.position = CGPoint(x: 200, y: -150)
-        spot.name = miniGame3
+        spot.name = feedBabyBirdMini
         addChild(spot)
     }
     
     
+    
+    
+    func transitionToLeaveIslandMini() {
+        guard let view = self.view else { return }
+        saveReturnState()
+        let minigameScene = LeaveIslandScene(size: view.bounds.size)
+        minigameScene.scaleMode = .resizeFill
+        minigameScene.viewModel = self.viewModel
+        
+        let transition = SKTransition.fade(withDuration: 0.5)
+        view.presentScene(minigameScene, transition: transition)
+    }
     
     func transitionToPredatorGame() {
         guard let view = self.view else { return }
@@ -630,10 +658,10 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
-    func transitionToMinigame1() {
+    func transitionToBuildNestScene() {
         guard let view = self.view else { return }
         saveReturnState()
-        let minigameScene = MiniGameScene1(size: view.bounds.size)
+        let minigameScene = BuildNestScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
         
@@ -641,10 +669,10 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
-    func transitionToMinigame2() {
+    func transitionToFeedUserScene() {
         guard let view = self.view else { return }
         saveReturnState()
-        let minigameScene = MiniGameScene2(size: view.bounds.size)
+        let minigameScene = FeedUserScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
         
@@ -652,10 +680,10 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
-    func transitionToMinigame3() {
+    func transitionToFeedBabyScene() {
         guard let view = self.view else { return }
         saveReturnState()
-        let minigameScene = MiniGameScene3(size: view.bounds.size)
+        let minigameScene = FeedBabyScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
         
