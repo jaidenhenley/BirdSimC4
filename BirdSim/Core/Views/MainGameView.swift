@@ -32,10 +32,16 @@ struct MainGameView: View {
                     }
                 
                 
+                VStack {
+                    HStack {
+                        DrainingHealthBarView(viewModel: viewModel)
+                            .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                        Spacer()
+                    }
+                    Spacer()
+                }
                 
                 if viewModel.controlsAreVisable {
-                    DrainingHealthBarView(viewModel: viewModel)
-                        .padding()
                     
                     VStack {
                         
@@ -53,7 +59,7 @@ struct MainGameView: View {
                             .padding()
                         }
                         
-                        Spacer ()
+                        Spacer()
                         
                         HUDControls(viewModel: viewModel)
                             .padding(60)
