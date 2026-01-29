@@ -31,14 +31,15 @@ struct MainGameView: View {
                         scene.viewModel = viewModel
                     }
                 
-                
-                VStack {
-                    HStack {
-                        DrainingHealthBarView(viewModel: viewModel)
-                            .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                if viewModel.controlsAreVisable {
+                    VStack {
+                        HStack {
+                            DrainingHealthBarView(viewModel: viewModel)
+                                .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                            Spacer()
+                        }
                         Spacer()
                     }
-                    Spacer()
                 }
                 
                 if viewModel.controlsAreVisable {
