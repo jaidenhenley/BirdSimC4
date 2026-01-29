@@ -38,29 +38,7 @@ class GameScene: SKScene {
     var birdImage: String = "Bird_Ground"
     
     override func didMove(to view: SKView) {
-        
-        if !hasInitializedWorld {
-            setupBackground()
-            setupUserBird()
-            setupPredator()
-            setupMiniGame1Spot()
-            setupMiniGame2Spot()
-            setupMiniGame3Spot()
-            
-            spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
-            spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
-            spawnItem(at: CGPoint(x: -600, y: 100), type: "stick")
-            spawnItem(at: CGPoint(x: -400, y: 300), type: "leaf")
-            
-            hasInitializedWorld = true
-            
-            viewModel?.mainScene = self
-        } else {
-            if viewModel?.mainScene == nil {
-                viewModel?.mainScene = self
-            }
-        }
-        // setupVirtualController()
+        // Setup camera first
         self.camera = cameraNode
         if cameraNode.parent == nil {
             self.addChild(cameraNode)
@@ -69,14 +47,27 @@ class GameScene: SKScene {
         if interactionLabel.parent == nil {
             interactionLabel.fontSize = 24
             interactionLabel.fontColor = .white
-            interactionLabel.position = CGPoint(x: 0, y: -200) // Lower center of screen
+            interactionLabel.position = CGPoint(x: 0, y: -200)
             interactionLabel.zPosition = 1000
             cameraNode.addChild(interactionLabel)
         }
-        
+
+        if !hasInitializedWorld {
+            // Preload the background texture
+            let backgroundTexture = SKTexture(imageNamed: "TestBirdMap")
+            SKTexture.preload([backgroundTexture]) { [weak self] in
+                DispatchQueue.main.async {
+                    self?.initializeGame()
+                }
+            }
+        } else {
+            if viewModel?.mainScene == nil {
+                viewModel?.mainScene = self
+            }
+        }
+
         restoreReturnStateIfNeeded()
     }
-    
     override func didSimulatePhysics() {
         // Intentionally left empty – camera updates occur in update(_:)
     }
@@ -117,124 +108,77 @@ class GameScene: SKScene {
     
     
     override func update(_ currentTime: TimeInterval) {
-        // A. Start with an empty message
         var currentMessage = ""
         miniGame1IsInRange = false
         miniGame2IsInRange = false
         miniGame3IsInRange = false
         
-        
-        
-        //Initialize last update time on the first frame
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
         }
         
-        //Calculate how much time has passed since last frame
-        let rawDelta: CGFloat
-        if lastUpdateTime == 0 {
-            rawDelta = 1.0 / 60.0 // assume one frame on first update
-        } else {
-            rawDelta = CGFloat(currentTime - lastUpdateTime)
-        }
-        
-        // Clamp delta between ~8ms (120fps) and ~33ms (30fps)
+        let rawDelta: CGFloat = CGFloat(currentTime - lastUpdateTime)
         let deltaTime = min(max(rawDelta, 1.0/120.0), 1.0/30.0)
         lastUpdateTime = currentTime
         
-        // Smooth, frame-based health drain (1% per second by default)
+        // Health drain
         if var health = viewModel?.health, health > 0 {
-            let drainPerSecond: CGFloat = 0.01 // 1%/sec
-            let drainThisFrame = drainPerSecond * deltaTime
+            let drainThisFrame = 0.01 * deltaTime
             health = max(0, health - drainThisFrame)
             if health != viewModel?.health {
                 viewModel?.health = health
             }
         }
         
+        // Get player once instead of multiple times
+        guard let player = self.childNode(withName: "userBird") else { return }
         
-        // Get the player and the target node(Predator Attack Radius)
-        if let player = self.childNode(withName: "userBird"),
-           let portal = self.childNode(withName: predator){
-            //2. Calculate the distance between them using the Pythagorean theorem
-            let dx = player.position.x - portal.position.x
-            let dy = player.position.y - portal.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            
-            // If distance is less then 200 pixels, trigger the game
-            
-            if distance < 200, predatorHit == false {
-                transitionToPredatorGame()
-                predatorHit = true
-                startPredatorTimer()
-                viewModel?.controlsAreVisable = false
-            }
+        // Single distance check function to reduce code duplication
+        func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
+            guard let node = self.childNode(withName: nodeName) else { return false }
+            let dx = player.position.x - node.position.x
+            let dy = player.position.y - node.position.y
+            return sqrt(dx*dx + dy*dy) < threshold
         }
-        if let player = self.childNode(withName: "userBird"),
-           let portal = self.childNode(withName: miniGame1){
-            //2. Calculate the distance between them using the Pythagorean theorem
-            let dx = player.position.x - portal.position.x
-            let dy = player.position.y - portal.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            
-            // If distance is less then 200 pixels, trigger the game
-            
-            if distance < 200, viewModel?.isFlying == false {
+        
+        // Predator check
+        if checkDistance(to: predator, threshold: 200), !predatorHit {
+            transitionToPredatorGame()
+            predatorHit = true
+            startPredatorTimer()
+            viewModel?.controlsAreVisable = false
+        }
+        
+        // Minigame checks
+        if viewModel?.isFlying == false {
+            if checkDistance(to: miniGame1) {
                 miniGame1IsInRange = true
-                currentMessage = "Play MiniGame 1" // Set message here
-            }
-        }
-        
-        if let player = self.childNode(withName: "userBird"),
-           let portal = self.childNode(withName: miniGame2){
-            //2. Calculate the distance between them using the Pythagorean theorem
-            let dx = player.position.x - portal.position.x
-            let dy = player.position.y - portal.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            
-            // If distance is less then 200 pixels, trigger the game
-            
-            if distance < 200, viewModel?.isFlying == false {
+                currentMessage = "Play MiniGame 1"
+            } else if checkDistance(to: miniGame2) {
                 miniGame2IsInRange = true
-                currentMessage = "Play MiniGame 2" // Set message here
-            }
-        }
-        
-        if let player = self.childNode(withName: "userBird"),
-           let portal = self.childNode(withName: miniGame3){
-            // Calculate the distance between them using the Pythagorean theorem
-            let dx = player.position.x - portal.position.x
-            let dy = player.position.y - portal.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            
-            // If distance is less then 200 pixels, trigger the game
-            
-            if distance < 200, viewModel?.isFlying == false {
+                currentMessage = "Play MiniGame 2"
+            } else if checkDistance(to: miniGame3) {
                 miniGame3IsInRange = true
-                currentMessage = "Play MiniGame 3" // Set message here
-            }
-        }
-        
-        // Check for closest nearby item (UI prompt only)
-        if let player = self.childNode(withName: "userBird"),
-           viewModel?.isFlying == false {
-
-            var closestItem: SKNode?
-            var closestDistance: CGFloat = .greatestFiniteMagnitude
-
-            for node in children where node.name == "stick" || node.name == "leaf" {
-                let dx = player.position.x - node.position.x
-                let dy = player.position.y - node.position.y
-                let distance = sqrt(dx * dx + dy * dy)
-
-                if distance < 200 && distance < closestDistance {
-                    closestDistance = distance
-                    closestItem = node
+                currentMessage = "Play MiniGame 3"
+            } else {
+                // Check for closest item only if no minigame is in range
+                var closestItem: SKNode?
+                var closestDistance: CGFloat = .greatestFiniteMagnitude
+                
+                for node in children where node.name == "stick" || node.name == "leaf" {
+                    let dx = player.position.x - node.position.x
+                    let dy = player.position.y - node.position.y
+                    let distance = sqrt(dx * dx + dy * dy)
+                    
+                    if distance < 200 && distance < closestDistance {
+                        closestDistance = distance
+                        closestItem = node
+                    }
                 }
-            }
-
-            if let item = closestItem, let itemName = item.name {
-                currentMessage = "Pick up \(itemName.capitalized)"
+                
+                if let item = closestItem {
+                    currentMessage = "Pick up \(item.name?.capitalized ?? "")"
+                }
             }
         }
         
@@ -245,7 +189,6 @@ class GameScene: SKScene {
             viewModel?.pendingScaleDelta = 0
         }
         
-        
         if let vm = viewModel {
             if vm.isFlying != lastAppliedIsFlying {
                 lastAppliedIsFlying = vm.isFlying
@@ -255,11 +198,8 @@ class GameScene: SKScene {
         
         updatePlayerPosition(deltaTime: deltaTime)
         clampPlayerToMap()
-        
-        if let player = self.childNode(withName: "userBird") {
-            updateCameraFollow(target: player.position, deltaTime: deltaTime)
-            clampCameraToMap()
-        }
+        updateCameraFollow(target: player.position, deltaTime: deltaTime)
+        clampCameraToMap()
     }
     
     func applyBirdState(isFlying: Bool) {
@@ -346,7 +286,6 @@ class GameScene: SKScene {
             inputPoint = CGPoint(x: CGFloat(xValue), y: CGFloat(yValue))
         }
         
-        
         // Convert to vector components and clamp to unit circle
         var dx = inputPoint.x
         var dy = inputPoint.y
@@ -360,27 +299,23 @@ class GameScene: SKScene {
         player.position.x += velocity.dx * deltaTime
         player.position.y += velocity.dy * deltaTime
         
-        // Smoothly rotate the bird to face movement direction
+        // Smoothly rotate the bird to face movement direction using exponential damping
         let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
         if speed > 0.001 {
-            // Angle from velocity vector
             let target = atan2(velocity.dy, velocity.dx)
-            // If your sprite artwork faces up instead of right, add an offset:
-            let assetOrientationOffset: CGFloat = -(.pi / 2) // change to 0 if asset faces right
+            let assetOrientationOffset: CGFloat = -(.pi / 2)
             let desired = target + assetOrientationOffset
 
-            // Shortest-angle interpolation
             let current = player.zRotation
             let deltaAngle = atan2(sin(desired - current), cos(desired - current))
 
-            // Turn rate in radians per second; higher is snappier
-            let turnRate: CGFloat = 10.0
-            let step = min(1.0, turnRate * deltaTime)
+            // Use exponential damping for frame-rate independent rotation
+            let turnStiffness: CGFloat = 12.0  // increased from 10.0 for snappier response
+            let rotationFactor = 1 - exp(-turnStiffness * deltaTime)
 
-            player.zRotation = current + deltaAngle * step
+            player.zRotation = current + deltaAngle * rotationFactor
         }
     }
-    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         // get location of touch in scene
@@ -457,6 +392,37 @@ class GameScene: SKScene {
 }
 
 extension GameScene {
+    
+    func initializeGame() {
+        viewModel?.joystickVelocity = .zero
+        
+        viewModel?.savedCameraPosition = nil
+        viewModel?.savedPlayerPosition = nil
+        viewModel?.health = 1
+        
+        self.removeAllChildren()
+        
+        viewModel?.gameStarted = true
+        
+        self.removeAllActions()
+        
+        setupBackground()
+        setupUserBird()
+        self.predatorHit = false
+        setupPredator()
+        setupMiniGame1Spot()
+        setupMiniGame2Spot()
+        setupMiniGame3Spot()
+        
+        spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
+        spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
+        spawnItem(at: CGPoint(x: -600, y: 100), type: "stick")
+        spawnItem(at: CGPoint(x: -400, y: 300), type: "leaf")
+        
+        hasInitializedWorld = true
+        
+        viewModel?.mainScene = self
+    }
     
     func spawnItem(at position: CGPoint, type: String) {
         let item = SKSpriteNode(imageNamed: type)
@@ -570,24 +536,7 @@ extension GameScene {
         
         self.addChild(player)
     }
-    
-  
-    func setupPredator() {
-        if self.childNode(withName: predator) != nil { return }
         
-        let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: frame.midX, y: frame.midY)
-        spot.name = predator
-        
-        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
-        let moveLeft = moveRight.reversed()
-        let sequence = SKAction.sequence([moveRight, moveLeft])
-        let repeatForever = SKAction.repeatForever(sequence)
-        spot.run(repeatForever)
-        addChild(spot)
-        
-    }
-    
     func startPredatorTimer() {
         self.removeAction(forKey: "predatorCooldown")
         
@@ -603,24 +552,41 @@ extension GameScene {
     
     }
     
+    func setupPredator() {
+        if self.childNode(withName: predator) != nil { return }
+        
+        let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
+        spot.position = CGPoint(x: 120, y: 150)
+        spot.name = predator
+        
+        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
+        let moveLeft = moveRight.reversed()
+        let sequence = SKAction.sequence([moveRight, moveLeft])
+        let repeatForever = SKAction.repeatForever(sequence)
+        spot.run(repeatForever)
+        addChild(spot)
+    }
+
     func setupMiniGame1Spot() {
         if self.childNode(withName: miniGame1) != nil { return }
         let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: frame.minX, y: frame.minY)
+        spot.position = CGPoint(x: -200, y: -150)
         spot.name = miniGame1
         addChild(spot)
     }
+
     func setupMiniGame2Spot() {
         if self.childNode(withName: miniGame2) != nil { return }
         let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: frame.minX, y: frame.maxY)
+        spot.position = CGPoint(x: -200, y: 150)
         spot.name = miniGame2
         addChild(spot)
     }
+
     func setupMiniGame3Spot() {
         if self.childNode(withName: miniGame3) != nil { return }
         let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: frame.maxX, y: frame.minY)
+        spot.position = CGPoint(x: 200, y: -150)
         spot.name = miniGame3
         addChild(spot)
     }
@@ -633,6 +599,12 @@ extension GameScene {
         let minigameScene = PredatorGame(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
+        minigameScene.dismissAction = { [weak self] in
+            DispatchQueue.main.async {
+                self?.viewModel?.showGameOver = true
+                self?.viewModel?.controlsAreVisable = false
+            }
+        }
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)

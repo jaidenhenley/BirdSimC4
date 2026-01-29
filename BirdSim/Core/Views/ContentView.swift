@@ -1,25 +1,26 @@
+////
+////  ContentView.swift
+////  BirdSimulator
+////
+////  Created by Jaiden Henley on 1/21/26.
+////
 //
-//  ContentView.swift
-//  BirdSimulator
+//import SwiftUI
 //
-//  Created by Jaiden Henley on 1/21/26.
+//struct ContentView: View {
+//    @State var gameStarted: Bool = false
 //
-
-import SwiftUI
-
-struct ContentView: View {
-    @State private var gameStarted: Bool = false
-    
-    var body: some View {
-        if !gameStarted {
-            StartGameView(gameStarted: $gameStarted)
-        } else {
-            MainGameView(viewModel: MainGameView.ViewModel())
-        }
-        
-    }
-}
-
-#Preview {
-    ContentView()
-}
+//    
+//    var body: some View {
+//        if !gameStarted {
+//            StartGameView(gameStarted: $gameStarted)
+//        } else {
+//            MainGameView(viewModel: MainGameView.ViewModel(), gameStarted: $gameStarted)
+//        }
+//        
+//    }
+//}
+//
+//#Preview {
+//    ContentView()
+//}

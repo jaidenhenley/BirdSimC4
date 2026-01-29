@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct BirdSimulatorApp: App {
+    @State var gameStarted: Bool = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainGameView(viewModel: MainGameView.ViewModel())
                 .statusBarHidden(true)
         }
     }
