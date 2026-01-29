@@ -1,5 +1,13 @@
 //
-//  MiniGameScene2.swift
+//  MiniGameScene3 2.swift
+//  BirdSimulator
+//
+//  Created by Jaiden Henley on 1/26/26.
+//
+
+
+//
+//  MiniGameScene3.swift
 //  BirdSimulator
 //
 //  Created by Jaiden Henley on 1/26/26.
@@ -7,11 +15,11 @@
 
 import SpriteKit
 
-class MiniGameScene1: SKScene {
+class FeedBabyScene: SKScene {
     var viewModel: MainGameView.ViewModel?
     
     override func didMove(to view: SKView) {
-        backgroundColor = .blue
+        backgroundColor = .yellow
         
         let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
         backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -20,7 +28,7 @@ class MiniGameScene1: SKScene {
         backLabel.name = "Back Button"
         backLabel.zPosition = 10
         addChild(backLabel)
-
+        
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
