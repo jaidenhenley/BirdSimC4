@@ -452,6 +452,10 @@ extension GameScene {
     func pickupItem(_ node: SKNode) {
         guard let name = node.name else { return }
         
+        if viewModel?.collectedItems.contains(name) == true {
+            print("\(name) already collected")
+            return
+        }
         // Update ViewModel
         viewModel?.collectItem(name)
         

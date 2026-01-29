@@ -25,11 +25,13 @@ extension MainGameView {
         @Published var health: CGFloat = 1
         @Published var showInventory: Bool = false
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0]
+        @Published var collectedItems: Set<String> = []
         @Published var gameStarted: Bool = false
         @Published var showGameOver: Bool = false
         
         func collectItem(_ name: String) {
                 // Standardize to lowercase to match node names
+            collectedItems.insert(name)
                 let key = name.lowercased()
                 if inventory.keys.contains(key) {
                     inventory[key, default: 0] += 1
