@@ -22,8 +22,10 @@ struct HUDControls: View {
             let buttonSize = max(isiPad ? 64 : 64,
                                  base * (isiPad ? 0.12 : 0.055))
 
-            ZStack {
+            ZStack {                
                 VStack {
+                  
+                    
                     Spacer()
 
                     HStack {
