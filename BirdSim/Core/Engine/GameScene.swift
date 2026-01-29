@@ -411,6 +411,9 @@ extension GameScene {
     func resetGame() {
         viewModel?.joystickVelocity = .zero
         
+        viewModel?.savedCameraPosition = nil
+        viewModel?.savedPlayerPosition = nil
+        
         self.removeAllChildren()
         
         viewModel?.gameStarted = true
@@ -567,7 +570,7 @@ extension GameScene {
         if self.childNode(withName: predator) != nil { return }
         
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 1200, y: 1500)
+        spot.position = CGPoint(x: 120, y: 150)
         spot.name = predator
         
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
@@ -581,7 +584,7 @@ extension GameScene {
     func setupMiniGame1Spot() {
         if self.childNode(withName: miniGame1) != nil { return }
         let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: -2000, y: -1500)
+        spot.position = CGPoint(x: -200, y: -150)
         spot.name = miniGame1
         addChild(spot)
     }
@@ -589,7 +592,7 @@ extension GameScene {
     func setupMiniGame2Spot() {
         if self.childNode(withName: miniGame2) != nil { return }
         let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: -2000, y: 1500)
+        spot.position = CGPoint(x: -200, y: 150)
         spot.name = miniGame2
         addChild(spot)
     }
@@ -597,7 +600,7 @@ extension GameScene {
     func setupMiniGame3Spot() {
         if self.childNode(withName: miniGame3) != nil { return }
         let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 2000, y: -1500)
+        spot.position = CGPoint(x: 200, y: -150)
         spot.name = miniGame3
         addChild(spot)
     }
