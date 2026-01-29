@@ -328,7 +328,7 @@ class GameScene: SKScene {
         guard let touch = touches.first else { return }
         // get location of touch in scene
         let location = touch.location(in: self)
-    
+        
         // Handle item taps: validate distance on tap
         for node in nodes(at: location) where node.name == "stick" {
             let largerHitArea = node.frame.insetBy(dx: -20, dy: -20)
@@ -390,8 +390,13 @@ class GameScene: SKScene {
                 transitionToFeedBabyScene()
                 viewModel?.controlsAreVisable = false
             } else if node.name == leaveIslandMini, leaveIslandMiniIsInRange == true {
-                transitionToLeaveIslandMini()
-                viewModel?.controlsAreVisable = false
+                if let items = viewModel?.collectedItems,
+                   items.contains("stick"),
+                   items.contains("leaf"),
+                   items.contains("spiderweb") {
+                    transitionToLeaveIslandMini()
+                    viewModel?.controlsAreVisable = false
+                }
             }
         }
     }
