@@ -165,7 +165,7 @@ class GameScene: SKScene {
                 var closestItem: SKNode?
                 var closestDistance: CGFloat = .greatestFiniteMagnitude
                 
-                for node in children where node.name == "stick" || node.name == "leaf" {
+                for node in children where node.name == "stick" || node.name == "leaf" || node.name == "spiderweb" {
                     let dx = player.position.x - node.position.x
                     let dy = player.position.y - node.position.y
                     let distance = sqrt(dx * dx + dy * dy)
@@ -348,6 +348,19 @@ class GameScene: SKScene {
                 }
             }
         }
+        for node in nodes(at: location) where node.name == "spiderweb" {
+            let largerHitArea = node.frame.insetBy(dx: -20, dy: -20)
+            if largerHitArea.contains(location),
+               let player = self.childNode(withName: "userBird") {
+                let dx = player.position.x - node.position.x
+                let dy = player.position.y - node.position.y
+                let distance = sqrt(dx*dx + dy*dy)
+                if distance < 200, viewModel?.isFlying == false {
+                    pickupItem(node)
+                    return
+                }
+            }
+        }
         
         // handles tapped areas for minigames
         // find all nodes in the location
@@ -399,6 +412,7 @@ extension GameScene {
         viewModel?.savedCameraPosition = nil
         viewModel?.savedPlayerPosition = nil
         viewModel?.health = 1
+        viewModel?.isFlying = false
         
         self.removeAllChildren()
         
@@ -418,6 +432,8 @@ extension GameScene {
         spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
         spawnItem(at: CGPoint(x: -600, y: 100), type: "stick")
         spawnItem(at: CGPoint(x: -400, y: 300), type: "leaf")
+        spawnItem(at: CGPoint(x: -700, y: 400), type: "spiderweb")
+        spawnItem(at: CGPoint(x: 700, y: 200), type: "spiderweb")
         
         hasInitializedWorld = true
         
@@ -436,6 +452,10 @@ extension GameScene {
     func pickupItem(_ node: SKNode) {
         guard let name = node.name else { return }
         
+        if viewModel?.collectedItems.contains(name) == true {
+            print("\(name) already collected")
+            return
+        }
         // Update ViewModel
         viewModel?.collectItem(name)
         
