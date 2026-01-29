@@ -32,9 +32,14 @@ struct InventoryView: View {
                     ForEach(viewModel.inventory.sorted(by: >), id: \.key) { name, count in
                         HStack {
                             //Map the name to an custom icon currently an emoji
-                            Text(name == "stick" ? "🪵" : "🍃")
-                                .font(.system(size: 40))
-                            
+                            if name == "stick" {
+                                    Text("🪵")
+                            } else if name == "leaf" {
+                                    Text("🍃")
+                            } else if name == "spiderweb" {
+                                    Text("🕸️")
+                            }
+                        
                             Text(name.capitalized)
                                 .font(.body)
                             
