@@ -57,22 +57,7 @@ class GameScene: SKScene {
             let backgroundTexture = SKTexture(imageNamed: "TestBirdMap")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
-                    self?.setupBackground()
-                    self?.setupUserBird()
-                    self?.predatorHit = false
-                    self?.setupPredator()
-                    self?.setupMiniGame1Spot()
-                    self?.setupMiniGame2Spot()
-                    self?.setupMiniGame3Spot()
-
-                    // Spawn items after world is set up
-                    self?.spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
-                    self?.spawnItem(at: CGPoint(x: 200, y: 100), type: "stick")
-                    self?.spawnItem(at: CGPoint(x: -600, y: 100), type: "stick")
-                    self?.spawnItem(at: CGPoint(x: -400, y: 300), type: "leaf")
-
-                    self?.hasInitializedWorld = true
-                    self?.viewModel?.mainScene = self
+                    self?.initializeGame()
                 }
             }
         } else {
@@ -408,11 +393,12 @@ class GameScene: SKScene {
 
 extension GameScene {
     
-    func resetGame() {
+    func initializeGame() {
         viewModel?.joystickVelocity = .zero
         
         viewModel?.savedCameraPosition = nil
         viewModel?.savedPlayerPosition = nil
+        viewModel?.health = 1
         
         self.removeAllChildren()
         

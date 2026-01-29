@@ -24,6 +24,6 @@ struct StartGameView: View {
     }
     func startGame() {
         gameStarted = true
-        scene.resetGame()
+        scene.initializeGame()
     }
 }
