@@ -65,7 +65,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createObstaclePair() {
-        let gapHeight: CGFloat = 150.0
+        let gapHeight: CGFloat = 200.0
             let pipeWidth: CGFloat = 60.0
             let pipeOffset = CGFloat.random(in: -150...150)
             
