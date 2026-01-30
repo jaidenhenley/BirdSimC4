@@ -5,8 +5,9 @@
 //  Created by Jaiden Henley on 1/20/26.
 //
 
-import SpriteKit
+import Foundation
 import GameController
+import SpriteKit
 
 class GameScene: SKScene {
     
@@ -33,6 +34,21 @@ class GameScene: SKScene {
     var feedBabyBirdMiniIsInRange: Bool = false
     var leaveIslandMiniIsInRange: Bool = false
     var predatorHit: Bool = false
+    let desiredPredatorCount: Int = 4
+    
+    private var predatorCooldownEnd: Date?
+    
+    // Fixed spawn points for predators
+    private let predatorSpawnPoints: [CGPoint] = [
+        CGPoint(x: 120, y: 150),
+        CGPoint(x: -300, y: 200),
+        CGPoint(x: 800, y: -100),
+        CGPoint(x: -500, y: -200)
+    ]
+    
+    // Tracks which spawn point indices are currently occupied
+    private var occupiedPredatorSpawns: Set<Int> = []
+    private var bannedPredatorSpawns: Set<Int> = []
     
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
@@ -101,6 +117,19 @@ class GameScene: SKScene {
         // addChild(mapFrame)
     }
     
+    // Returns true if the player is within threshold of any predator node
+    func isPlayerNearAnyPredator(player: SKNode, threshold: CGFloat = 200) -> Bool {
+        for node in children where node.name == predatorMini {
+            let dx = player.position.x - node.position.x
+            let dy = player.position.y - node.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            if distance < threshold {
+                return true
+            }
+        }
+        return false
+    }
+
     
     override func update(_ currentTime: TimeInterval) {
         buildNestMiniIsInRange = false
@@ -129,7 +158,28 @@ class GameScene: SKScene {
         }
         
         // Get player once instead of multiple times
+        
+        // Get player once instead of multiple times
         guard let player = self.childNode(withName: "userBird") else { return }
+        
+        // Predator check: find the closest predator within threshold and transition with that specific node
+        if !predatorHit, let predator = closestPredator(to: player, within: 200) {
+            transitionToPredatorGame(triggeringPredator: predator)
+        }
+        
+        // Resolve predator cooldown and respawn up to desired count
+        if predatorHit, let end = predatorCooldownEnd, Date() >= end {
+            predatorHit = false
+            predatorCooldownEnd = nil
+
+            let currentCount = children.filter { $0.name == predatorMini }.count
+            let needed = max(0, desiredPredatorCount - currentCount)
+            if needed > 0 {
+                for _ in 0..<needed {
+                    if !spawnPredatorAtAvailableSpot() { break }
+                }
+            }
+        }
         
         // Single distance check function to reduce code duplication
         func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
@@ -137,13 +187,6 @@ class GameScene: SKScene {
             let dx = player.position.x - node.position.x
             let dy = player.position.y - node.position.y
             return sqrt(dx*dx + dy*dy) < threshold
-        }
-        
-        // Predator check
-        if checkDistance(to: predatorMini, threshold: 200), !predatorHit {
-            transitionToPredatorGame()
-            predatorHit = true
-            viewModel?.controlsAreVisable = false
         }
         
         // Minigame checks
@@ -384,8 +427,8 @@ class GameScene: SKScene {
         
         // check is any of the touched nodes is in our minigame spot
         for node in touchedNodes {
-            if node.name == predatorMini {
-                transitionToPredatorGame()
+            if node.name == predatorMini, !predatorHit {
+                transitionToPredatorGame(triggeringPredator: node)
                 viewModel?.controlsAreVisable = false
                 return
             } else if node.name == buildNestMini, buildNestMiniIsInRange == true {
@@ -443,8 +486,14 @@ extension GameScene {
         setupBackground()
         setupUserBird()
         self.predatorHit = false
-        setupPredator(at: nextPredatorSpawnPoint())
-        setupPredator(at: CGPoint(x: 300, y: 300))
+        self.predatorCooldownEnd = nil
+        occupiedPredatorSpawns.removeAll()
+        bannedPredatorSpawns.removeAll()
+        // Spawn up to desiredPredatorCount unique predators
+        var spawned = 0
+        while spawned < min(desiredPredatorCount, predatorSpawnPoints.count) && spawnPredatorAtAvailableSpot() {
+            spawned += 1
+        }
         setupBuildNestSpot()
         setupFeedUserBirdSpot()
         setupFeedBabyBirdSpot()
@@ -620,7 +669,7 @@ extension GameScene {
         if self.childNode(withName: "userBird") != nil { return }
         
         let player = SKSpriteNode(imageNamed: birdImage)
-        player.position = CGPoint(x: 200, y: 400)
+        player.position = CGPoint(x: 800, y: -400)
         player.zPosition = 10
         player.name = "userBird"
         
@@ -661,11 +710,57 @@ extension GameScene {
         return randomPoints.randomElement() ?? CGPoint(x: 120, y: 150)
     }
     
-    func setupPredator(at position: CGPoint? = nil) {
+    // Returns a random free spawn index, or nil if all are occupied or banned
+    func nextAvailablePredatorSpawnIndex() -> Int? {
+        let available = (0..<predatorSpawnPoints.count).filter { !occupiedPredatorSpawns.contains($0) && !bannedPredatorSpawns.contains($0) }
+        return available.randomElement()
+    }
+
+    // Spawns a predator at a free spot and marks it occupied.
+    @discardableResult
+    func spawnPredatorAtAvailableSpot() -> Bool {
+        guard let index = nextAvailablePredatorSpawnIndex() else { return false }
+        let position = predatorSpawnPoints[index]
+        occupiedPredatorSpawns.insert(index)
+        setupPredator(at: position, spawnIndex: index)
+        return true
+    }
+    
+    func removePredator(_ node: SKNode, banSpawn: Bool = true) {
+        if let idx = node.userData?["spawnIndex"] as? Int {
+            occupiedPredatorSpawns.remove(idx)
+            if banSpawn {
+                bannedPredatorSpawns.insert(idx)
+            }
+        }
+        node.removeFromParent()
+    }
+
+    func closestPredator(to player: SKNode, within threshold: CGFloat) -> SKNode? {
+        var closest: SKNode?
+        var closestDist = threshold
+        for node in children where node.name == predatorMini {
+            let dx = player.position.x - node.position.x
+            let dy = player.position.y - node.position.y
+            let dist = sqrt(dx*dx + dy*dy)
+            if dist < closestDist {
+                closestDist = dist
+                closest = node
+            }
+        }
+        return closest
+    }
+    
+    func setupPredator(at position: CGPoint? = nil, spawnIndex: Int? = nil) {
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
         
         spot.position = position ?? CGPoint(x: 120, y: 150)
         spot.name = predatorMini
+        
+        if spot.userData == nil { spot.userData = [:] }
+        if let idx = spawnIndex {
+            spot.userData?["spawnIndex"] = idx
+        }
         
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
         let moveLeft = moveRight.reversed()
@@ -673,6 +768,17 @@ extension GameScene {
         let repeatForever = SKAction.repeatForever(sequence)
         spot.run(repeatForever)
         addChild(spot)
+    }
+    func removeAllPredators() {
+        for node in children where node.name == predatorMini {
+            node.removeFromParent()
+        }
+        occupiedPredatorSpawns.removeAll()
+    }
+    
+    func startPredatorCooldown(duration: TimeInterval = 5.0) {
+        predatorHit = true
+        predatorCooldownEnd = Date().addingTimeInterval(duration)
     }
     
     func setupLeaveIslandSpot() {
@@ -721,11 +827,15 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
-    func transitionToPredatorGame() {
+    func transitionToPredatorGame(triggeringPredator predator: SKNode) {
         guard let view = self.view else { return }
         saveReturnState()
-        self.childNode(withName: predatorMini)?.removeFromParent()
-        startPredatorTimer()
+        removePredator(predator, banSpawn: true)
+        startPredatorCooldown(duration: 5.0)
+        viewModel?.controlsAreVisable = false
+        // Removed these lines as per instructions:
+        // self.childNode(withName: predatorMini)?.removeFromParent()
+        // startPredatorTimer()
         let minigameScene = PredatorGame(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
