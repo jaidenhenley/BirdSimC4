@@ -8,6 +8,18 @@
 import SpriteKit
 
 class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
+    func didBegin(_ contact: SKPhysicsContact) {
+        gameOver()
+    }
+    
+    func gameOver() {
+        // Trigger the SwiftUI GameOverView
+        viewModel?.showGameOver = true
+        
+        // Optional: stop physics so everything freezes
+        self.isPaused = true
+    }
+
     var viewModel: MainGameView.ViewModel?
     
     var bird = SKSpriteNode(color: .yellow, size: CGSize(width: 40, height: 40))
@@ -20,7 +32,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         setupBird()
         setupObstacles()
 //        backgroundColor = .systemCyan
-//        
+//
 //        let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
 //        backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
 //        backLabel.fontColor = .white
@@ -35,7 +47,9 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
         bird.physicsBody = SKPhysicsBody(circleOfRadius: 20)
         bird.physicsBody?.isDynamic = true
+        bird.physicsBody?.categoryBitMask = 1
         bird.physicsBody?.contactTestBitMask = 1
+        bird.physicsBody?.collisionBitMask = 2
         addChild(bird)
     }
     
@@ -51,14 +65,36 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createObstaclePair() {
-        let pipe = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 400))
-                pipe.position = CGPoint(x: self.frame.maxX + 50, y: self.frame.midY - 250)
-                pipe.physicsBody = SKPhysicsBody(rectangleOf: pipe.size)
-                pipe.physicsBody?.isDynamic = false // Static so bird bounces off
-                
-                let moveLeft = SKAction.moveBy(x: -self.frame.width - 100, y: 0, duration: 4.0)
-                pipe.run(SKAction.sequence([moveLeft, .removeFromParent()]))
-                addChild(pipe)
+        let gapHeight: CGFloat = 150.0
+            let pipeWidth: CGFloat = 60.0
+            let pipeOffset = CGFloat.random(in: -150...150)
+            
+            // Bottom Pipe
+            let bottomPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: 600))
+            bottomPipe.position = CGPoint(x: self.frame.maxX + 50, y: self.frame.midY - 300 - (gapHeight / 2) + pipeOffset)
+            setupObstaclePhysics(bottomPipe)
+            
+            // Top Pipe
+            let topPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: 600))
+            topPipe.position = CGPoint(x: self.frame.maxX + 50, y: self.frame.midY + 300 + (gapHeight / 2) + pipeOffset)
+            setupObstaclePhysics(topPipe)
+            
+            let moveLeft = SKAction.moveBy(x: -self.frame.width - 150, y: 0, duration: 4.0)
+            let sequence = SKAction.sequence([moveLeft, .removeFromParent()])
+            
+            bottomPipe.run(sequence)
+            topPipe.run(sequence)
+            
+            addChild(bottomPipe)
+            addChild(topPipe)
+    }
+    
+    func setupObstaclePhysics(_ obstacle: SKSpriteNode) {
+        obstacle.physicsBody = SKPhysicsBody(rectangleOf: obstacle.size)
+        obstacle.physicsBody?.isDynamic = false
+        obstacle.physicsBody?.categoryBitMask = 2
+        obstacle.physicsBody?.contactTestBitMask = 1
+        obstacle.physicsBody?.collisionBitMask = 1
     }
 
 }
