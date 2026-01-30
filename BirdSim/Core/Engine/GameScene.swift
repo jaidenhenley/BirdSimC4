@@ -56,7 +56,7 @@ class GameScene: SKScene {
 
         if !hasInitializedWorld {
             // Preload the background texture
-            let backgroundTexture = SKTexture(imageNamed: "TestBirdMap")
+            let backgroundTexture = SKTexture(imageNamed: "mapland")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
                     self?.initializeGame()
@@ -83,7 +83,7 @@ class GameScene: SKScene {
             .filter { $0.name == "background" }
             .forEach { $0.removeFromParent() }
         
-        let texture = SKTexture(imageNamed: "TestBirdMap")
+        let texture = SKTexture(imageNamed: "mapland")
         texture.usesMipmaps = true
         texture.filteringMode = .linear
         
@@ -149,7 +149,6 @@ class GameScene: SKScene {
         if checkDistance(to: predatorMini, threshold: 200), !predatorHit {
             transitionToPredatorGame()
             predatorHit = true
-            startPredatorTimer()
             viewModel?.controlsAreVisable = false
         }
         
@@ -435,7 +434,8 @@ extension GameScene {
         setupBackground()
         setupUserBird()
         self.predatorHit = false
-        setupPredator()
+        setupPredator(at: nextPredatorSpawnPoint())
+        setupPredator(at: CGPoint(x: 300, y: 300))
         setupBuildNestSpot()
         setupFeedUserBirdSpot()
         setupFeedBabyBirdSpot()
@@ -574,8 +574,16 @@ extension GameScene {
         self.removeAction(forKey: "predatorCooldown")
         
         let wait = SKAction.wait(forDuration: 5.0) //adjust timer here for predator cooldown
-        let reset = SKAction.run {
+        let reset = SKAction.run { [weak self] in
+            guard let self = self else {
+                return
+            }
             self.predatorHit = false
+            
+            if self.childNode(withName: self.predatorMini) == nil {
+                let spawnPoint = self.nextPredatorSpawnPoint()
+                self.setupPredator(at: spawnPoint)
+            }
         }
         
         let sequence = SKAction.sequence([
@@ -585,11 +593,21 @@ extension GameScene {
     
     }
     
-    func setupPredator() {
-        if self.childNode(withName: predatorMini) != nil { return }
+    func nextPredatorSpawnPoint() -> CGPoint {
+        let randomPoints: [CGPoint] = [
+            CGPoint(x: 120, y: 150),
+            CGPoint(x: -300, y: 200),
+            CGPoint(x: 800, y: -100),
+            CGPoint(x: -500, y: -200)
+        ]
         
+        return randomPoints.randomElement() ?? CGPoint(x: 120, y: 150)
+    }
+    
+    func setupPredator(at position: CGPoint? = nil) {
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 120, y: 150)
+        
+        spot.position = position ?? CGPoint(x: 120, y: 150)
         spot.name = predatorMini
         
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
@@ -649,6 +667,8 @@ extension GameScene {
     func transitionToPredatorGame() {
         guard let view = self.view else { return }
         saveReturnState()
+        self.childNode(withName: predatorMini)?.removeFromParent()
+        startPredatorTimer()
         let minigameScene = PredatorGame(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel

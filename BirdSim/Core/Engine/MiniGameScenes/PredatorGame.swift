@@ -15,19 +15,19 @@ class PredatorGame: SKScene {
         backgroundColor = .red
         
         let endLabel = SKLabelNode(text: "End Game")
-        endLabel.position = CGPoint(x: frame.midX + 50, y: frame.midY + 50)
+        endLabel.position = CGPoint(x: frame.midX, y: frame.midY + 50)
         endLabel.fontColor = .white
-        endLabel.fontSize = 28
+        endLabel.fontSize = 50
         endLabel.name = "End Button"
         endLabel.zPosition = 10
         addChild(endLabel)
         
         
-        let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
-        backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
+        let backLabel = SKLabelNode(text: "Win Game")
+        backLabel.position = CGPoint(x: frame.midX, y: frame.midY - 50)
         backLabel.fontColor = .white
-        backLabel.fontSize = 28
-        backLabel.name = "Back Button"
+        backLabel.fontSize = 50
+        backLabel.name = "Game success"
         backLabel.zPosition = 10
         addChild(backLabel)
     
@@ -40,7 +40,7 @@ class PredatorGame: SKScene {
         let touchedNodes = nodes(at: location)
         
         for node in touchedNodes {
-            if node.name == "Back Button" {
+            if node.name == "Game success" {
                 guard let view = self.view else { return }
                 // Reuse the existing main scene if available, otherwise create and register one
                 if let existing = viewModel?.mainScene {
