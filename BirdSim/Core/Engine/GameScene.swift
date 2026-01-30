@@ -333,8 +333,14 @@ class GameScene: SKScene {
                 viewModel?.controlsAreVisable = false
                 return
             } else if node.name == buildNestMini, buildNestMiniIsInRange == true {
-                transitionToBuildNestScene()
-                viewModel?.controlsAreVisable = false
+                if let items = viewModel?.collectedItems,
+                   items.contains("stick"),
+                   items.contains("leaf"),
+                   items.contains("spiderweb") {
+                    transitionToBuildNestScene()
+                    viewModel?.controlsAreVisable = false
+                }
+
             } else if node.name == feedUserBirdMini, feedUserBirdMiniIsInRange == true {
                 transitionToFeedUserScene()
                 viewModel?.controlsAreVisable = false
@@ -342,13 +348,8 @@ class GameScene: SKScene {
                 transitionToFeedBabyScene()
                 viewModel?.controlsAreVisable = false
             } else if node.name == leaveIslandMini, leaveIslandMiniIsInRange == true {
-                if let items = viewModel?.collectedItems,
-                   items.contains("stick"),
-                   items.contains("leaf"),
-                   items.contains("spiderweb") {
                     transitionToLeaveIslandMini()
                     viewModel?.controlsAreVisable = false
-                }
             }
         }
     }
@@ -393,6 +394,9 @@ extension GameScene {
         spawnItem(at: CGPoint(x: -700, y: 400), type: "spiderweb")
         spawnItem(at: CGPoint(x: 700, y: 200), type: "spiderweb")
         
+        
+        spawnItem(at: CGPoint(x: 900, y: 900), type: "tree1")
+        
         hasInitializedWorld = true
         
         viewModel?.mainScene = self
@@ -430,7 +434,7 @@ extension GameScene {
         waterBackground.size = CGSize(width: 12000, height: 12000)
         
         // Treat map as fixed world size (no scaling hacks)
-        waterBackground.size = CGSize(width: 8000, height: 5000)
+        waterBackground.size = CGSize(width: 10000, height: 5000)
         waterBackground.xScale = 1
         waterBackground.yScale = 1
         
