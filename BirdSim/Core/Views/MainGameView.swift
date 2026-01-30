@@ -37,8 +37,24 @@ struct MainGameView: View {
                             DrainingHealthBarView(viewModel: viewModel)
                                 .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
                             Spacer()
+                            
+                        }
+                        
+                        HStack {
+                            HelpTextView(viewModel: viewModel)
+                                .padding([.top, .leading], 20)
+                            Spacer()
+                        }
+                        Button("Tap") {
+                            viewModel.mainScene?.enterMapNode()
+                        }
+                        .padding()
+                        
+                        Button("Close") {
+                            viewModel.mainScene?.exitMapMode()
                         }
                         Spacer()
+
                     }
                 }
                 
