@@ -87,7 +87,7 @@ class GameScene: SKScene {
         background.zPosition = -1
         
         // Treat map as fixed world size (no scaling hacks)
-        background.size = CGSize(width: 5000, height: 3800)
+        background.size = CGSize(width: 8000, height: 5000)
         background.xScale = 1
         background.yScale = 1
         
@@ -290,6 +290,7 @@ class GameScene: SKScene {
     
     func updatePlayerPosition(deltaTime: CGFloat) {
         guard let player = self.childNode(withName: "userBird") else { return }
+        if viewModel?.isMapMode  == true { return }
         
         // Prefer SwiftUI joystick via view model (CGPoint normalized to [-1, 1])
         var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
@@ -526,6 +527,54 @@ extension GameScene {
         
         player.position.x = max(minX, min(player.position.x, maxX))
         player.position.y = max(minY, min(player.position.y, maxY))
+    }
+    
+    func zoomToFitMap() {
+        guard let backgroud = childNode(withName: "background") as? SKSpriteNode,
+              let view = self.view else { return }
+        
+        let scaleX = view.bounds.width / backgroud.size.width
+        let scaleY = view.bounds.height / backgroud.size.height
+        
+        let zoom = min(scaleX, scaleY)
+        cameraNode.setScale(1 / zoom)
+    }
+    
+    func enterMapNode() {
+        viewModel?.isMapMode = true
+        
+        guard let background = childNode(withName: "background") else { return }
+        // center camera on map
+        cameraNode.position = background.position
+        // zoom out
+        zoomToFitMap()
+        // add player marker
+        showPlayerMarker()
+    }
+    
+    func exitMapMode() {
+        viewModel?.isMapMode = false
+
+        // Remove marker
+        childNode(withName: "mapMarker")?.removeFromParent()
+
+        // Snap camera back to player
+        if let player = childNode(withName: "userBird") {
+            cameraNode.position = player.position
+            cameraNode.setScale(1.25) // your normal zoom
+        }
+    }
+    
+    func showPlayerMarker() {
+        guard let player = childNode(withName: "userBird") else { return }
+        
+        let marker = SKShapeNode(circleOfRadius: 20)
+        marker.fillColor = .red
+        marker.strokeColor = .clear
+        marker.name = "mapMarker"
+        marker.zPosition = 1000
+        marker.position = player.position
+        addChild(marker)
     }
     
     func updateCameraFollow(target: CGPoint, deltaTime: CGFloat) {

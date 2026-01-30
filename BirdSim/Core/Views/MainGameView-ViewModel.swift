@@ -21,6 +21,7 @@ extension MainGameView {
         @Published var controlsAreVisable: Bool = true
         @Published var savedPlayerPosition: CGPoint?
         @Published var savedCameraPosition: CGPoint?
+        @Published var isMapMode: Bool = false
         @Published var mainScene: GameScene?
         @Published var health: CGFloat = 1
         @Published var showInventory: Bool = false
