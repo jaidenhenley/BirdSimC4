@@ -65,7 +65,7 @@ class GameScene: SKScene {
 
         if !hasInitializedWorld {
             // Preload the background texture
-            let backgroundTexture = SKTexture(imageNamed: "mapland")
+            let backgroundTexture = SKTexture(imageNamed: "map_land")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
                     self?.initializeGame()
@@ -92,22 +92,41 @@ class GameScene: SKScene {
             .filter { $0.name == "background" }
             .forEach { $0.removeFromParent() }
         
-        let texture = SKTexture(imageNamed: "mapland")
-        texture.usesMipmaps = true
-        texture.filteringMode = .linear
+        let grassTexture = SKTexture(imageNamed: "map_land")
+        grassTexture.usesMipmaps = true
+        grassTexture.filteringMode = .linear
         
-        let background = SKSpriteNode(texture: texture)
-        background.name = "background"
-        background.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        background.position = .zero
-        background.zPosition = -1
+        let waterTexture = SKTexture(imageNamed: "map_water")
+        waterTexture.usesMipmaps = true
+        waterTexture.filteringMode = .linear
+        
+        let grassBackground = SKSpriteNode(texture: grassTexture)
+        grassBackground.name = "background"
+        grassBackground.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        grassBackground.position = .zero
+        grassBackground.zPosition = -1
         
         // Treat map as fixed world size (no scaling hacks)
-        background.size = CGSize(width: 8000, height: 5000)
-        background.xScale = 1
-        background.yScale = 1
+        grassBackground.size = CGSize(width: 8000, height: 5000)
+        grassBackground.xScale = 1
+        grassBackground.yScale = 1
         
-        addChild(background)
+        let waterBackground = SKSpriteNode(texture: waterTexture)
+        waterBackground.name = "background1"
+        waterBackground.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        waterBackground.position = .zero
+        waterBackground.zPosition = -2
+        waterBackground.size = CGSize(width: 12000, height: 12000)
+        
+        // Treat map as fixed world size (no scaling hacks)
+        waterBackground.size = CGSize(width: 8000, height: 5000)
+        waterBackground.xScale = 1
+        waterBackground.yScale = 1
+        
+        
+        
+        addChild(grassBackground)
+        addChild(waterBackground)
         
         // DEBUG: visualize world bounds
         // let mapFrame = SKShapeNode(rect: background.frame)
@@ -257,6 +276,7 @@ class GameScene: SKScene {
         updatePlayerPosition(deltaTime: deltaTime)
         clampPlayerToMap()
         updateCameraFollow(target: player.position, deltaTime: deltaTime)
+        resizeWaterToFillScreen()
         clampCameraToMap()
     }
     
@@ -900,5 +920,27 @@ extension GameScene {
         circle.run(scaleAction, withKey: "scaleEase")
         
     }
+    // Dynamically resize the water to fill the camera view, with extra padding to eliminate black edges.
+    func resizeWaterToFillScreen() {
+        guard let view = self.view else { return }
+        
+        let padding: CGFloat = 150.0 // extra buffer to prevent black edges
+        let visibleWidth = view.bounds.width * cameraNode.xScale + padding
+        let visibleHeight = view.bounds.height * cameraNode.yScale + padding
+        
+        for node in children where node.name == "background1" {
+            if let water = node as? SKSpriteNode {
+                water.size = CGSize(
+                    width: max(water.size.width, visibleWidth),
+                    height: max(water.size.height, visibleHeight)
+                )
+                
+                // Center water on camera, plus small offset to ensure coverage
+                water.position = cameraNode.position
+            }
+        }
+    }
+
 }
+
 
