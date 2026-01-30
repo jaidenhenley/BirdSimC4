@@ -29,6 +29,7 @@ extension MainGameView {
         @Published var collectedItems: Set<String> = []
         @Published var gameStarted: Bool = false
         @Published var showGameOver: Bool = false
+        @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
         
         func collectItem(_ name: String) {

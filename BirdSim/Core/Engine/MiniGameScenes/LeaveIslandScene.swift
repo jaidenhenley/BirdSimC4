@@ -12,10 +12,13 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         gameOver()
     }
     
+    func gameWin() {
+        viewModel?.showGameWin = true
+    }
+    
     func gameOver() {
         // Trigger the SwiftUI GameOverView
         viewModel?.showGameOver = true
-        
         // Optional: stop physics so everything freezes
         self.isPaused = true
     }
@@ -31,6 +34,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         
         setupBird()
         setupObstacles()
+        startCountdown()
 //        backgroundColor = .systemCyan
 //
 //        let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
@@ -95,6 +99,19 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         obstacle.physicsBody?.categoryBitMask = 2
         obstacle.physicsBody?.contactTestBitMask = 1
         obstacle.physicsBody?.collisionBitMask = 1
+    }
+    
+    func startCountdown() {
+        let wait = SKAction.wait(forDuration: 5.0)
+        let action = SKAction.run {
+            self.userHasWon()
+        }
+        let sequence = SKAction.sequence([wait, action])
+        self.run(sequence)
+    }
+    
+    func userHasWon() {
+        gameWin()
     }
 
 }

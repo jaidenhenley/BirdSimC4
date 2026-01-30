@@ -360,6 +360,7 @@ extension GameScene {
     func initializeGame() {
         viewModel?.joystickVelocity = .zero
         
+        viewModel?.showGameWin = false
         viewModel?.savedCameraPosition = nil
         viewModel?.savedPlayerPosition = nil
         viewModel?.health = 1
