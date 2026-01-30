@@ -56,7 +56,7 @@ class GameScene: SKScene {
 
         if !hasInitializedWorld {
             // Preload the background texture
-            let backgroundTexture = SKTexture(imageNamed: "TestBirdMap")
+            let backgroundTexture = SKTexture(imageNamed: "mapland")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
                     self?.initializeGame()
@@ -83,7 +83,7 @@ class GameScene: SKScene {
             .filter { $0.name == "background" }
             .forEach { $0.removeFromParent() }
         
-        let texture = SKTexture(imageNamed: "TestBirdMap")
+        let texture = SKTexture(imageNamed: "mapland")
         texture.usesMipmaps = true
         texture.filteringMode = .linear
         
@@ -435,6 +435,7 @@ extension GameScene {
         setupUserBird()
         self.predatorHit = false
         setupPredator(at: nextPredatorSpawnPoint())
+        setupPredator(at: CGPoint(x: 300, y: 300))
         setupBuildNestSpot()
         setupFeedUserBirdSpot()
         setupFeedBabyBirdSpot()
@@ -598,17 +599,12 @@ extension GameScene {
             CGPoint(x: -300, y: 200),
             CGPoint(x: 800, y: -100),
             CGPoint(x: -500, y: -200)
-
-
-
         ]
         
         return randomPoints.randomElement() ?? CGPoint(x: 120, y: 150)
     }
     
     func setupPredator(at position: CGPoint? = nil) {
-        if self.childNode(withName: predatorMini) != nil { return }
-        
         let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
         
         spot.position = position ?? CGPoint(x: 120, y: 150)
