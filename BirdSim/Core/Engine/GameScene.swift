@@ -65,7 +65,7 @@ class GameScene: SKScene {
 
         if !hasInitializedWorld {
             // Preload the background texture
-            let backgroundTexture = SKTexture(imageNamed: "mapland")
+            let backgroundTexture = SKTexture(imageNamed: "map_land")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
                     self?.initializeGame()
@@ -79,58 +79,9 @@ class GameScene: SKScene {
 
         restoreReturnStateIfNeeded()
     }
-    override func didSimulatePhysics() {
-        // Intentionally left empty – camera updates occur in update(_:)
-    }
     
-    
-    
-    
-    func setupBackground() {
-        // Remove existing background
-        self.children
-            .filter { $0.name == "background" }
-            .forEach { $0.removeFromParent() }
-        
-        let texture = SKTexture(imageNamed: "mapland")
-        texture.usesMipmaps = true
-        texture.filteringMode = .linear
-        
-        let background = SKSpriteNode(texture: texture)
-        background.name = "background"
-        background.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        background.position = .zero
-        background.zPosition = -1
-        
-        // Treat map as fixed world size (no scaling hacks)
-        background.size = CGSize(width: 8000, height: 5000)
-        background.xScale = 1
-        background.yScale = 1
-        
-        addChild(background)
-        
-        // DEBUG: visualize world bounds
-        // let mapFrame = SKShapeNode(rect: background.frame)
-        // mapFrame.strokeColor = .green
-        // mapFrame.lineWidth = 8
-        // mapFrame.zPosition = 1000
-        // addChild(mapFrame)
-    }
-    
-    // Returns true if the player is within threshold of any predator node
-    func isPlayerNearAnyPredator(player: SKNode, threshold: CGFloat = 200) -> Bool {
-        for node in children where node.name == predatorMini {
-            let dx = player.position.x - node.position.x
-            let dy = player.position.y - node.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            if distance < threshold {
-                return true
-            }
-        }
-        return false
-    }
+   
 
-    
     override func update(_ currentTime: TimeInterval) {
         buildNestMiniIsInRange = false
         feedUserBirdMiniIsInRange = false
@@ -257,6 +208,7 @@ class GameScene: SKScene {
         updatePlayerPosition(deltaTime: deltaTime)
         clampPlayerToMap()
         updateCameraFollow(target: player.position, deltaTime: deltaTime)
+        resizeWaterToFillScreen()
         clampCameraToMap()
     }
     
@@ -276,57 +228,6 @@ class GameScene: SKScene {
             let pulseDown = SKAction.scale(to: finalScale, duration: 0.12)
             pulseDown.timingMode = .easeIn
             bird.run(SKAction.sequence([pulseUp, pulseDown]), withKey: "statePulse")
-        }
-    }
-    
-    func crossFadeBirdTexture(to imageName: String, duration: TimeInterval = 0.15) {
-        // If the bird doesn't exist yet, create it with the target texture
-        guard let existing = self.childNode(withName: "userBird") as? SKSpriteNode else {
-            let node = SKSpriteNode(imageNamed: imageName)
-            node.name = "userBird"
-            node.zPosition = 10
-            addChild(node)
-            return
-        }
-        
-        // Avoid work if the texture already matches
-        if let tex = existing.texture, tex.description.contains(imageName) {
-            return
-        }
-        
-        let newTexture = SKTexture(imageNamed: imageName)
-        SKTexture.preload([newTexture]) { [weak self] in
-            guard let self = self,
-                  let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
-            DispatchQueue.main.async {
-                // Remove any previous temp overlay
-                self.childNode(withName: "userBird_crossfade_temp")?.removeFromParent()
-                
-                // Create an overlay sprite with the new texture, matching the bird's transform
-                let overlay = SKSpriteNode(texture: newTexture)
-                overlay.name = "userBird_crossfade_temp"
-                overlay.position = bird.position
-                overlay.zPosition = bird.zPosition + 1
-                overlay.zRotation = bird.zRotation
-                overlay.anchorPoint = bird.anchorPoint
-                overlay.xScale = bird.xScale
-                overlay.yScale = bird.yScale
-                overlay.alpha = 0
-                self.addChild(overlay)
-                
-                let fadeIn = SKAction.fadeIn(withDuration: duration)
-                let fadeOut = SKAction.fadeOut(withDuration: duration)
-                
-                bird.run(fadeOut, withKey: "crossfadeOut")
-                overlay.run(fadeIn, completion: { [weak self] in
-                    guard let self = self,
-                          let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
-                    bird.texture = newTexture
-                    bird.size = newTexture.size()
-                    bird.alpha = 1.0
-                    overlay.removeFromParent()
-                })
-            }
         }
     }
 
@@ -432,8 +333,14 @@ class GameScene: SKScene {
                 viewModel?.controlsAreVisable = false
                 return
             } else if node.name == buildNestMini, buildNestMiniIsInRange == true {
-                transitionToBuildNestScene()
-                viewModel?.controlsAreVisable = false
+                if let items = viewModel?.collectedItems,
+                   items.contains("stick"),
+                   items.contains("leaf"),
+                   items.contains("spiderweb") {
+                    transitionToBuildNestScene()
+                    viewModel?.controlsAreVisable = false
+                }
+
             } else if node.name == feedUserBirdMini, feedUserBirdMiniIsInRange == true {
                 transitionToFeedUserScene()
                 viewModel?.controlsAreVisable = false
@@ -441,29 +348,10 @@ class GameScene: SKScene {
                 transitionToFeedBabyScene()
                 viewModel?.controlsAreVisable = false
             } else if node.name == leaveIslandMini, leaveIslandMiniIsInRange == true {
-                if let items = viewModel?.collectedItems,
-                   items.contains("stick"),
-                   items.contains("leaf"),
-                   items.contains("spiderweb") {
                     transitionToLeaveIslandMini()
                     viewModel?.controlsAreVisable = false
-                }
             }
         }
-    }
-    
-    func touchDown(atPoint pos : CGPoint) {
-        
-    }
-    
-    
-    func touchMoved(toPoint pos : CGPoint) {
-        
-    }
-    
-    
-    func touchUp(atPoint pos : CGPoint) {
-        
     }
 }
 
@@ -506,9 +394,61 @@ extension GameScene {
         spawnItem(at: CGPoint(x: -700, y: 400), type: "spiderweb")
         spawnItem(at: CGPoint(x: 700, y: 200), type: "spiderweb")
         
+        
+        spawnItem(at: CGPoint(x: 900, y: 900), type: "tree1")
+        
         hasInitializedWorld = true
         
         viewModel?.mainScene = self
+    }
+    func setupBackground() {
+        // Remove existing background
+        self.children
+            .filter { $0.name == "background" }
+            .forEach { $0.removeFromParent() }
+        
+        let grassTexture = SKTexture(imageNamed: "map_land")
+        grassTexture.usesMipmaps = true
+        grassTexture.filteringMode = .linear
+        
+        let waterTexture = SKTexture(imageNamed: "map_water")
+        waterTexture.usesMipmaps = true
+        waterTexture.filteringMode = .linear
+        
+        let grassBackground = SKSpriteNode(texture: grassTexture)
+        grassBackground.name = "background"
+        grassBackground.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        grassBackground.position = .zero
+        grassBackground.zPosition = -1
+        
+        // Treat map as fixed world size (no scaling hacks)
+        grassBackground.size = CGSize(width: 8000, height: 5000)
+        grassBackground.xScale = 1
+        grassBackground.yScale = 1
+        
+        let waterBackground = SKSpriteNode(texture: waterTexture)
+        waterBackground.name = "background1"
+        waterBackground.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        waterBackground.position = .zero
+        waterBackground.zPosition = -2
+        waterBackground.size = CGSize(width: 12000, height: 12000)
+        
+        // Treat map as fixed world size (no scaling hacks)
+        waterBackground.size = CGSize(width: 10000, height: 5000)
+        waterBackground.xScale = 1
+        waterBackground.yScale = 1
+        
+        
+        
+        addChild(grassBackground)
+        addChild(waterBackground)
+        
+        // DEBUG: visualize world bounds
+        // let mapFrame = SKShapeNode(rect: background.frame)
+        // mapFrame.strokeColor = .green
+        // mapFrame.lineWidth = 8
+        // mapFrame.zPosition = 1000
+        // addChild(mapFrame)
     }
     
     func spawnItem(at position: CGPoint, type: String) {
@@ -564,7 +504,7 @@ extension GameScene {
     
     func clampPlayerToMap() {
         guard let player = self.childNode(withName: "userBird"),
-                let background = self.childNode(withName: "background") as? SKSpriteNode else { return }
+              let background = self.childNode(withName: "background") as? SKSpriteNode else { return }
         
         let halfWidth = background.size.width / 2
         let halfHeight = background.size.height / 2
@@ -603,10 +543,10 @@ extension GameScene {
     
     func exitMapMode() {
         viewModel?.isMapMode = false
-
+        
         // Remove marker
         childNode(withName: "mapMarker")?.removeFromParent()
-
+        
         // Snap camera back to player
         if let player = childNode(withName: "userBird") {
             cameraNode.position = player.position
@@ -644,9 +584,9 @@ extension GameScene {
         cameraNode.position.x += tx * factor
         cameraNode.position.y += ty * factor
     }
-}
-
-extension GameScene {
+    
+    
+    
     func saveReturnState() {
         if let player = self.childNode(withName: "userBird") {
             viewModel?.savedPlayerPosition = player.position
@@ -675,28 +615,69 @@ extension GameScene {
         
         self.addChild(player)
     }
-        
-    func startPredatorTimer() {
-        self.removeAction(forKey: "predatorCooldown")
-        
-        let wait = SKAction.wait(forDuration: 5.0) //adjust timer here for predator cooldown
-        let reset = SKAction.run { [weak self] in
-            guard let self = self else {
-                return
-            }
-            self.predatorHit = false
-            
-            if self.childNode(withName: self.predatorMini) == nil {
-                let spawnPoint = self.nextPredatorSpawnPoint()
-                self.setupPredator(at: spawnPoint)
-            }
+    
+    func crossFadeBirdTexture(to imageName: String, duration: TimeInterval = 0.15) {
+        // If the bird doesn't exist yet, create it with the target texture
+        guard let existing = self.childNode(withName: "userBird") as? SKSpriteNode else {
+            let node = SKSpriteNode(imageNamed: imageName)
+            node.name = "userBird"
+            node.zPosition = 10
+            addChild(node)
+            return
         }
         
-        let sequence = SKAction.sequence([
-            wait,reset
-        ])
-        self.run(sequence, withKey: "predatorCooldown")
+        // Avoid work if the texture already matches
+        if let tex = existing.texture, tex.description.contains(imageName) {
+            return
+        }
+        
+        let newTexture = SKTexture(imageNamed: imageName)
+        SKTexture.preload([newTexture]) { [weak self] in
+            guard let self = self,
+                  let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+            DispatchQueue.main.async {
+                // Remove any previous temp overlay
+                self.childNode(withName: "userBird_crossfade_temp")?.removeFromParent()
+                
+                // Create an overlay sprite with the new texture, matching the bird's transform
+                let overlay = SKSpriteNode(texture: newTexture)
+                overlay.name = "userBird_crossfade_temp"
+                overlay.position = bird.position
+                overlay.zPosition = bird.zPosition + 1
+                overlay.zRotation = bird.zRotation
+                overlay.anchorPoint = bird.anchorPoint
+                overlay.xScale = bird.xScale
+                overlay.yScale = bird.yScale
+                overlay.alpha = 0
+                self.addChild(overlay)
+                
+                let fadeIn = SKAction.fadeIn(withDuration: duration)
+                let fadeOut = SKAction.fadeOut(withDuration: duration)
+                
+                bird.run(fadeOut, withKey: "crossfadeOut")
+                overlay.run(fadeIn, completion: { [weak self] in
+                    guard let self = self,
+                          let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+                    bird.texture = newTexture
+                    bird.size = newTexture.size()
+                    bird.alpha = 1.0
+                    overlay.removeFromParent()
+                })
+            }
+        }
+    }
     
+    // Returns true if the player is within threshold of any predator node
+    func isPlayerNearAnyPredator(player: SKNode, threshold: CGFloat = 200) -> Bool {
+        for node in children where node.name == predatorMini {
+            let dx = player.position.x - node.position.x
+            let dy = player.position.y - node.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            if distance < threshold {
+                return true
+            }
+        }
+        return false
     }
     
     func nextPredatorSpawnPoint() -> CGPoint {
@@ -715,7 +696,7 @@ extension GameScene {
         let available = (0..<predatorSpawnPoints.count).filter { !occupiedPredatorSpawns.contains($0) && !bannedPredatorSpawns.contains($0) }
         return available.randomElement()
     }
-
+    
     // Spawns a predator at a free spot and marks it occupied.
     @discardableResult
     func spawnPredatorAtAvailableSpot() -> Bool {
@@ -735,7 +716,7 @@ extension GameScene {
         }
         node.removeFromParent()
     }
-
+    
     func closestPredator(to player: SKNode, within threshold: CGFloat) -> SKNode? {
         var closest: SKNode?
         var closestDist = threshold
@@ -788,7 +769,7 @@ extension GameScene {
         spot.name = leaveIslandMini
         addChild(spot)
     }
-
+    
     func setupBuildNestSpot() {
         if self.childNode(withName: buildNestMini) != nil { return }
         let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
@@ -796,7 +777,7 @@ extension GameScene {
         spot.name = buildNestMini
         addChild(spot)
     }
-
+    
     func setupFeedUserBirdSpot() {
         if self.childNode(withName: feedUserBirdMini) != nil { return }
         let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
@@ -804,7 +785,7 @@ extension GameScene {
         spot.name = feedUserBirdMini
         addChild(spot)
     }
-
+    
     func setupFeedBabyBirdSpot() {
         if self.childNode(withName: feedBabyBirdMini) != nil { return }
         let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
@@ -900,5 +881,26 @@ extension GameScene {
         circle.run(scaleAction, withKey: "scaleEase")
         
     }
+    // Dynamically resize the water to fill the camera view, with extra padding to eliminate black edges.
+    func resizeWaterToFillScreen() {
+        guard let view = self.view else { return }
+        
+        let padding: CGFloat = 150.0 // extra buffer to prevent black edges
+        let visibleWidth = view.bounds.width * cameraNode.xScale + padding
+        let visibleHeight = view.bounds.height * cameraNode.yScale + padding
+        
+        for node in children where node.name == "background1" {
+            if let water = node as? SKSpriteNode {
+                water.size = CGSize(
+                    width: max(water.size.width, visibleWidth),
+                    height: max(water.size.height, visibleHeight)
+                )
+                
+                // Center water on camera, plus small offset to ensure coverage
+                water.position = cameraNode.position
+            }
+        }
+    }
+    
 }
 

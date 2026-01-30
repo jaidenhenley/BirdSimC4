@@ -45,16 +45,8 @@ struct MainGameView: View {
                                 .padding([.top, .leading], 20)
                             Spacer()
                         }
-                        Button("Tap") {
-                            viewModel.mainScene?.enterMapNode()
-                        }
-                        .padding()
-                        
-                        Button("Close") {
-                            viewModel.mainScene?.exitMapMode()
-                        }
                         Spacer()
-
+                      
                     }
                 }
                 
@@ -74,6 +66,22 @@ struct MainGameView: View {
                                     .background(Circle().fill(.ultraThinMaterial))
                             }
                             .padding()
+                            
+                            Button() {
+                                if viewModel.isMapMode == false {
+                                    viewModel.mainScene?.enterMapNode()
+                                } else {
+                                    viewModel.mainScene?.exitMapMode()
+                                    
+                                }
+                            } label: {
+                                Image(systemName: "map.fill")
+                                    .font(.largeTitle)
+                                    .padding()
+                                    .background(Circle().fill(.ultraThinMaterial))
+                            }
+                            .padding()
+                            
                         }
                         
                         Spacer()
