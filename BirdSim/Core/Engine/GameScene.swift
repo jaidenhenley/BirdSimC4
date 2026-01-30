@@ -46,13 +46,6 @@ class GameScene: SKScene {
             self.addChild(cameraNode)
             cameraNode.setScale(1.25)
         }
-        if interactionLabel.parent == nil {
-            interactionLabel.fontSize = 24
-            interactionLabel.fontColor = .white
-            interactionLabel.position = CGPoint(x: 0, y: -200)
-            interactionLabel.zPosition = 1000
-            cameraNode.addChild(interactionLabel)
-        }
 
         if !hasInitializedWorld {
             // Preload the background texture
@@ -110,12 +103,13 @@ class GameScene: SKScene {
     
     
     override func update(_ currentTime: TimeInterval) {
-        var currentMessage = ""
         buildNestMiniIsInRange = false
         feedUserBirdMiniIsInRange = false
         feedBabyBirdMiniIsInRange = false
         leaveIslandMiniIsInRange = false
         
+        // Clear the message at the start of the frame so it goes away when out of range
+        viewModel?.currentMessage = ""
         
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
@@ -156,16 +150,16 @@ class GameScene: SKScene {
         if viewModel?.isFlying == false {
             if checkDistance(to: buildNestMini) {
                 buildNestMiniIsInRange = true
-                currentMessage = "Tap to build a nest"
+                viewModel?.currentMessage = "Tap to build a nest"
             } else if checkDistance(to: feedUserBirdMini) {
                 feedUserBirdMiniIsInRange = true
-                currentMessage = "Tap to feed"
+                viewModel?.currentMessage = "Tap to feed"
             } else if checkDistance(to: feedBabyBirdMini) {
                 feedBabyBirdMiniIsInRange = true
-                currentMessage = "Tap to feed baby bird"
+                viewModel?.currentMessage = "Tap to feed baby bird"
             } else if checkDistance(to: leaveIslandMini) {
                 leaveIslandMiniIsInRange = true
-                currentMessage = "Tap to leave island"
+                viewModel?.currentMessage = "Tap to leave island"
                 
             } else {
                 // Check for closest item only if no minigame is in range
@@ -184,12 +178,26 @@ class GameScene: SKScene {
                 }
                 
                 if let item = closestItem {
-                    currentMessage = "Pick up \(item.name?.capitalized ?? "")"
+                    viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "")"
                 }
             }
         }
         
-        interactionLabel.text = currentMessage
+        let message = viewModel?.currentMessage ?? ""
+        interactionLabel.text = message
+        if message.isEmpty {
+            if interactionLabel.alpha != 0 {
+                interactionLabel.removeAction(forKey: "msgFade")
+                let fade = SKAction.fadeOut(withDuration: 0.2)
+                interactionLabel.run(fade, withKey: "msgFade")
+            }
+        } else {
+            if interactionLabel.alpha != 1 {
+                interactionLabel.removeAction(forKey: "msgFade")
+                let fade = SKAction.fadeIn(withDuration: 0.1)
+                interactionLabel.run(fade, withKey: "msgFade")
+            }
+        }
         
         if let delta = viewModel?.pendingScaleDelta, delta != 0 {
             adjustCircleScale(by: delta)
