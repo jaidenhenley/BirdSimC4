@@ -22,8 +22,6 @@ struct MainGameView: View {
             StartGameView(gameStarted: $viewModel.gameStarted, scene: $scene)
         } else if viewModel.showGameOver {
             EndGameView(viewModel: viewModel)
-        } else if viewModel.showGameWin {
-            WinGameView(viewModel: viewModel)
         } else {
             ZStack(alignment: .bottomLeading) {
                 SpriteView(scene: scene)
