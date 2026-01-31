@@ -97,8 +97,38 @@ class GameScene: SKScene {
                 viewModel?.mainScene = self
             }
         }
-
+        viewModel?.onNestSpawned = { [weak self] in
+                // We call this on the main thread to ensure SpriteKit can add the node
+                DispatchQueue.main.async {
+                    self?.spawnSuccessNest()
+                }
+            }
         restoreReturnStateIfNeeded()
+    }
+    func spawnSuccessNest() {
+        let nest = SKSpriteNode(imageNamed: "built_nest") // Make sure you have this image
+        nest.name = "final_nest"
+        nest.size = CGSize(width: 100, height: 100)
+        nest.zPosition = 5 // Above the ground
+        
+        // Pick a random spot within a specific range
+        // Adjust these numbers based on where your island "land" actually is
+        let randomX = CGFloat.random(in: -1000...1000)
+        let randomY = CGFloat.random(in: -1000...1000)
+        nest.position = CGPoint(x: randomX, y: randomY)
+        
+        // Add a little "poof" animation so it doesn't just pop in
+        nest.alpha = 0
+        nest.setScale(0.1)
+        addChild(nest)
+        
+        let appear = SKAction.group([
+            SKAction.fadeIn(withDuration: 1.0),
+            SKAction.scale(to: 1.0, duration: 1.0)
+        ])
+        nest.run(appear)
+        
+        print("Nest spawned at: \(nest.position)")
     }
     
     // Called when leaving this scene.
@@ -190,41 +220,75 @@ class GameScene: SKScene {
         }
 
         // Minigame checks
+        // This usually lives inside the update() function or a dedicated checkProximity() function
         if viewModel?.isFlying == false {
-            if checkDistance(to: buildNestMini) {
-                buildNestMiniIsInRange = true
-                viewModel?.currentMessage = "Tap to build a nest"
-            } else if checkDistance(to: feedUserBirdMini) {
-                feedUserBirdMiniIsInRange = true
-                viewModel?.currentMessage = "Tap to feed"
-            } else if checkDistance(to: feedBabyBirdMini) {
-                feedBabyBirdMiniIsInRange = true
-                viewModel?.currentMessage = "Tap to feed baby bird"
-            } else if checkDistance(to: leaveIslandMini) {
-                leaveIslandMiniIsInRange = true
-                viewModel?.currentMessage = "Tap to leave island"
-            } else {
-                // Check for closest item only if no minigame is in range
-                var closestItem: SKNode?
-                var closestDistance: CGFloat = .greatestFiniteMagnitude
+            
+            // 1. Check if an important alert (like the Failure message) is currently locked on screen
+            if viewModel?.messageIsLocked == false {
+                
+                if checkDistance(to: buildNestMini) {
+                    buildNestMiniIsInRange = true
+                    viewModel?.currentMessage = "Tap to build a nest"
+                    
+                } else if checkDistance(to: feedUserBirdMini) {
+                    feedUserBirdMiniIsInRange = true
+                    viewModel?.currentMessage = "Tap to feed"
+                    
+                } else if checkDistance(to: feedBabyBirdMini) {
+                    feedBabyBirdMiniIsInRange = true
+                    viewModel?.currentMessage = "Tap to feed baby bird"
+                    
+                } else if checkDistance(to: leaveIslandMini) {
+                    leaveIslandMiniIsInRange = true
+                    viewModel?.currentMessage = "Tap to leave island"
+                    
+                } else {
+                    // 2. No Mini-Game spots are nearby, check for items to pick up
+                    var closestItem: SKNode?
+                    var closestDistance: CGFloat = .greatestFiniteMagnitude
 
-                for node in children where node.name == "stick" || node.name == "leaf" || node.name == "spiderweb" {
-                    let dx = player.position.x - node.position.x
-                    let dy = player.position.y - node.position.y
-                    let distance = sqrt(dx * dx + dy * dy)
+                    for node in children where node.name == "stick" || node.name == "leaf" || node.name == "spiderweb" {
+                        let dx = player.position.x - node.position.x
+                        let dy = player.position.y - node.position.y
+                        let distance = sqrt(dx * dx + dy * dy)
 
-                    if distance < 200 && distance < closestDistance {
-                        closestDistance = distance
-                        closestItem = node
+                        if distance < 200 && distance < closestDistance {
+                            closestDistance = distance
+                            closestItem = node
+                        }
+                    }
+
+                    if let item = closestItem {
+                        viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "")"
+                    } else {
+                        // 3. If nothing is nearby at all, clear the message
+                        // This prevents the "Failed" message from being replaced by an empty string
+                        // ONLY if the lock is off.
+                        viewModel?.currentMessage = ""
                     }
                 }
-
-                if let item = closestItem {
-                    viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "")"
-                }
+            }
+        } else {
+            // If the bird starts flying, we usually want to clear proximity messages
+            if viewModel?.messageIsLocked == false {
+                viewModel?.currentMessage = ""
             }
         }
         
+        // Nest game //
+        
+        
+        
+        func clearCollectedItemsFromMap() {
+            // Look for any nodes that match your item names
+            for node in children {
+                if let name = node.name, ["stick", "leaf", "spiderweb"].contains(name) {
+                    // Only remove them if the player has actually "built" with them
+                    // Or just remove all to 'respawn' them later
+                    node.removeFromParent()
+                }
+            }
+        }
         let message = viewModel?.currentMessage ?? ""
         interactionLabel.text = message
         if message.isEmpty {
@@ -916,14 +980,22 @@ extension GameScene {
     
     // Scene transition helpers for minigames.
     func transitionToBuildNestScene() {
-        guard let view = self.view else { return }
-        saveReturnState()
-        let minigameScene = BuildNestScene(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.viewModel = self.viewModel
+        guard let vm = viewModel, let view = self.view else { return }
         
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
+        // Use the ViewModel's logic directly
+        if vm.canStartNestGame {
+            vm.controlsAreVisable = false
+            saveReturnState()
+            
+            let minigameScene = BuildNestScene(size: view.bounds.size)
+            minigameScene.scaleMode = .resizeFill
+            minigameScene.viewModel = vm
+            
+            let transition = SKTransition.fade(withDuration: 0.5)
+            view.presentScene(minigameScene, transition: transition)
+        } else {
+            vm.currentMessage = "Gather 1 stick, 1 leaf, and 1 web first!"
+        }
     }
     
     // Scene transition helpers for minigames.

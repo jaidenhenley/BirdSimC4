@@ -47,7 +47,21 @@ extension MainGameView {
             @Published var isMemorizing: Bool = false
             @Published var currentMessageNestGame: String = ""
             @Published var slots: [String?] = [nil, nil, nil] // Stores item names in specific slots
-        // Add this inside your ViewModel class
+        // Inside ViewModel
+        @Published var messageIsLocked: Bool = false
+        var onNestSpawned: (() -> Void)?
+        
+
+
+        func showPriorityMessage(_ message: String, duration: TimeInterval = 7.0) {
+            self.currentMessage = message
+            self.messageIsLocked = true
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                self.messageIsLocked = false
+            }
+        }
+        
         var canStartNestGame: Bool {
             let sticks = inventory["stick"] ?? 0
             let leaves = inventory["leaf"] ?? 0
@@ -74,7 +88,7 @@ extension MainGameView {
                 
                 if currentAttempt == challengeSequence {
                     print("MATCH FOUND! Transitioning...")
-                    completeChallenge()
+                    completeNestBuild()
                 } else {
                     print("NO MATCH. Try again.")
                     // Optional: Reset slots if they get it wrong
@@ -83,37 +97,37 @@ extension MainGameView {
             }
         }
 
-        private func completeChallenge() {
-            currentMessage = "Perfect!"
+        private func completeNestBuild() {
+            saveWorkItem?.cancel()
+            currentMessage = "Nest Built!"
             
-            // Deduct the items from inventory
-            inventory["stick", default: 0] -= 1
-            inventory["leaf", default: 0] -= 1
-            inventory["spiderweb", default: 0] -= 1
+            // 1. Trigger the spawn signal BEFORE clearing data
+            self.onNestSpawned?()
+
+            self.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
+            self.collectedItems.removeAll()
+            self.slots = [nil, nil, nil]
+            self.playerAttempt.removeAll()
+
+            if let gs = gameState {
+                gs.inventoryStick = 0
+                gs.inventoryLeaf = 0
+                gs.inventorySpiderweb = 0
+                // Important: Save that the nest is built so it persists!
+                // gs.isNestBuilt = true
+            }
             
+            do {
+                try modelContext?.save()
+            } catch {
+                print("Error saving: \(error)")
+            }
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.onChallengeComplete?()
             }
         }
-        // Inside your ViewModel
-        func checkWinCondition() {
-            // 1. Check if all slots are filled (no nil values)
-            let currentAttempt = slots.compactMap { $0 }
-            
-            if currentAttempt.count == 3 {
-                // 2. Compare the arrays
-                if currentAttempt == challengeSequence {
-                    print("Winner!")
-                    // Trigger the transition back after a short delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self.onChallengeComplete?()
-                    }
-                } else {
-                    print("Wrong order, try again!")
-                    // Optional: Reset slots here if you want them to restart
-                }
-            }
-        }
+    
         
         // Inside your ViewModel class
         func startNewChallenge() {
@@ -144,13 +158,36 @@ extension MainGameView {
                     // Optional: restart the flash if they fail
                     startNewChallenge()
                 } else if playerAttempt.count == challengeSequence.count {
-                    completeChallenge()
+                    completeNestBuild()
                 }
             }
         
         var onChallengeComplete: (() -> Void)?
+        
+        // Inside your ViewModel
+        // In your ViewModel class variables
+        var onChallengeFailed: (() -> Void)?
 
+        // Simplified Logic for the Slot-based Nest Game
+        func checkWinCondition() {
+            // 1. Only check if all 3 slots have an item
+            let currentAttempt = slots.compactMap { $0 }
+            guard currentAttempt.count == 3 else { return }
             
+            // 2. Compare the filled slots to the target sequence
+            if currentAttempt == challengeSequence {
+                print("MATCH FOUND! Completing nest...")
+                completeNestBuild()
+            } else {
+                print("NO MATCH. Triggering failure...")
+                // We delay slightly so the player sees the last item land before being kicked out
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.onChallengeFailed?()
+                }
+            }
+        }
+        
+       
         // End Nest Game
         
         

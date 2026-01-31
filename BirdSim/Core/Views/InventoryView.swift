@@ -30,26 +30,30 @@ struct InventoryView: View {
             ScrollView {
                 VStack(spacing: 15) {
                     ForEach(viewModel.inventory.sorted(by: >), id: \.key) { name, count in
-                        HStack {
-                            //Map the name to an custom icon currently an emoji
-                            if name == "stick" {
+                        // ONLY show the row if the count is greater than zero
+                        if count > 0 {
+                            HStack {
+                                // Map the name to a custom icon
+                                if name == "stick" {
                                     Text("🪵")
-                            } else if name == "leaf" {
+                                } else if name == "leaf" {
                                     Text("🍃")
-                            } else if name == "spiderweb" {
+                                } else if name == "spiderweb" {
                                     Text("🕸️")
+                                }
+                                
+                                Text(name.capitalized)
+                                    .font(.body)
+                                
+                                Spacer()
+                                
+                                Text("x\(count)")
+                                    .bold()
                             }
-                        
-                            Text(name.capitalized)
-                                .font(.body)
-                            
-                            Spacer()
-                            
-                            Text("x\(count)")
-                                .bold()
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.1)))
+                            .transition(.scale.combined(with: .opacity)) // Optional: adds a nice pop-out effect
                         }
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.1)))
                     }
                 }
                 .padding()
