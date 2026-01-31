@@ -49,13 +49,12 @@ struct MainGameView: View {
                       
                     }
                 }
-                
-                if viewModel.controlsAreVisable {
+                                    
+                VStack {
                     
-                    VStack {
-                        
-                        HStack {
-                            Spacer()
+                    HStack {
+                        Spacer()
+                        if viewModel.controlsAreVisable {
                             
                             Button{
                                 viewModel.showInventory = true
@@ -66,30 +65,33 @@ struct MainGameView: View {
                                     .background(Circle().fill(.ultraThinMaterial))
                             }
                             .padding()
-                            
-                            Button() {
-                                if viewModel.isMapMode == false {
-                                    viewModel.mainScene?.enterMapNode()
-                                } else {
-                                    viewModel.mainScene?.exitMapMode()
-                                    
-                                }
-                            } label: {
-                                Image(systemName: "map.fill")
-                                    .font(.largeTitle)
-                                    .padding()
-                                    .background(Circle().fill(.ultraThinMaterial))
-                            }
-                            .padding()
-                            
                         }
                         
-                        Spacer()
+                        Button() {
+                            if viewModel.isMapMode == false {
+                                viewModel.mainScene?.enterMapNode()
+                            } else {
+                                viewModel.mainScene?.exitMapMode()
+                                
+                            }
+                        } label: {
+                            Image(systemName: "map.fill")
+                                .font(.largeTitle)
+                                .padding()
+                                .background(Circle().fill(.ultraThinMaterial))
+                        }
+                        .padding()
+                        
+                    }
+                    
+                    Spacer()
+                    if viewModel.controlsAreVisable {
                         
                         HUDControls(viewModel: viewModel)
                             .padding(60)
                     }
                 }
+                
                 
                 if viewModel.showInventory {
                     Color.black.opacity(0.4)
