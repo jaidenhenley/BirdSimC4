@@ -9,36 +9,52 @@ import Foundation
 import GameController
 import SpriteKit
 
+// MARK: - GameScene
+// Main SpriteKit scene for the overworld.
+// Responsible for:
+// - Player movement & camera
+// - Interaction detection
+// - Spawning and managing predators/items
+// - Transitioning into minigames
+// - Syncing transient state with the SwiftUI ViewModel
+
 class GameScene: SKScene {
-    
+
+    // MARK: - ViewModel Bridge
+    // Reference to SwiftUI ViewModel for shared game state & persistence
     weak var viewModel: MainGameView.ViewModel?
-    
+
     let interactionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-    
+
+    // MARK: - Internal State
+    // Local runtime state for timing, cooldowns, and flags
     private var hasInitializedWorld = false
     private var lastUpdateTime: TimeInterval = 0
     private var healthAccumulator: CGFloat = 0
     private var positionPersistAccumulator: CGFloat = 0
     private var lastAppliedIsFlying: Bool = false
-    
+
+    // MARK: - Scene Graph Nodes
+    // Root nodes for world content and UI overlays
     let worldNode = SKNode()
     let overlayNode = SKNode()
-    
+
+    // MARK: - Predator / Minigame Identifiers
     let predatorMini: String = "predatorMini"
     let buildNestMini: String = "buildNestMini"
     let feedUserBirdMini: String = "feedUserBirdMini"
     let feedBabyBirdMini: String = "feedBabyBirdMini"
     let leaveIslandMini: String = "leaveIslandMini"
-    
+
     var buildNestMiniIsInRange: Bool = false
     var feedUserBirdMiniIsInRange: Bool = false
     var feedBabyBirdMiniIsInRange: Bool = false
     var leaveIslandMiniIsInRange: Bool = false
     var predatorHit: Bool = false
     let desiredPredatorCount: Int = 4
-    
+
     private var predatorCooldownEnd: Date?
-    
+
     // Fixed spawn points for predators
     private let predatorSpawnPoints: [CGPoint] = [
         CGPoint(x: 120, y: 150),
@@ -46,16 +62,20 @@ class GameScene: SKScene {
         CGPoint(x: 800, y: -100),
         CGPoint(x: -500, y: -200)
     ]
-    
+
     // Tracks which spawn point indices are currently occupied
     private var occupiedPredatorSpawns: Set<Int> = []
     private var bannedPredatorSpawns: Set<Int> = []
-    
+
+    // MARK: - Input & Camera
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var playerSpeed: CGFloat = 400.0
     var birdImage: String = "Bird_Ground"
-    
+
+    // MARK: - Scene Lifecycle
+    // Called when the scene is first presented.
+    // Sets up camera, loads textures, and initializes world.
     override func didMove(to view: SKView) {
         // Setup camera first
         self.camera = cameraNode
@@ -81,6 +101,8 @@ class GameScene: SKScene {
         restoreReturnStateIfNeeded()
     }
     
+    // Called when leaving this scene.
+    // Persists player & camera positions.
     override func willMove(from view: SKView) {
         // Persist the latest positions before leaving the scene
         if let player = self.childNode(withName: "userBird") {
@@ -90,6 +112,13 @@ class GameScene: SKScene {
         viewModel?.saveState()
     }
 
+    // Main per-frame update loop.
+    // Handles:
+    // - Timers & persistence
+    // - Health drain
+    // - Proximity checks
+    // - Movement & camera follow
+    // - UI message updates
     override func update(_ currentTime: TimeInterval) {
         buildNestMiniIsInRange = false
         feedUserBirdMiniIsInRange = false
@@ -107,6 +136,7 @@ class GameScene: SKScene {
         let deltaTime = min(max(rawDelta, 1.0/120.0), 1.0/30.0)
         lastUpdateTime = currentTime
         
+        // Periodically persist player & camera positions (once per second)
         positionPersistAccumulator += deltaTime
         if positionPersistAccumulator >= 1.0 {
             positionPersistAccumulator = 0
@@ -117,7 +147,7 @@ class GameScene: SKScene {
             viewModel?.saveState()
         }
         
-        // Health drain
+        // Gradual health drain over time (frame-rate independent)
         if var health = viewModel?.health, health > 0 {
             let drainThisFrame = 0.01 * deltaTime
             health = max(0, health - drainThisFrame)
@@ -130,8 +160,8 @@ class GameScene: SKScene {
         
         // Get player once instead of multiple times
         guard let player = self.childNode(withName: "userBird") else { return }
-        
-        // Predator check: find the closest predator within threshold and transition with that specific node
+
+        // Check for nearby predators and trigger minigame
         if !predatorHit, let predator = closestPredator(to: player, within: 200) {
             transitionToPredatorGame(triggeringPredator: predator)
         }
@@ -151,13 +181,14 @@ class GameScene: SKScene {
         }
         
         // Single distance check function to reduce code duplication
+        // Proximity-based interaction messages
         func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
             guard let node = self.childNode(withName: nodeName) else { return false }
             let dx = player.position.x - node.position.x
             let dy = player.position.y - node.position.y
             return sqrt(dx*dx + dy*dy) < threshold
         }
-        
+
         // Minigame checks
         if viewModel?.isFlying == false {
             if checkDistance(to: buildNestMini) {
@@ -172,23 +203,22 @@ class GameScene: SKScene {
             } else if checkDistance(to: leaveIslandMini) {
                 leaveIslandMiniIsInRange = true
                 viewModel?.currentMessage = "Tap to leave island"
-                
             } else {
                 // Check for closest item only if no minigame is in range
                 var closestItem: SKNode?
                 var closestDistance: CGFloat = .greatestFiniteMagnitude
-                
+
                 for node in children where node.name == "stick" || node.name == "leaf" || node.name == "spiderweb" {
                     let dx = player.position.x - node.position.x
                     let dy = player.position.y - node.position.y
                     let distance = sqrt(dx * dx + dy * dy)
-                    
+
                     if distance < 200 && distance < closestDistance {
                         closestDistance = distance
                         closestItem = node
                     }
                 }
-                
+
                 if let item = closestItem {
                     viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "")"
                 }
@@ -223,6 +253,7 @@ class GameScene: SKScene {
             }
         }
         
+        // Core movement + camera systems
         updatePlayerPosition(deltaTime: deltaTime)
         clampPlayerToMap()
         updateCameraFollow(target: player.position, deltaTime: deltaTime)
@@ -230,14 +261,16 @@ class GameScene: SKScene {
         clampCameraToMap()
     }
     
+    // MARK: - Player State
+    // Applies visual & gameplay changes when switching flying/ground modes.
     func applyBirdState(isFlying: Bool) {
         // Adjust movement speed
         playerSpeed = isFlying ? 650.0 : 400.0
         birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground"
-        
+
         // Cross-fade to the new texture
         crossFadeBirdTexture(to: birdImage, duration: 0.15)
-        
+
         // Subtle scale pulse around the target scale
         if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
             let finalScale: CGFloat = isFlying ? 1.1 : 1.0
@@ -249,21 +282,22 @@ class GameScene: SKScene {
         }
     }
 
-    
+    // Moves the player based on joystick or controller input.
+    // Uses normalized vectors and exponential damping for smooth rotation.
     func updatePlayerPosition(deltaTime: CGFloat) {
         guard let player = self.childNode(withName: "userBird") else { return }
         if viewModel?.isMapMode  == true { return }
-        
+
         // Prefer SwiftUI joystick via view model (CGPoint normalized to [-1, 1])
         var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
-        
+
         // Fallback to virtual controller if SwiftUI joystick is idle
         if inputPoint == .zero,
            let xValue = virtualController?.controller?.extendedGamepad?.leftThumbstick.xAxis.value,
            let yValue = virtualController?.controller?.extendedGamepad?.leftThumbstick.yAxis.value {
             inputPoint = CGPoint(x: CGFloat(xValue), y: CGFloat(yValue))
         }
-        
+
         // Convert to vector components and clamp to unit circle
         var dx = inputPoint.x
         var dy = inputPoint.y
@@ -272,11 +306,11 @@ class GameScene: SKScene {
             dx /= mag
             dy /= mag
         }
-        
+
         let velocity = CGVector(dx: dx * playerSpeed, dy: dy * playerSpeed)
         player.position.x += velocity.dx * deltaTime
         player.position.y += velocity.dy * deltaTime
-        
+
         // Smoothly rotate the bird to face movement direction using exponential damping
         let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
         if speed > 0.001 {
@@ -294,6 +328,11 @@ class GameScene: SKScene {
             player.zRotation = current + deltaAngle * rotationFactor
         }
     }
+
+    // MARK: - Input Handling
+    // Handles taps for:
+    // - Picking up items
+    // - Triggering minigames
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         // get location of touch in scene
@@ -373,8 +412,12 @@ class GameScene: SKScene {
     }
 }
 
+// MARK: - World Setup & Utilities
+// All helper methods for spawning, clamping, camera, transitions, etc.
 extension GameScene {
     
+    // Initializes or resets the entire world state.
+    // Spawns background, player, predators, items, and restores save state.
     func initializeGame(resetState: Bool = false) {
         viewModel?.joystickVelocity = .zero
         
@@ -500,6 +543,7 @@ extension GameScene {
         print("Bird tapped a \(name)")
     }
     
+    // Prevents the camera from leaving the map bounds.
     func clampCameraToMap() {
         guard let camera = camera,
               let background = self.childNode(withName: "background") as? SKSpriteNode,
@@ -521,6 +565,7 @@ extension GameScene {
         camera.position = pos
     }
     
+    // Prevents the player from leaving the map bounds.
     func clampPlayerToMap() {
         guard let player = self.childNode(withName: "userBird"),
               let background = self.childNode(withName: "background") as? SKSpriteNode else { return }
@@ -585,6 +630,7 @@ extension GameScene {
         addChild(marker)
     }
     
+    // Smooth camera follow using exponential damping and dead zone.
     func updateCameraFollow(target: CGPoint, deltaTime: CGFloat) {
         // Exponential damping for smooth, frame-rate independent following
         let stiffness: CGFloat = 6.0   // higher = snappier, lower = smoother
@@ -816,6 +862,7 @@ extension GameScene {
     
     
     
+    // Scene transition helpers for minigames.
     func transitionToLeaveIslandMini() {
         guard let view = self.view else { return }
         saveReturnState()
@@ -827,6 +874,7 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
+    // Scene transition helpers for minigames.
     func transitionToPredatorGame(triggeringPredator predator: SKNode) {
         guard let view = self.view else { return }
         saveReturnState()
@@ -850,6 +898,7 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
+    // Scene transition helpers for minigames.
     func transitionToBuildNestScene() {
         guard let view = self.view else { return }
         saveReturnState()
@@ -861,6 +910,7 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
+    // Scene transition helpers for minigames.
     func transitionToFeedUserScene() {
         guard let view = self.view else { return }
         saveReturnState()
@@ -872,6 +922,7 @@ extension GameScene {
         view.presentScene(minigameScene, transition: transition)
     }
     
+    // Scene transition helpers for minigames.
     func transitionToFeedBabyScene() {
         guard let view = self.view else { return }
         saveReturnState()
@@ -900,7 +951,8 @@ extension GameScene {
         circle.run(scaleAction, withKey: "scaleEase")
         
     }
-    // Dynamically resize the water to fill the camera view, with extra padding to eliminate black edges.
+    // Dynamically resizes water background so it always fills the visible camera area.
+    // Prevents black edges when zooming or panning.
     func resizeWaterToFillScreen() {
         guard let view = self.view else { return }
         
