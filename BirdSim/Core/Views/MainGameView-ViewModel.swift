@@ -39,6 +39,123 @@ extension MainGameView {
         private var cancellables = Set<AnyCancellable>()
         private var saveWorkItem: DispatchWorkItem?
         
+        //Matching Nest Game
+        // The items the player MUST match
+            @Published var challengeSequence: [String] = []
+            // The items the player HAS matched so far
+            @Published var playerAttempt: [String] = []
+            @Published var isMemorizing: Bool = false
+            @Published var currentMessageNestGame: String = ""
+            @Published var slots: [String?] = [nil, nil, nil] // Stores item names in specific slots
+        // Add this inside your ViewModel class
+        var canStartNestGame: Bool {
+            let sticks = inventory["stick"] ?? 0
+            let leaves = inventory["leaf"] ?? 0
+            let webs = inventory["spiderweb"] ?? 0
+            
+            return sticks >= 1 && leaves >= 1 && webs >= 1
+        }
+        // Update this in your ViewModel
+        func updateSlot(at index: Int, with itemName: String) {
+            // 1. Standardize the name
+            let cleanName = itemName.lowercased().trimmingCharacters(in: .whitespaces)
+            slots[index] = cleanName
+            
+            // 2. Debugging: Print to the console to see what's happening
+            print("Current Slots: \(slots)")
+            print("Target Sequence: \(challengeSequence)")
+            
+            // 3. Check if all slots are filled
+            let allFilled = slots.allSatisfy { $0 != nil }
+            
+            if allFilled {
+                // Map the [String?] to [String] to ensure a clean comparison
+                let currentAttempt = slots.compactMap { $0 }
+                
+                if currentAttempt == challengeSequence {
+                    print("MATCH FOUND! Transitioning...")
+                    completeChallenge()
+                } else {
+                    print("NO MATCH. Try again.")
+                    // Optional: Reset slots if they get it wrong
+                    // slots = [nil, nil, nil]
+                }
+            }
+        }
+
+        private func completeChallenge() {
+            currentMessage = "Perfect!"
+            
+            // Deduct the items from inventory
+            inventory["stick", default: 0] -= 1
+            inventory["leaf", default: 0] -= 1
+            inventory["spiderweb", default: 0] -= 1
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.onChallengeComplete?()
+            }
+        }
+        // Inside your ViewModel
+        func checkWinCondition() {
+            // 1. Check if all slots are filled (no nil values)
+            let currentAttempt = slots.compactMap { $0 }
+            
+            if currentAttempt.count == 3 {
+                // 2. Compare the arrays
+                if currentAttempt == challengeSequence {
+                    print("Winner!")
+                    // Trigger the transition back after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.onChallengeComplete?()
+                    }
+                } else {
+                    print("Wrong order, try again!")
+                    // Optional: Reset slots here if you want them to restart
+                }
+            }
+        }
+        
+        // Inside your ViewModel class
+        func startNewChallenge() {
+            let possibleItems = ["stick", "leaf", "spiderweb"]
+            
+            // .shuffled() rearranges the original 3 items randomly
+            // This ensures you get one of each, with no duplicates.
+            challengeSequence = possibleItems.shuffled()
+            
+            // Reset state for the new game
+            slots = [nil, nil, nil]
+            playerAttempt = []
+            isMemorizing = true
+            currentMessageNestGame = "Memorize the order!"
+        }
+        
+        func useItemFromInventory(itemName: String) {
+                // Prevent tapping during the "Flash" phase
+                guard !challengeSequence.isEmpty && !isMemorizing else { return }
+                
+                let key = itemName.lowercased()
+                playerAttempt.append(key)
+                
+                let index = playerAttempt.count - 1
+                if playerAttempt[index] != challengeSequence[index] {
+                    currentMessage = "Wrong! Try again."
+                    playerAttempt = []
+                    // Optional: restart the flash if they fail
+                    startNewChallenge()
+                } else if playerAttempt.count == challengeSequence.count {
+                    completeChallenge()
+                }
+            }
+        
+        var onChallengeComplete: (() -> Void)?
+
+            
+        // End Nest Game
+        
+        
+     
+        
         init(context: ModelContext) {
             self.modelContext = context
 
