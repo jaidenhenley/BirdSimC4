@@ -275,8 +275,6 @@ class GameScene: SKScene {
             }
         }
         
-        // Nest game //
-        
         
         
         func clearCollectedItemsFromMap() {
@@ -480,6 +478,71 @@ class GameScene: SKScene {
 // All helper methods for spawning, clamping, camera, transitions, etc.
 extension GameScene {
     
+    // Nest game //
+        
+        func pickupItem(_ node: SKNode) {
+            guard let name = node.name else { return }
+            
+            // 1. Update Inventory
+            viewModel?.collectItem(name)
+            
+            // 2. Start the Respawn Timer
+            scheduleRespawn(for: name)
+            
+            // 3. Visual Feedback
+            let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 0.2)
+            let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+            let remove = SKAction.removeFromParent()
+            
+            node.run(SKAction.sequence([moveUp, fadeOut, remove]))
+        }
+
+    func scheduleRespawn(for itemName: String) {
+        print("⏰ Respawn timer started for: \(itemName). Will appear in 30s.")
+        
+        // Create a sequence of 5-second waits to print progress
+        let segment = SKAction.sequence([
+            SKAction.wait(forDuration: 5.0),
+            SKAction.run { print("... \(itemName) respawning in 25s...") },
+            SKAction.wait(forDuration: 5.0),
+            SKAction.run { print("... \(itemName) respawning in 20s...") },
+            SKAction.wait(forDuration: 10.0),
+            SKAction.run { print("... \(itemName) respawning in 10s...") },
+            SKAction.wait(forDuration: 10.0)
+        ])
+        
+        let spawn = SKAction.run { [weak self] in
+            guard let self = self, let player = self.childNode(withName: "userBird") else { return }
+            
+            // DEBUG: Instead of totally random, spawn it within 500 pixels of the player
+            // so you can actually see it happen!
+            let randomX = player.position.x + CGFloat.random(in: -500...500)
+            let randomY = player.position.y + CGFloat.random(in: -500...500)
+            let spawnPoint = CGPoint(x: randomX, y: randomY)
+            
+            self.spawnItem(at: spawnPoint, type: itemName)
+            
+            
+            print("✅ SUCCESS: \(itemName) respawned at \(spawnPoint)")
+        }
+        
+        self.run(SKAction.sequence([segment, spawn]))
+    }
+
+    // Helper to help you find the respawned item visually
+    func createDebugFlare(at pos: CGPoint) {
+        let circle = SKShapeNode(circleOfRadius: 100)
+        circle.strokeColor = .yellow
+        circle.lineWidth = 5
+        circle.position = pos
+        circle.zPosition = 100
+        addChild(circle)
+        circle.run(SKAction.sequence([SKAction.fadeOut(withDuration: 2.0), SKAction.removeFromParent()]))
+    }
+    
+    
+    // End Nest Game//
+    
     // Initializes or resets the entire world state.
     // Spawns background, player, predators, items, and restores save state.
     func initializeGame(resetState: Bool = false) {
@@ -586,26 +649,7 @@ extension GameScene {
         self.addChild(item)
     }
     
-    func pickupItem(_ node: SKNode) {
-        guard let name = node.name else { return }
-        
-        if viewModel?.collectedItems.contains(name) == true {
-            print("\(name) already collected")
-            return
-        }
-        // Update ViewModel
-        viewModel?.collectItem(name)
-        
-        let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 0.2)
-        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
-        let remove = SKAction.removeFromParent()
-        
-        node.run(SKAction.sequence([
-            moveUp, fadeOut, remove
-        ]))
-        
-        print("Bird tapped a \(name)")
-    }
+    
     
     // Prevents the camera from leaving the map bounds.
     func clampCameraToMap() {
