@@ -36,6 +36,7 @@ class FeedUserScene: SKScene {
                 if let existing = viewModel?.mainScene {
                     viewModel?.joystickVelocity = .zero
                     viewModel?.controlsAreVisable = true
+                    viewModel?.health = 1
                     let transition = SKTransition.crossFade(withDuration: 0.5)
                     view.presentScene(existing, transition: transition)
                 } else {
@@ -44,6 +45,7 @@ class FeedUserScene: SKScene {
                     mapScene.viewModel = self.viewModel
                     viewModel?.joystickVelocity = .zero
                     viewModel?.controlsAreVisable = true
+                    viewModel?.health = 1
                     let transition = SKTransition.crossFade(withDuration: 0.5)
                     view.presentScene(mapScene, transition: transition)
                 }

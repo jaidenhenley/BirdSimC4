@@ -595,6 +595,7 @@ extension GameScene {
     
     func enterMapNode() {
         viewModel?.isMapMode = true
+        viewModel?.controlsAreVisable = false
         
         guard let background = childNode(withName: "background") else { return }
         // center camera on map
@@ -607,6 +608,7 @@ extension GameScene {
     
     func exitMapMode() {
         viewModel?.isMapMode = false
+        viewModel?.controlsAreVisable = true
         
         // Remove marker
         childNode(withName: "mapMarker")?.removeFromParent()
