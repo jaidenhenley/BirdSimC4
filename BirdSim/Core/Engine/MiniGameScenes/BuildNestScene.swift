@@ -15,14 +15,21 @@ class BuildNestScene: SKScene {
     // This connects the ViewModel's success to the Scene's transition
     // Inside BuildNestScene.swift
     override func didMove(to view: SKView) {
-        // This tells the scene: "When the VM says we're done, run exitMiniGame"
+        // Success path
         viewModel?.onChallengeComplete = { [weak self] in
             self?.exitMiniGame()
+        }
+        
+        // Failure path
+        viewModel?.onChallengeFailed = { [weak self] in
+            self?.handleFailure()
         }
         
         setupGame()
         showMemorizationPhase()
     }
+
+    
    
     
     func exitMiniGame() {
@@ -55,6 +62,7 @@ class BuildNestScene: SKScene {
         
         viewModel?.startNewChallenge()
     }
+    
     
     // --- 2. THE MEMORIZATION PHASE ---
     func showMemorizationPhase() {
@@ -160,5 +168,37 @@ class BuildNestScene: SKScene {
         }
         
         self.draggedNode = nil
+    }
+    
+    func handleFailure() {
+        // 1. Visual feedback (Flash & Shake)
+        let flash = SKSpriteNode(color: .red, size: self.size)
+        flash.position = CGPoint(x: frame.midX, y: frame.midY)
+        flash.alpha = 0
+        flash.zPosition = 100
+        addChild(flash)
+        
+        let group = SKAction.group([
+            SKAction.fadeAlpha(to: 0.5, duration: 0.1),
+            SKAction.sequence([
+                SKAction.moveBy(x: -15, y: 0, duration: 0.05),
+                SKAction.moveBy(x: 30, y: 0, duration: 0.05),
+                SKAction.moveBy(x: -15, y: 0, duration: 0.05)
+            ])
+        ])
+        
+        run(SKAction.sequence([group, SKAction.fadeOut(withDuration: 0.2), SKAction.removeFromParent()])) { [weak self] in
+            // 1. Reset the slots first
+            self?.viewModel?.slots = [nil, nil, nil]
+            
+            // 2. Exit the minigame scene
+            self?.exitMiniGame()
+            
+            // 3. IMPORTANT: Use a tiny delay to ensure the Main Scene has finished
+            // its 'didMove' logic before we push the failure message.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self?.viewModel?.currentMessage = "Incorrect order! You failed to build the nest."
+            }
+        }
     }
 }
