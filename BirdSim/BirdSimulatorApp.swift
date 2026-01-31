@@ -14,7 +14,7 @@ struct BirdSimulatorApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: [GameState.self, InventoryItem.self])
+            container = try ModelContainer(for: GameState.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -22,7 +22,7 @@ struct BirdSimulatorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainGameView(viewModel: MainGameView.ViewModel(modelContext: container.mainContext))
+            MainGameView(viewModel: MainGameView.ViewModel(context: container.mainContext))
                 .statusBarHidden(true)
         }
         .modelContainer(container)

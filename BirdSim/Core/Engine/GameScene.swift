@@ -18,6 +18,7 @@ class GameScene: SKScene {
     private var hasInitializedWorld = false
     private var lastUpdateTime: TimeInterval = 0
     private var healthAccumulator: CGFloat = 0
+    private var positionPersistAccumulator: CGFloat = 0
     private var lastAppliedIsFlying: Bool = false
     
     let worldNode = SKNode()
@@ -68,7 +69,7 @@ class GameScene: SKScene {
             let backgroundTexture = SKTexture(imageNamed: "map_land")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
-                    self?.initializeGame()
+                    self?.initializeGame(resetState: false)
                 }
             }
         } else {
@@ -80,7 +81,14 @@ class GameScene: SKScene {
         restoreReturnStateIfNeeded()
     }
     
-   
+    override func willMove(from view: SKView) {
+        // Persist the latest positions before leaving the scene
+        if let player = self.childNode(withName: "userBird") {
+            viewModel?.savedPlayerPosition = player.position
+        }
+        viewModel?.savedCameraPosition = cameraNode.position
+        viewModel?.saveState()
+    }
 
     override func update(_ currentTime: TimeInterval) {
         buildNestMiniIsInRange = false
@@ -98,6 +106,16 @@ class GameScene: SKScene {
         let rawDelta: CGFloat = CGFloat(currentTime - lastUpdateTime)
         let deltaTime = min(max(rawDelta, 1.0/120.0), 1.0/30.0)
         lastUpdateTime = currentTime
+        
+        positionPersistAccumulator += deltaTime
+        if positionPersistAccumulator >= 1.0 {
+            positionPersistAccumulator = 0
+            if let player = self.childNode(withName: "userBird") {
+                viewModel?.savedPlayerPosition = player.position
+            }
+            viewModel?.savedCameraPosition = cameraNode.position
+            viewModel?.saveState()
+        }
         
         // Health drain
         if var health = viewModel?.health, health > 0 {
@@ -357,20 +375,19 @@ class GameScene: SKScene {
 
 extension GameScene {
     
-    func initializeGame() {
+    func initializeGame(resetState: Bool = false) {
         viewModel?.joystickVelocity = .zero
         
-        viewModel?.showGameWin = false
-        viewModel?.savedCameraPosition = nil
-        viewModel?.savedPlayerPosition = nil
-        viewModel?.health = 1
-        viewModel?.isFlying = false
+        if resetState {
+            viewModel?.showGameWin = false
+            viewModel?.savedCameraPosition = nil
+            viewModel?.savedPlayerPosition = nil
+            viewModel?.health = 1
+            viewModel?.isFlying = false
+            viewModel?.gameStarted = true
+        }
         
         self.removeAllChildren()
-        
-        viewModel?.gameStarted = true
-        
-        self.removeAllActions()
         
         setupBackground()
         setupUserBird()
@@ -401,6 +418,7 @@ extension GameScene {
         hasInitializedWorld = true
         
         viewModel?.mainScene = self
+        restoreReturnStateIfNeeded()
     }
     func setupBackground() {
         // Remove existing background

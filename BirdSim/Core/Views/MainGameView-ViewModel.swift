@@ -18,85 +18,93 @@ extension MainGameView {
     class ViewModel: ObservableObject {
         @Published var joystickVelocity: CGPoint = .zero
         @Published var pendingScaleDelta: CGFloat = 0
-        @Published var isFlying: Bool = false {
-            didSet { scheduleSave() }
-        }
-        @Published var controlsAreVisable: Bool = true {
-            didSet { scheduleSave() }
-        }
-        @Published var savedPlayerPosition: CGPoint? { didSet { scheduleSave() } }
-        @Published var savedCameraPosition: CGPoint? { didSet { scheduleSave() } }
+        @Published var isFlying: Bool = false
+        @Published var controlsAreVisable: Bool = true
+        @Published var savedPlayerPosition: CGPoint?
+        @Published var savedCameraPosition: CGPoint?
         @Published var isMapMode: Bool = false
         @Published var mainScene: GameScene?
-        @Published var health: CGFloat = 1 { didSet { scheduleSave() } }
+        @Published var health: CGFloat = 1
         @Published var showInventory: Bool = false
-        @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0] { didSet { scheduleSave() } }
+        @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
-        @Published var gameStarted: Bool = false { didSet { scheduleSave() } }
-        @Published var showGameOver: Bool = false { didSet { scheduleSave() } }
-        @Published var showGameWin: Bool = false { didSet { scheduleSave() } }
+        @Published var gameStarted: Bool = false
+        @Published var showGameOver: Bool = false
+        @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
         
         // SwiftData context & model
-        private let modelContext: ModelContext
+        private var modelContext: ModelContext?
         private var gameState: GameState?
         private var cancellables = Set<AnyCancellable>()
         private var saveWorkItem: DispatchWorkItem?
         
         init(context: ModelContext) {
             self.modelContext = context
-            // Load or create GameState
-            if let existing = (try? modelContext.fetch(FetchDescriptor<GameState>()))?.first {
+
+            if let existing = try? context.fetch(FetchDescriptor<GameState>()).first {
                 self.gameState = existing
-                mapFromModel(existing)
             } else {
                 let gs = GameState()
-                modelContext.insert(gs)
+                context.insert(gs)
                 self.gameState = gs
-                try? modelContext.save()
+                try? context.save()
             }
 
-            // Observe some properties and debounce saves
-            $health
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $isFlying
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $savedPlayerPosition
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $savedCameraPosition
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $inventory
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $gameStarted
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $controlsAreVisable
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            $showGameOver
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
+            if let gs = gameState {
+                mapFromModel(gs)
+            }
+
+            bindAutoSave()
         }
         
         /// Convenience initializer for previews and legacy code paths that call `ViewModel()`.
         /// Creates an ephemeral ModelContainer and uses its mainContext.
         convenience init() {
-            do {
-                let container = try ModelContainer(for: [GameState.self])
-                self.init(context: container.mainContext)
-            } catch {
-                fatalError("Failed to create ModelContainer in ViewModel convenience init: \(error)")
-            }
+            let container = try! ModelContainer(for: GameState.self)
+            self.init(context: container.mainContext)
+        }
+        
+        private func bindAutoSave() {
+            $health
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $isFlying
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $savedPlayerPosition
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $savedCameraPosition
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $inventory
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $gameStarted
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $controlsAreVisable
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $showGameOver
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+
+            $showGameWin
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
         }
 
         deinit {
             saveWorkItem?.cancel()
-            try? modelContext.save()
         }
         
         private func mapFromModel(_ m: GameState) {
@@ -146,7 +154,7 @@ extension MainGameView {
         func saveState() {
             mapToModel()
             do {
-                try modelContext.save()
+                try modelContext?.save()
             } catch {
                 print("Failed to save game state:\(error)")
             }
@@ -162,6 +170,13 @@ extension MainGameView {
             
             scheduleSave()
             }
+        
+        func attach(gameState: GameState, context: ModelContext) {
+            self.modelContext = context
+            self.gameState = gameState
+            mapFromModel(gameState)
+            bindAutoSave()
+        }
         
     }
     
