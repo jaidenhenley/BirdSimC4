@@ -9,45 +9,156 @@ import SpriteKit
 
 class BuildNestScene: SKScene {
     var viewModel: MainGameView.ViewModel?
+    var draggedNode: SKSpriteNode?
+    var originalPosition: CGPoint?
     
+    // This connects the ViewModel's success to the Scene's transition
+    // Inside BuildNestScene.swift
     override func didMove(to view: SKView) {
-        backgroundColor = .blue
+        // This tells the scene: "When the VM says we're done, run exitMiniGame"
+        viewModel?.onChallengeComplete = { [weak self] in
+            self?.exitMiniGame()
+        }
         
-        let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
-        backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-        backLabel.fontColor = .white
-        backLabel.fontSize = 28
-        backLabel.name = "Back Button"
-        backLabel.zPosition = 10
-        addChild(backLabel)
-
+        setupGame()
+        showMemorizationPhase()
+    }
+   
+    
+    func exitMiniGame() {
+        // Ensure all buttons are visible for the next session
+            let items = ["stick", "leaf", "spiderweb"]
+            for name in items {
+                self.childNode(withName: name)?.isHidden = false
+            }
+        guard let view = self.view, let mainScene = viewModel?.mainScene else { return }
+        
+        // Bring back the main game buttons/joystick
+        viewModel?.controlsAreVisable = true
+        
+        let transition = SKTransition.doorsOpenHorizontal(withDuration: 0.5)
+        view.presentScene(mainScene, transition: transition)
     }
     
+    // --- 1. SETUP THE INITIAL VIEW ---
+    func setupGame() {
+        backgroundColor = .systemBlue
+        
+        let backLabel = SKLabelNode(text: "EXIT MINI-GAME")
+        backLabel.position = CGPoint(x: frame.midX - 100, y: 100) // Moved slightly left
+        backLabel.fontName = "AvenirNext-Bold"
+        backLabel.fontSize = 20
+        backLabel.name = "Back Button"
+        addChild(backLabel)
+        
+        
+        
+        viewModel?.startNewChallenge()
+    }
+    
+    // --- 2. THE MEMORIZATION PHASE ---
+    func showMemorizationPhase() {
+        guard let sequence = viewModel?.challengeSequence else { return }
+        
+        // Create a container so we can delete everything at once
+        let hintContainer = SKNode()
+        hintContainer.name = "HintContainer"
+        addChild(hintContainer)
+        
+        for (index, itemName) in sequence.enumerated() {
+            let hint = SKSpriteNode(imageNamed: itemName)
+            hint.size = CGSize(width: 80, height: 80)
+            // Positioned ABOVE the slots
+            hint.position = CGPoint(x: frame.midX + CGFloat(index - 1) * 110, y: frame.midY + 150)
+            hintContainer.addChild(hint)
+        }
+        
+        // The "Disappearing" Logic
+        let wait = SKAction.wait(forDuration: 3.0)
+        let removeHints = SKAction.run { [weak self] in
+            // This clears the 3 images above the slots
+            hintContainer.removeFromParent()
+            // NOW show the slots and draggables
+            self?.setupBuildingPhase()
+        }
+        
+        run(SKAction.sequence([wait, removeHints]))
+    }
+    
+    // --- 3. THE BUILDING PHASE ---
+    func setupBuildingPhase() {
+        // 1. The 3 Empty Slots (These Stay)
+        for i in 0..<3 {
+            let slot = SKShapeNode(rectOf: CGSize(width: 90, height: 90))
+            slot.name = "slot_\(i)"
+            slot.position = CGPoint(x: frame.midX + CGFloat(i - 1) * 110, y: frame.midY)
+            slot.strokeColor = .white
+            slot.fillColor = .clear // NO yellow circle
+            addChild(slot)
+        }
+        
+        // 2. The 3 Draggable Items at the bottom (These Stay)
+        let items = ["stick", "leaf", "spiderweb"]
+        for (index, name) in items.enumerated() {
+            let draggable = SKSpriteNode(imageNamed: name)
+            draggable.name = name
+            draggable.size = CGSize(width: 70, height: 70)
+            // Positioned at the BOTTOM of the screen
+            draggable.position = CGPoint(x: frame.midX + CGFloat(index - 1) * 110, y: 200)
+            draggable.zPosition = 10
+            addChild(draggable)
+        }
+    }
+    
+    // --- 4. TOUCH CONTROLS ---
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        //add logic to go back to the map scene
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
-        let touchedNodes = nodes(at: location)
+        let node = atPoint(location)
         
-        for node in touchedNodes {
-            if node.name == "Back Button" {
-                guard let view = self.view else { return }
-                // Reuse the existing main scene if available, otherwise create and register one
-                if let existing = viewModel?.mainScene {
-                    viewModel?.joystickVelocity = .zero
-                    viewModel?.controlsAreVisable = true
-                    let transition = SKTransition.crossFade(withDuration: 0.5)
-                    view.presentScene(existing, transition: transition)
-                } else {
-                    let mapScene = GameScene(size: view.bounds.size)
-                    mapScene.scaleMode = .resizeFill
-                    mapScene.viewModel = self.viewModel
-                    viewModel?.joystickVelocity = .zero
-                    viewModel?.controlsAreVisable = true
-                    let transition = SKTransition.crossFade(withDuration: 0.5)
-                    view.presentScene(mapScene, transition: transition)
-                }
-            }
+        if node.name == "Back Button" {
+            exitMiniGame()
+        } else if ["stick", "leaf", "spiderweb"].contains(node.name) {
+            draggedNode = node as? SKSpriteNode
+            originalPosition = node.position
         }
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first, let draggedNode = draggedNode else { return }
+        draggedNode.position = touch.location(in: self)
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let draggedNode = draggedNode, let original = originalPosition else { return }
+        let nodesAtLocation = nodes(at: draggedNode.position)
+        
+        if let slot = nodesAtLocation.first(where: { $0.name?.contains("slot") == true }),
+           let slotName = slot.name,
+           let index = Int(slotName.split(separator: "_").last!) {
+            
+            // 1. Place the visual item in the slot
+            let placedItem = SKSpriteNode(imageNamed: draggedNode.name!)
+            placedItem.size = CGSize(width: 80, height: 80)
+            placedItem.position = slot.position
+            placedItem.name = "placed_item"
+            // Store the name of the source button so we can find it later to reset
+            placedItem.userData = ["sourceButton": draggedNode.name!]
+            addChild(placedItem)
+            
+            // 2. HIDE the original draggable button at the bottom
+            draggedNode.isHidden = true // This makes it disappear from the dock
+            draggedNode.position = original
+            
+            // 3. Update data and check win
+            viewModel?.slots[index] = draggedNode.name
+            viewModel?.checkWinCondition()
+            
+        } else {
+            // If they missed the slot, move it back and keep it visible
+            draggedNode.run(SKAction.move(to: original, duration: 0.2))
+        }
+        
+        self.draggedNode = nil
     }
 }
