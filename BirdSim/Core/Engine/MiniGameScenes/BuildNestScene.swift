@@ -33,16 +33,26 @@ class BuildNestScene: SKScene {
    
     
     func exitMiniGame() {
-        // Ensure all buttons are visible for the next session
-            let items = ["stick", "leaf", "spiderweb"]
-            for name in items {
-                self.childNode(withName: name)?.isHidden = false
-            }
+        // 1. Reset the draggable items visibility for the next time the game opens
+        let items = ["stick", "leaf", "spiderweb"]
+        for name in items {
+            self.childNode(withName: name)?.isHidden = false
+        }
+        
         guard let view = self.view, let mainScene = viewModel?.mainScene else { return }
         
-        // Bring back the main game buttons/joystick
-        viewModel?.controlsAreVisable = true
+        // 2. ONLY trigger mating if the nest is complete (3 items placed)
+        let filledSlots = viewModel?.slots.compactMap { $0 }.count ?? 0
+        if filledSlots == 3 {
+            // Success path: Trigger the CPU bird spawn
+            viewModel?.startMatingPhase()
+        } else {
+            // Manual exit path: Just show a message
+            viewModel?.currentMessage = "Nest building paused."
+        }
         
+        // 3. Return to the main world
+        viewModel?.controlsAreVisable = true
         let transition = SKTransition.doorsOpenHorizontal(withDuration: 0.5)
         view.presentScene(mainScene, transition: transition)
     }

@@ -37,6 +37,19 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         setupBackButton()
     }
     
+    func didBegin(_ contact: SKPhysicsContact) {
+        guard !isSceneTransitioning else { return }
+        
+        // Find the body that ISN'T the item
+        let otherBody = (contact.bodyA.categoryBitMask == itemCategory) ? contact.bodyB : contact.bodyA
+        
+        // Only win if it touches the bottom plate, not the side walls
+        if otherBody.categoryBitMask == bucketCategory {
+            // Optional: Check if the item's Y position is higher than the bottom's Y position
+            handleGameOver(success: true)
+        }
+    }
+    
     // --- MONITOR FALLING ---
     override func update(_ currentTime: TimeInterval) {
         guard let item = item, !isSceneTransitioning else { return }
@@ -78,14 +91,8 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         addChild(container)
     }
     
-    func didBegin(_ contact: SKPhysicsContact) {
-        guard !isSceneTransitioning else { return }
-        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
-        
-        if contactMask == (itemCategory | bucketCategory) {
-            handleGameOver(success: true)
-        }
-    }
+
+    
     
     // Combined Win/Fail handler
     func handleGameOver(success: Bool) {
