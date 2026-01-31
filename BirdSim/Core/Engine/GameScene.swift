@@ -747,15 +747,18 @@ extension GameScene {
         return false
     }
     
-    func nextPredatorSpawnPoint() -> CGPoint {
-        let randomPoints: [CGPoint] = [
-            CGPoint(x: 120, y: 150),
-            CGPoint(x: -300, y: 200),
-            CGPoint(x: 800, y: -100),
-            CGPoint(x: -500, y: -200)
-        ]
-        
-        return randomPoints.randomElement() ?? CGPoint(x: 120, y: 150)
+    func createRandomPredatorSpawn() -> CGPoint {
+        guard let background = self.childNode(withName: "background") as? SKSpriteNode else {
+            return .zero
+        }
+
+        let halfWidth = background.size.width / 2
+        let halfHeight = background.size.height / 2
+
+        let randomX = CGFloat.random(in: -halfWidth...halfWidth)
+        let randomY = CGFloat.random(in: -halfHeight...halfHeight)
+
+        return CGPoint(x: randomX, y: randomY)
     }
     
     // Returns a random free spawn index, or nil if all are occupied or banned
@@ -766,9 +769,20 @@ extension GameScene {
     
     // Spawns a predator at a free spot and marks it occupied.
     @discardableResult
+    
+    
     func spawnPredatorAtAvailableSpot() -> Bool {
-        guard let index = nextAvailablePredatorSpawnIndex() else { return false }
-        let position = predatorSpawnPoints[index]
+        guard let index = nextAvailablePredatorSpawnIndex(),
+              let background = self.childNode(withName: "background") as? SKSpriteNode else { return false }
+
+        // Compute random point inside map bounds
+        let halfWidth = background.size.width / 2
+        let halfHeight = background.size.height / 2
+
+        let randomX = CGFloat.random(in: -halfWidth...halfWidth)
+        let randomY = CGFloat.random(in: -halfHeight...halfHeight)
+        let position = CGPoint(x: randomX, y: randomY)
+
         occupiedPredatorSpawns.insert(index)
         setupPredator(at: position, spawnIndex: index)
         return true
