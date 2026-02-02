@@ -556,6 +556,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             // Optional: brief feedback
             viewModel?.currentMessage = "Picked up \(itemName.capitalized)"
+            scheduleRespawn(for: node.name!)
             print("Successfully added \(itemName) to collected items.")
         }
 
