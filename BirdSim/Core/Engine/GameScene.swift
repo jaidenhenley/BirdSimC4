@@ -549,6 +549,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             // Drive inventory UI from collectedItems via the ViewModel helper
             // This also persists and optionally updates counts if you still track them
+            if viewModel?.collectedItems.contains(itemName) == true {
+                viewModel?.currentMessage = " You already have \(itemName)"
+                return
+            }
+            
             viewModel?.collectItem(itemName)
 
             // Remove the item from the world
