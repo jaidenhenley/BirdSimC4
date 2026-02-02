@@ -28,6 +28,10 @@ struct PhysicsCategory {
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
 
+    // MARK: - Defaults
+    private let defaultPlayerStartPosition = CGPoint(x: 800, y: -400)
+    private let defaultCameraScale: CGFloat = 1.25
+
     // MARK: - ViewModel Bridge
     // Reference to SwiftUI ViewModel for shared game state & persistence
     weak var viewModel: MainGameView.ViewModel?
@@ -543,10 +547,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // MARK: - Helper Functions
         func pickupItem(_ node: SKNode) {
-            guard let itemName = node.name else { return }
-            viewModel?.collectedItems.insert(itemName)
+            guard let rawName = node.name else { return }
+            // Standardize to lowercase so set membership is consistent
+            let itemName = rawName.lowercased()
+
+            // Drive inventory UI from collectedItems via the ViewModel helper
+            // This also persists and optionally updates counts if you still track them
+            if viewModel?.collectedItems.contains(itemName) == true {
+                viewModel?.currentMessage = " You already have \(itemName)"
+                return
+            }
+            
+            viewModel?.collectItem(itemName)
+
+            // Remove the item from the world
             node.removeFromParent()
-            print("Successfully added \(itemName) to inventory.")
+
+            // Optional: brief feedback
+            viewModel?.currentMessage = "Picked up \(itemName.capitalized)"
+            scheduleRespawn(for: node.name!)
+            print("Successfully added \(itemName) to collected items.")
         }
 
         // Add any missing transition functions below this line
@@ -682,6 +702,9 @@ extension GameScene {
             viewModel?.health = 1
             viewModel?.isFlying = false
             viewModel?.gameStarted = true
+            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
+            viewModel?.collectedItems.removeAll()
+            viewModel?.savedPlayerPosition = nil
         }
         
         self.removeAllChildren()
@@ -711,11 +734,27 @@ extension GameScene {
         
         
         spawnItem(at: CGPoint(x: 900, y: 900), type: "tree1")
+
+        // If we're resetting, force the player + camera back to defaults and
+        // overwrite any previously persisted return state.
+        if resetState {
+            if let player = self.childNode(withName: "userBird") {
+                player.position = defaultPlayerStartPosition
+            }
+            cameraNode.position = defaultPlayerStartPosition
+            cameraNode.setScale(defaultCameraScale)
+
+            viewModel?.savedPlayerPosition = defaultPlayerStartPosition
+            viewModel?.savedCameraPosition = defaultPlayerStartPosition
+        }
         
         hasInitializedWorld = true
         
         viewModel?.mainScene = self
-        restoreReturnStateIfNeeded()
+        // Only restore persisted positions when NOT doing a full reset.
+        if !resetState {
+            restoreReturnStateIfNeeded()
+        }
     }
     func setupBackground() {
         // Remove existing background
@@ -904,6 +943,7 @@ extension GameScene {
             cameraNode.position = camPos
         } else if let player = self.childNode(withName: "userBird") {
             cameraNode.position = player.position
+            cameraNode.setScale(defaultCameraScale)
         }
     }
     
@@ -911,7 +951,7 @@ extension GameScene {
         if self.childNode(withName: "userBird") != nil { return }
         
         let player = SKSpriteNode(imageNamed: birdImage)
-        player.position = CGPoint(x: 800, y: -400)
+        player.position = defaultPlayerStartPosition
         player.zPosition = 10
         player.name = "userBird"
         
