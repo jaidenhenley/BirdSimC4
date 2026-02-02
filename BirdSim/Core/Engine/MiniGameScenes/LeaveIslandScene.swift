@@ -54,6 +54,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.physicsBody?.categoryBitMask = 1
         bird.physicsBody?.contactTestBitMask = 1
         bird.physicsBody?.collisionBitMask = 2
+        bird.name = "playerBird"
         addChild(bird)
     }
     
@@ -113,5 +114,18 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     func userHasWon() {
         gameWin()
     }
+    
+    
 
+    override func update(_ currentTime: TimeInterval) {
+        // If bird falls below bottom of screen → game over
+        if bird.position.y < frame.minY {
+            gameOver()
+        }
+
+        // (Optional) If bird goes too high → also game over
+        if bird.position.y > frame.maxY {
+            gameOver()
+        }
+    }
 }
