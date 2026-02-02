@@ -1,0 +1,41 @@
+//
+//  MainMenuView.swift
+//  BirdSim
+//
+//  Created by Jaiden Henley on 1/27/26.
+//  Updated to main menu entry point on 2/2/26.
+//
+
+import SwiftUI
+import SwiftData
+
+struct MainMenuView: View {
+    let container: ModelContainer
+    let onStartNewGame: () -> Void
+    let onResumeGame: () -> Void
+    
+    var hasSavedGame: Bool {
+        (try? container.mainContext.fetch(FetchDescriptor<GameState>()).isEmpty == false) ?? false
+    }
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Button("Start New Game", action: onStartNewGame)
+                .buttonStyle(.borderedProminent)
+                .font(.title2.bold())
+                .padding(.horizontal, 40)
+            Button("Resume Game", action: onResumeGame)
+                .buttonStyle(.bordered)
+                .font(.title2)
+                .padding(.horizontal, 40)
+                .disabled(!hasSavedGame)
+        }
+        .padding(40)
+        .background(.thinMaterial)
+        .cornerRadius(20)
+        .shadow(radius: 10)
+        .frame(maxWidth: 400)
+        .frame(maxHeight: .infinity)
+        .ignoresSafeArea(edges: .all)
+    }
+}

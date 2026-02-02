@@ -9,6 +9,7 @@ import SwiftUI
 
 struct EndGameView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
+    let onExit: () -> Void
 
     var body: some View {
         ZStack {
@@ -20,12 +21,14 @@ struct EndGameView: View {
                     .foregroundStyle(.white)
 
                 Button("Back to Start") {
-                    withAnimation {
-                        viewModel.mainScene = nil
-                        viewModel.showGameOver = false
-                        viewModel.gameStarted = false
-                        viewModel.controlsAreVisable = true
-                    }
+                    
+                    onExit()
+//                    withAnimation {
+//                        viewModel.mainScene = nil
+//                        viewModel.showGameOver = false
+//                        viewModel.gameStarted = false
+//                        viewModel.controlsAreVisable = true
+//                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
@@ -34,8 +37,4 @@ struct EndGameView: View {
             .padding()
         }
     }
-}
-
-#Preview {
-    EndGameView(viewModel: MainGameView.ViewModel())
 }
