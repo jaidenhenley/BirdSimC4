@@ -39,7 +39,26 @@ extension MainGameView {
         private var cancellables = Set<AnyCancellable>()
         private var saveWorkItem: DispatchWorkItem?
         
+        // babybirdnestgame//
+        // Add these inside class ViewModel, near your other @Published vars
+        @Published var hasFoundMale: Bool = false
+        @Published var hasPlayedBabyGame: Bool = false
+        @Published var isBabyReadyToGrow: Bool = false
+        enum GameStage {
+            case gathering    // Collecting stick, leaf, web
+            case building    // Playing the nest minigame
+            case findingMale // Nest is done, looking for the male bird
+            case raisingBaby // Baby is in the nest, timer is running
+        }
+
+        // In your ViewModel:
+        var currentStage: GameStage = .gathering
+        
+        //end baby bird game//
+        
         //Matching Nest Game
+        
+        
         // The items the player MUST match
             @Published var challengeSequence: [String] = []
             // The items the player HAS matched so far
@@ -50,6 +69,22 @@ extension MainGameView {
         // Inside ViewModel
         @Published var messageIsLocked: Bool = false
         var onNestSpawned: (() -> Void)?
+        @Published var hasNest: Bool = false
+        @Published var babyRaisingProgress: Double = 0.0 // 0.0 to 1.0 (1.0 = 2 minutes)
+        @Published var isRaisingBaby: Bool = false
+
+        func startFeedingTimer() {
+            isRaisingBaby = true
+            // We increment this in the background or during the mini-game
+        }
+            
+            func startMatingPhase() {
+                self.hasNest = true
+                self.currentMessage = "Nest Complete! Find a male bird to start your family."
+                
+                // This reaches into the main GameScene to drop the CPU bird
+                self.mainScene?.spawnMaleBird()
+            }
         
 
 
@@ -99,21 +134,28 @@ extension MainGameView {
 
         private func completeNestBuild() {
             saveWorkItem?.cancel()
+            
+            // 1. UI Feedback
             currentMessage = "Nest Built!"
             
-            // 1. Trigger the spawn signal BEFORE clearing data
+            // 2. Trigger the physical nest to appear on the GameScene map
             self.onNestSpawned?()
+            
+            // 3. START THE MATING PHASE (This spawns the Male Bird)
+            self.startMatingPhase()
 
+            // 4. Reset temporary game data
             self.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
             self.collectedItems.removeAll()
             self.slots = [nil, nil, nil]
             self.playerAttempt.removeAll()
 
+            // 5. Update Persistent Storage (SwiftData)
             if let gs = gameState {
                 gs.inventoryStick = 0
                 gs.inventoryLeaf = 0
                 gs.inventorySpiderweb = 0
-                // Important: Save that the nest is built so it persists!
+                // Ensure your GameState model has this property to remember the progress
                 // gs.isNestBuilt = true
             }
             
@@ -123,8 +165,14 @@ extension MainGameView {
                 print("Error saving: \(error)")
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // 6. Return to the Main Map
+            // We wait 1.5 seconds so the player can actually read the "Nest Built!" message
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                // This tells the BuildNestScene to transition back to GameScene
                 self.onChallengeComplete?()
+                
+                // Ensure controls (joystick/buttons) come back
+                self.controlsAreVisable = true
             }
         }
     
