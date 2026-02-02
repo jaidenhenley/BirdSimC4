@@ -6,24 +6,38 @@
 //
 
 import SpriteKit
+import SwiftData
 import SwiftUI
+
 struct MainGameView: View {
+    let container: ModelContainer
+    let newGame: Bool
+    let onExit: () -> Void
     @StateObject var viewModel: ViewModel
-    @State private var scene = GameScene()    
+    @State private var scene = GameScene()
     
-    protocol GameDelegate: AnyObject {
-        func dismissGame()
+    
+    init(container: ModelContainer, newGame: Bool, onExit: @escaping () -> Void) {
+        self.container = container
+        self.newGame = newGame
+        self.onExit = onExit
+        
+        let context = container.mainContext
+        
+        if newGame {
+            Self.resetGameState(in: context)
+        }
+        _viewModel = StateObject(wrappedValue: ViewModel(context: context))
     }
     
-    
     var body: some View {
-        
-        if !viewModel.gameStarted {
-            StartGameView(gameStarted: $viewModel.gameStarted, scene: $scene)
-        } else if viewModel.showGameOver {
-            EndGameView(viewModel: viewModel)
+        if viewModel.showGameOver {
+            EndGameView(viewModel: viewModel, onExit: {
+                Self.clearSavedGame(in: container.mainContext)
+                onExit()
+            })
         } else if viewModel.showGameWin {
-            WinGameView(viewModel: viewModel)
+            WinGameView(viewModel: viewModel, onExit: onExit)
         } else {
             ZStack(alignment: .bottomLeading) {
                 SpriteView(scene: scene)
@@ -39,7 +53,6 @@ struct MainGameView: View {
                             DrainingHealthBarView(viewModel: viewModel)
                                 .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
                             Spacer()
-                            
                         }
                         
                         HStack {
@@ -48,16 +61,13 @@ struct MainGameView: View {
                             Spacer()
                         }
                         Spacer()
-                      
                     }
                 }
                                     
                 VStack {
-                    
                     HStack {
                         Spacer()
                         if viewModel.controlsAreVisable {
-                            
                             Button{
                                 viewModel.showInventory = true
                             } label: {
@@ -74,7 +84,6 @@ struct MainGameView: View {
                                 viewModel.mainScene?.enterMapNode()
                             } else {
                                 viewModel.mainScene?.exitMapMode()
-                                
                             }
                         } label: {
                             Image(systemName: "map.fill")
@@ -84,16 +93,23 @@ struct MainGameView: View {
                         }
                         .padding()
                         
+                        Button {
+                            onExit()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.largeTitle)
+                                .padding()
+                                .background(Circle().fill(.ultraThinMaterial))
+                        }
+                        .padding()
                     }
                     
                     Spacer()
                     if viewModel.controlsAreVisable {
-                        
                         HUDControls(viewModel: viewModel)
                             .padding(60)
                     }
                 }
-                
                 
                 if viewModel.showInventory {
                     Color.black.opacity(0.4)
@@ -109,20 +125,31 @@ struct MainGameView: View {
             .animation(.spring, value: viewModel.showInventory)
         }
     }
+    
+    static func resetGameState(in context: ModelContext) {
+        if let oldStates = try? context.fetch(FetchDescriptor<GameState>()) {
+            for gs in oldStates { context.delete(gs) }
+            try? context.save()
+        }
+    }
+    
+    static func clearSavedGame(in context: ModelContext) {
+        if let oldStates = try? context.fetch(FetchDescriptor<GameState>()) {
+            for gs in oldStates { context.delete(gs) }
+            try? context.save()
+        }
+    }
+    
     func createScene() -> SKScene {
         let scene = PredatorGame(size: CGSize(width: 750, height: 1334))
         scene.scaleMode = .aspectFill
         
         scene.dismissAction = {
             withAnimation {
-                self.viewModel.gameStarted = false
+                self.onExit()
             }
         }
         return scene
     }
-}
-
-#Preview {
-    MainGameView(viewModel: MainGameView.ViewModel())
 }
 

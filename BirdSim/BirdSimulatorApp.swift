@@ -22,7 +22,7 @@ struct BirdSimulatorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainGameView(viewModel: MainGameView.ViewModel(context: container.mainContext))
+            ContentRootView(container: container)
                 .statusBarHidden(true)
         }
         .modelContainer(container)
