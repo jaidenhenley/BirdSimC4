@@ -47,8 +47,7 @@ class BuildNestScene: SKScene {
             // Success path: Trigger the CPU bird spawn
             viewModel?.startMatingPhase()
         } else {
-            // Manual exit path: Just show a message
-            viewModel?.currentMessage = "Nest building paused."
+            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
         }
         
         // 3. Return to the main world
