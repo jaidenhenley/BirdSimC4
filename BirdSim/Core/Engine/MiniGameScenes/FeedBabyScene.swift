@@ -46,6 +46,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         // Only win if it touches the bottom plate, not the side walls
         if otherBody.categoryBitMask == bucketCategory {
             // Optional: Check if the item's Y position is higher than the bottom's Y position
+            viewModel?.userFedBabyCount += 1
             handleGameOver(success: true)
         }
     }
@@ -98,6 +99,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     func handleGameOver(success: Bool) {
         isSceneTransitioning = true
         physicsWorld.contactDelegate = nil
+        
         
         let endLabel = SKLabelNode(text: success ? "SUCCESS!" : "TRY AGAIN!")
         endLabel.fontName = "AvenirNext-Bold"

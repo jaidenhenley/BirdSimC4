@@ -359,6 +359,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         
+        if viewModel?.userFedBabyCount == 2 {
+            removeBabyBird()
+            //add score for completing a baby
+        }
+
+        
+        
         func clearCollectedItemsFromMap() {
             // Look for any nodes that match your item names
             for node in children {
@@ -618,7 +625,12 @@ extension GameScene {
         
         viewModel?.currentMessage = "The baby has hatched! Now keep it fed."
     }
-        
+    
+    func removeBabyBird() {
+        self.childNode(withName: "babyBird")?.removeFromParent()
+    }
+    
+    
     func spawnMaleBird() {
             if childNode(withName: "MaleBird") != nil { return }
             

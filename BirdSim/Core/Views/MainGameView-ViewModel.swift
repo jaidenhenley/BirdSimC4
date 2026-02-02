@@ -44,17 +44,12 @@ extension MainGameView {
         @Published var hasFoundMale: Bool = false
         @Published var hasPlayedBabyGame: Bool = false
         @Published var isBabyReadyToGrow: Bool = false
-        enum GameStage {
-            case gathering    // Collecting stick, leaf, web
-            case building    // Playing the nest minigame
-            case findingMale // Nest is done, looking for the male bird
-            case raisingBaby // Baby is in the nest, timer is running
-        }
-
-        // In your ViewModel:
-        var currentStage: GameStage = .gathering
+        @Published var userFedBabyCount: Int = 0
+        
         
         //end baby bird game//
+        
+        
         
         //Matching Nest Game
         
