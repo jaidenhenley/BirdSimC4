@@ -705,6 +705,7 @@ extension GameScene {
             viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
             viewModel?.collectedItems.removeAll()
             viewModel?.savedPlayerPosition = nil
+            viewModel?.showGameWin = false
         }
         
         self.removeAllChildren()
