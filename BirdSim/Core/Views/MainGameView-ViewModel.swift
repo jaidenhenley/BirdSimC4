@@ -144,9 +144,11 @@ extension MainGameView {
             // 3. START THE MATING PHASE (This spawns the Male Bird)
             self.startMatingPhase()
 
-            // 4. Reset temporary game data
+            // Consuming materials after a successful build: clear both counts and set
             self.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
             self.collectedItems.removeAll()
+
+            // 4. Reset temporary game data
             self.slots = [nil, nil, nil]
             self.playerAttempt.removeAll()
 
@@ -256,6 +258,14 @@ extension MainGameView {
             if let gs = gameState {
                 mapFromModel(gs)
             }
+            
+            if let gs = gameState, self.collectedItems.isEmpty {
+                var rebuilt: Set<String> = []
+                if gs.inventoryStick > 0 { rebuilt.insert("stick") }
+                if gs.inventoryLeaf > 0 { rebuilt.insert("leaf") }
+                if gs.inventorySpiderweb > 0 { rebuilt.insert("spiderweb") }
+                self.collectedItems = rebuilt
+            }
 
             bindAutoSave()
         }
@@ -309,17 +319,24 @@ extension MainGameView {
             saveWorkItem?.cancel()
         }
         
-        private func mapFromModel(_ m: GameState) {
+        private func mapFromModel(_ state: GameState) {
             DispatchQueue.main.async {
-                self.savedPlayerPosition = CGPoint(x: m.playerX, y: m.playerY)
-                self.savedCameraPosition = CGPoint(x: m.cameraX, y: m.cameraY)
-                self.isFlying = m.isFlying
-                self.controlsAreVisable = m.controlsAreVisable
-                self.gameStarted = m.gameStarted
-                self.showGameOver = m.showGameOver
-                self.showGameWin = m.showGameWin
-                self.health = CGFloat(m.health)
-                self.inventory = ["stick": m.inventoryStick, "leaf": m.inventoryLeaf, "spiderweb": m.inventorySpiderweb]
+                self.savedPlayerPosition = CGPoint(x: state.playerX, y: state.playerY)
+                self.savedCameraPosition = CGPoint(x: state.cameraX, y: state.cameraY)
+                self.isFlying = state.isFlying
+                self.controlsAreVisable = state.controlsAreVisable
+                self.gameStarted = state.gameStarted
+                self.showGameOver = state.showGameOver
+                self.showGameWin = state.showGameWin
+                self.health = CGFloat(state.health)
+                self.inventory = ["stick": state.inventoryStick, "leaf": state.inventoryLeaf, "spiderweb": state.inventorySpiderweb]
+                
+                // Rebuild collectedItems from persisted inventory counts so UI can drive from the set
+                var rebuilt: Set<String> = []
+                if state.inventoryStick > 0 { rebuilt.insert("stick") }
+                if state.inventoryLeaf > 0 { rebuilt.insert("leaf") }
+                if state.inventorySpiderweb > 0 { rebuilt.insert("spiderweb") }
+                self.collectedItems = rebuilt
             }
         }
         
@@ -393,3 +410,4 @@ extension MainGameView: GameDelegate {
         viewModel.gameStarted = false
     }
 }
+

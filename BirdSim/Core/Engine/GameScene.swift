@@ -543,10 +543,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // MARK: - Helper Functions
         func pickupItem(_ node: SKNode) {
-            guard let itemName = node.name else { return }
-            viewModel?.collectedItems.insert(itemName)
+            guard let rawName = node.name else { return }
+            // Standardize to lowercase so set membership is consistent
+            let itemName = rawName.lowercased()
+
+            // Drive inventory UI from collectedItems via the ViewModel helper
+            // This also persists and optionally updates counts if you still track them
+            viewModel?.collectItem(itemName)
+
+            // Remove the item from the world
             node.removeFromParent()
-            print("Successfully added \(itemName) to inventory.")
+
+            // Optional: brief feedback
+            viewModel?.currentMessage = "Picked up \(itemName.capitalized)"
+            print("Successfully added \(itemName) to collected items.")
         }
 
         // Add any missing transition functions below this line
@@ -682,6 +692,8 @@ extension GameScene {
             viewModel?.health = 1
             viewModel?.isFlying = false
             viewModel?.gameStarted = true
+            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
+            viewModel?.collectedItems.removeAll()
         }
         
         self.removeAllChildren()
