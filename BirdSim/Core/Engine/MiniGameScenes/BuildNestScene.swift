@@ -17,6 +17,8 @@ class BuildNestScene: SKScene {
     override func didMove(to view: SKView) {
         // Success path
         viewModel?.onChallengeComplete = { [weak self] in
+            
+            self?.addPoints()
             self?.exitMiniGame()
         }
         
@@ -32,6 +34,11 @@ class BuildNestScene: SKScene {
     
    
     
+    func addPoints() {
+        viewModel?.userScore += 1 // change score amount for build nest minigame here
+        print("added 1 to score")
+    }
+    
     func exitMiniGame() {
         // 1. Reset the draggable items visibility for the next time the game opens
         let items = ["stick", "leaf", "spiderweb"]
@@ -45,12 +52,15 @@ class BuildNestScene: SKScene {
         let filledSlots = viewModel?.slots.compactMap { $0 }.count ?? 0
         if filledSlots == 3 {
             // Success path: Trigger the CPU bird spawn
+            viewModel?.userScore += 1 // change score amount for build nest minigame here
+            print("added 1 to score")
             viewModel?.startMatingPhase()
         } else {
             viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
         }
         
         // 3. Return to the main world
+
         viewModel?.controlsAreVisable = true
         let transition = SKTransition.doorsOpenHorizontal(withDuration: 0.5)
         view.presentScene(mainScene, transition: transition)

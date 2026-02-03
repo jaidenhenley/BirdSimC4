@@ -36,6 +36,10 @@ struct HUDControls: View {
                         .frame(width: joystickDiameter, height: joystickDiameter)
 
                         Spacer()
+                    
+                        UserScoreView(viewModel: viewModel)
+                        
+                        Spacer()
 
                         FlyButtonView(viewModel: viewModel)
                             .frame(width: buttonSize, height: buttonSize)

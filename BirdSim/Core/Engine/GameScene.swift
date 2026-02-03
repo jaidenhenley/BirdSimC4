@@ -188,7 +188,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func spawnSuccessNest() {
-        let nest = SKSpriteNode(imageNamed: "built_nest") // Make sure you have this image
+        let nest = SKSpriteNode(imageNamed: "nest") // Make sure you have this image
         nest.name = "final_nest"
         nest.size = CGSize(width: 100, height: 100)
         nest.zPosition = 5 // Above the ground
@@ -203,6 +203,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         nest.alpha = 0
         nest.setScale(0.1)
         addChild(nest)
+        viewModel?.hasNest = true
+        viewModel?.nestPosition = nest.position
+        viewModel?.scheduleSave()
         
         let appear = SKAction.group([
             SKAction.fadeIn(withDuration: 1.0),
@@ -288,6 +291,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
                 // 3. Reset State
                 babySpawnTime = nil
+                viewModel?.clearNestAndBabyState()
                 viewModel?.hasFoundMale = false // Reset this so they have to try again
                 viewModel?.currentMessage = "The nest was abandoned..."
                 print("Nest and Baby disappeared due to timeout.")
@@ -389,8 +393,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if viewModel?.userFedBabyCount == 2 {
             removeBabyBird()
-            //add score for completing a baby
-            removeFinalNest()
+                viewModel?.userScore += 2 // change score amount for build nest minigame here
+                print("added 2 to score")
+                removeFinalNest()
+                viewModel?.clearNestAndBabyState()
                 
                 viewModel?.userFedBabyCount = 0
                 viewModel?.hasFoundMale = false
@@ -740,12 +746,12 @@ extension GameScene {
             return
         }
         
-        let baby = SKSpriteNode(imageNamed: "baby_bird_idle")
+        let baby = SKSpriteNode(imageNamed: "babyBird")
         baby.name = "babyBird"
         // Position the baby slightly inside the nest
         baby.position = CGPoint(x: nest.position.x, y: nest.position.y + 10)
         baby.zPosition = nest.zPosition + 1
-        baby.setScale(0.5)
+        baby.setScale(0.2)
         
         // Add physics so the player can "touch" the baby to feed it
         baby.physicsBody = SKPhysicsBody(circleOfRadius: 25)
@@ -755,6 +761,10 @@ extension GameScene {
         babySpawnTime = Date()
             print("Baby spawned! Timer started.")
         addChild(baby)
+        viewModel?.hasBaby = true
+        viewModel?.babyPosition = baby.position
+        viewModel?.babySpawnDate = babySpawnTime
+        viewModel?.scheduleSave()
         
         // Visual Hatch Effect
         baby.alpha = 0
@@ -771,9 +781,9 @@ extension GameScene {
     func spawnMaleBird() {
             if childNode(withName: "MaleBird") != nil { return }
             
-            let maleBird = SKSpriteNode(imageNamed: "male_bird")
+            let maleBird = SKSpriteNode(imageNamed: "Bird_Ground_Left")
             maleBird.name = "MaleBird"
-            maleBird.size = CGSize(width: 50, height: 50)
+            maleBird.size = CGSize(width: 500, height: 500)
             maleBird.zPosition = 5
             
             // Position him somewhere random but far enough away to be a "quest"
@@ -855,6 +865,8 @@ extension GameScene {
             viewModel?.collectedItems.removeAll()
             viewModel?.savedPlayerPosition = nil
             viewModel?.showGameWin = false
+            viewModel?.clearNestAndBabyState()
+            babySpawnTime = nil
         }
         
         self.removeAllChildren()
@@ -904,6 +916,7 @@ extension GameScene {
         // Only restore persisted positions when NOT doing a full reset.
         if !resetState {
             restoreReturnStateIfNeeded()
+            restorePersistedNestAndBaby()
         }
     }
     func setupBackground() {
@@ -1094,6 +1107,41 @@ extension GameScene {
         } else if let player = self.childNode(withName: "userBird") {
             cameraNode.position = player.position
             cameraNode.setScale(defaultCameraScale)
+        }
+    }
+    
+    func restorePersistedNestAndBaby() {
+        guard let viewModel = viewModel else { return }
+
+        // Restore Nest
+        if viewModel.hasNest, let pos = viewModel.nestPosition {
+            let nest = SKSpriteNode(imageNamed: "nest")
+            nest.name = "final_nest"
+            nest.size = CGSize(width: 100, height: 100)
+            nest.zPosition = 5
+            nest.position = pos
+            addChild(nest)
+        }
+
+        // Restore Baby
+        if viewModel.hasBaby, let pos = viewModel.babyPosition {
+            let baby = SKSpriteNode(imageNamed: "babyBird")
+            baby.name = "babyBird"
+            baby.position = pos
+            baby.zPosition = 6
+            baby.setScale(0.2)
+
+            // Match the physics used in spawnBabyInNest()
+            let body = SKPhysicsBody(circleOfRadius: 25)
+            body.isDynamic = false
+            body.categoryBitMask = PhysicsCategory.nest
+            body.contactTestBitMask = PhysicsCategory.player
+            baby.physicsBody = body
+
+            addChild(baby)
+
+            // Restore the hatch timer so your 2-minute logic continues to work
+            self.babySpawnTime = viewModel.babySpawnDate
         }
     }
     

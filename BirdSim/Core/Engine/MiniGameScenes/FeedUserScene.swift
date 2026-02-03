@@ -167,12 +167,15 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func handleWin() {
-        // 1. Stop the game spawning
+        // Stop the game spawning
         removeAction(forKey: "spawning")
         
-        // 2. REFILL THE HEALTH
+        // REFILL THE HEALTH
         // We set health back to 1.0 (100%)
         viewModel?.health = 1.0
+        
+        // Add points
+        addPoints()
         
         // 3. UI Feedback in the mini-game
         let winLabel = SKLabelNode(text: "BIRD IS FULL! + HEALTH ")
@@ -189,6 +192,12 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         ]))
     }
 
+    
+    func addPoints() {
+        viewModel?.userScore += 1 // change score amount for build nest minigame here
+        print("added 1 to score")
+    }
+    
     func setupBackButton() {
         let backLabel = SKLabelNode(text: "← Back")
         backLabel.position = CGPoint(x: 60, y: frame.height - 50)
