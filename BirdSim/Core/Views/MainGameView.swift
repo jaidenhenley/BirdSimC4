@@ -37,7 +37,10 @@ struct MainGameView: View {
                 onExit()
             })
         } else if viewModel.showGameWin {
-            WinGameView(viewModel: viewModel, onExit: onExit)
+            WinGameView(viewModel: viewModel, onExit: {
+                Self.clearSavedGame(in: container.mainContext)
+                onExit()
+            })
         } else {
             ZStack(alignment: .bottomLeading) {
                 SpriteView(scene: scene)
