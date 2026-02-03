@@ -35,16 +35,6 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         setupBird()
         setupObstacles()
         startCountdown()
-//        backgroundColor = .systemCyan
-//
-//        let backLabel = SKLabelNode(text: "Mini Game active tap to go back")
-//        backLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-//        backLabel.fontColor = .white
-//        backLabel.fontSize = 28
-//        backLabel.name = "Back Button"
-//        backLabel.zPosition = 10
-//        addChild(backLabel)
-
     }
     
     func setupBird() {

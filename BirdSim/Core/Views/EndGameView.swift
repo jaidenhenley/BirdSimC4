@@ -23,12 +23,6 @@ struct EndGameView: View {
                 Button("Back to Start") {
                     
                     onExit()
-//                    withAnimation {
-//                        viewModel.mainScene = nil
-//                        viewModel.showGameOver = false
-//                        viewModel.gameStarted = false
-//                        viewModel.controlsAreVisable = true
-//                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
