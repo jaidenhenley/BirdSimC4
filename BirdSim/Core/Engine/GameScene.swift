@@ -484,7 +484,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Handles taps for:
     // - Picking up items
     // - Triggering minigames
-    // MARK: - Input Handling
+    
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
             guard let touch = touches.first else { return }
             let location = touch.location(in: self)

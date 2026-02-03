@@ -122,7 +122,6 @@ extension MainGameView {
                 } else {
                     print("NO MATCH. Try again.")
                     // Optional: Reset slots if they get it wrong
-                    // slots = [nil, nil, nil]
                 }
             }
         }
