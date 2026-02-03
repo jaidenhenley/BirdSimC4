@@ -27,6 +27,26 @@ final class GameState {
     var inventorySpiderweb: Int = 0
     
     var userScore: Int = 0
+    
+    // babybirdnestgame saved variables
+    var hasFoundMale: Bool = false
+    var hasPlayedBabyGame: Bool = false
+    var isBabyReadyToGrow: Bool = false
+    var userFedBabyCount: Int = 0
+    
+    // MARK: - Nest Persistence
+    
+    var hasNest: Bool = false
+    var nestX: Double = 0
+    var nestY: Double = 0
+
+    var hasBaby: Bool = false
+    var babyX: Double = 0
+    var babyY: Double = 0
+
+    // Stores Date().timeIntervalSince1970
+    var babySpawnTimestamp: Double = 0
+
 
     init() {}
 }
