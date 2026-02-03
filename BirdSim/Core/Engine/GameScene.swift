@@ -53,6 +53,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var healthAccumulator: CGFloat = 0
     private var positionPersistAccumulator: CGFloat = 0
     private var lastAppliedIsFlying: Bool = false
+    
+    // MARK: - Walk Animaiton Variables
+    // controls the walking animation for the user bird
+    private let walkFrames: [SKTexture] = [
+        SKTexture(imageNamed: "Bird_Ground_Left"),
+        SKTexture(imageNamed: "Bird_Ground_Right")
+        
+    ]
+    
+    private var lastWalkSpeed: CGFloat? = nil
+        
+    private lazy var walkAction: SKAction = {
+        walkFrames.forEach { $0.filteringMode = .nearest }
+        let animate = SKAction.animate(with: walkFrames,
+                                      timePerFrame: 0.24,
+                                      resize: false,
+                                      restore: false)
+        return SKAction.repeatForever(animate)
+    }()
+    
+    private let walkKey = "walk"
+    
+        
+    
 
     // MARK: - Scene Graph Nodes
     // Root nodes for world content and UI overlays
@@ -91,7 +115,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var virtualController: GCVirtualController?
     let cameraNode = SKCameraNode()
     var playerSpeed: CGFloat = 400.0
-    var birdImage: String = "Bird_Ground"
+    var birdImage: String = "Bird_Ground_Right"
+
+    // Joystick deadzone used for movement + walk animation gating
+    private let joystickDeadzone: CGFloat = 0.15
 
     // MARK: - Scene Lifecycle
     // Called when the scene is first presented.
@@ -414,15 +441,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     // MARK: - Player State
     // Applies visual & gameplay changes when switching flying/ground modes.
+    // - Updates speed and default texture.
+    // - Stops ground-walk animation when entering flight.
+    // - Cross-fades the texture and plays a subtle scale pulse.
     func applyBirdState(isFlying: Bool) {
         // Adjust movement speed
         playerSpeed = isFlying ? 650.0 : 400.0
-        birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground"
 
-        // Cross-fade to the new texture
+        // Choose the "base" texture for the new state
+        birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground_Right"
+
+        // If we just entered flight, ensure we are not running the ground walk animation.
+        if isFlying, let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
+            stopWalking(bird)
+        }
+
+        // Cross-fade to the new texture so state changes feel smooth.
         crossFadeBirdTexture(to: birdImage, duration: 0.15)
 
-        // Subtle scale pulse around the target scale
+        // Subtle scale pulse around the target scale (tiny feedback that state changed).
         if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
             let finalScale: CGFloat = isFlying ? 1.1 : 1.0
             let pulseUp = SKAction.scale(to: finalScale * 1.06, duration: 0.08)
@@ -433,11 +470,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
+    // MARK: - Player Movement
     // Moves the player based on joystick or controller input.
-    // Uses normalized vectors and exponential damping for smooth rotation.
+    // - Uses a deadzone so tiny joystick drift doesn't move the character.
+    // - Keeps speed consistent by clamping the input vector to the unit circle.
+    // - Rotates the bird to face its movement direction (with exponential damping).
     func updatePlayerPosition(deltaTime: CGFloat) {
-        guard let player = self.childNode(withName: "userBird") else { return }
-        if viewModel?.isMapMode  == true { return }
+        guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+
+        // In map mode, we prevent walking animation and don't process movement here.
+        if viewModel?.isMapMode == true {
+            stopWalking(player)
+            return
+        }
 
         // Prefer SwiftUI joystick via view model (CGPoint normalized to [-1, 1])
         var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
@@ -449,35 +494,108 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             inputPoint = CGPoint(x: CGFloat(xValue), y: CGFloat(yValue))
         }
 
-        // Convert to vector components and clamp to unit circle
+        // Convert to vector components
         var dx = inputPoint.x
         var dy = inputPoint.y
-        let mag = sqrt(dx*dx + dy*dy)
+
+        // Determine if the joystick is actively moving (deadzone)
+        let rawMag = sqrt(dx * dx + dy * dy)
+        let isMoving = rawMag > joystickDeadzone
+
+        // MARK: Walk Animation Gating
+        // Only show the ground-walk animation when:
+        // - we're NOT flying, and
+        // - the input magnitude is above the deadzone.
+        let isFlyingNow = viewModel?.isFlying ?? false
+        if isFlyingNow {
+            stopWalking(player)
+        } else {
+            if isMoving {
+                startWalking(player, speed: rawMag)
+            } else {
+                stopWalking(player)
+            }
+        }
+
+        // Clamp to unit circle for consistent speed
+        var mag = rawMag
         if mag > 1.0 {
             dx /= mag
             dy /= mag
+            mag = 1.0
         }
 
-        let velocity = CGVector(dx: dx * playerSpeed, dy: dy * playerSpeed)
+        // Convert input to a velocity in world units
+        let velocity: CGVector = isMoving
+            ? CGVector(dx: dx * playerSpeed, dy: dy * playerSpeed)
+            : .zero
+
+        // Apply movement
         player.position.x += velocity.dx * deltaTime
         player.position.y += velocity.dy * deltaTime
 
-        // Smoothly rotate the bird to face movement direction using exponential damping
+        // Rotate the bird to face movement direction (smooth + frame-rate independent)
         let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
         if speed > 0.001 {
             let target = atan2(velocity.dy, velocity.dx)
+
+            // Your texture appears oriented "up" by default, so we offset by -90 degrees
             let assetOrientationOffset: CGFloat = -(.pi / 2)
             let desired = target + assetOrientationOffset
 
             let current = player.zRotation
             let deltaAngle = atan2(sin(desired - current), cos(desired - current))
 
-            // Use exponential damping for frame-rate independent rotation
-            let turnStiffness: CGFloat = 12.0  // increased from 10.0 for snappier response
+            // Exponential damping for stable smoothing across different frame rates
+            let turnStiffness: CGFloat = 12.0  // higher = snappier
             let rotationFactor = 1 - exp(-turnStiffness * deltaTime)
 
             player.zRotation = current + deltaAngle * rotationFactor
         }
+    }
+
+    // MARK: - Walk Animation
+    // Creates a repeat-forever walk action where `speedMultiplier` (0..1)
+    // affects how quickly we step between frames.
+    private func makeWalkAction(speedMultiplier: CGFloat) -> SKAction {
+        let minFrameTime: CGFloat = 0.30    // slower steps
+        let maxFrameTime: CGFloat = 0.18    // faster steps
+
+        // Clamp multiplier into a safe range
+        let t = max(0.1, min(speedMultiplier, 1.0))
+
+        // Linearly interpolate timePerFrame (lower time = faster animation)
+        let frameTime = minFrameTime - (minFrameTime - maxFrameTime) * t
+
+        let animate = SKAction.animate(
+            with: walkFrames,
+            timePerFrame: frameTime,
+            resize: false,
+            restore: false
+        )
+
+        return SKAction.repeatForever(animate)
+    }
+
+    // Starts (or updates) the ground-walk animation.
+    // We avoid restarting the action every frame by only refreshing when
+    // the speed meaningfully changes.
+    private func startWalking(_ player: SKSpriteNode, speed: CGFloat) {
+        let didSpeedChange = abs((lastWalkSpeed ?? 0) - speed) > 0.05
+
+        // Only start walking action if not already running OR speed changed significantly
+        if player.action(forKey: walkKey) == nil || didSpeedChange {
+            let walk = makeWalkAction(speedMultiplier: speed)
+            player.removeAction(forKey: walkKey)
+            player.run(walk, withKey: walkKey)
+            lastWalkSpeed = speed
+        }
+    }
+
+    // Stops the ground-walk animation and clears cached speed.
+    private func stopWalking(_ player: SKSpriteNode) {
+        player.removeAction(forKey: walkKey)
+        lastWalkSpeed = nil
     }
 
     // MARK: - Input Handling
@@ -964,6 +1082,7 @@ extension GameScene {
         if self.childNode(withName: "userBird") != nil { return }
         
         let player = SKSpriteNode(imageNamed: birdImage)
+        player.size = CGSize(width: 100, height: 100)
         player.position = defaultPlayerStartPosition
         player.zPosition = 10
         player.name = "userBird"
@@ -1014,13 +1133,14 @@ extension GameScene {
                 // Remove any previous temp overlay
                 self.childNode(withName: "userBird_crossfade_temp")?.removeFromParent()
                 
-                // Create an overlay sprite with the new texture, matching the bird's transform
+                // Create an overlay sprite with the new texture, matching the bird's transform and size
                 let overlay = SKSpriteNode(texture: newTexture)
                 overlay.name = "userBird_crossfade_temp"
                 overlay.position = bird.position
                 overlay.zPosition = bird.zPosition + 1
                 overlay.zRotation = bird.zRotation
                 overlay.anchorPoint = bird.anchorPoint
+                overlay.size = bird.size
                 overlay.xScale = bird.xScale
                 overlay.yScale = bird.yScale
                 overlay.alpha = 0
@@ -1034,7 +1154,7 @@ extension GameScene {
                     guard let self = self,
                           let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
                     bird.texture = newTexture
-                    bird.size = newTexture.size()
+//                    bird.size = newTexture.size()
                     bird.alpha = 1.0
                     overlay.removeFromParent()
                 })
