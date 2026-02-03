@@ -1109,12 +1109,12 @@ extension GameScene {
             cameraNode.setScale(defaultCameraScale)
         }
     }
-    // Add inside `extension GameScene { ... }` or within the class if you prefer
+    
     func restorePersistedNestAndBaby() {
-        guard let vm = viewModel else { return }
+        guard let viewModel = viewModel else { return }
 
         // Restore Nest
-        if vm.hasNest, let pos = vm.nestPosition {
+        if viewModel.hasNest, let pos = viewModel.nestPosition {
             let nest = SKSpriteNode(imageNamed: "nest")
             nest.name = "final_nest"
             nest.size = CGSize(width: 100, height: 100)
@@ -1124,7 +1124,7 @@ extension GameScene {
         }
 
         // Restore Baby
-        if vm.hasBaby, let pos = vm.babyPosition {
+        if viewModel.hasBaby, let pos = viewModel.babyPosition {
             let baby = SKSpriteNode(imageNamed: "babyBird")
             baby.name = "babyBird"
             baby.position = pos
@@ -1141,7 +1141,7 @@ extension GameScene {
             addChild(baby)
 
             // Restore the hatch timer so your 2-minute logic continues to work
-            self.babySpawnTime = vm.babySpawnDate
+            self.babySpawnTime = viewModel.babySpawnDate
         }
     }
     
