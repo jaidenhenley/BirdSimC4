@@ -5,6 +5,7 @@
 //  Created by Jaiden Henley on 1/20/26.
 //
 
+import CoreLocation
 import Foundation
 import GameController
 import SpriteKit
@@ -26,7 +27,7 @@ struct PhysicsCategory {
 // - Transitioning into minigames
 // - Syncing transient state with the SwiftUI ViewModel
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
+class GameScene: SKScene, SKPhysicsContactDelegate, CLLocationManagerDelegate {
 
     // MARK: - Defaults
     private let defaultPlayerStartPosition = CGPoint(x: 800, y: -400)
@@ -53,6 +54,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var healthAccumulator: CGFloat = 0
     private var positionPersistAccumulator: CGFloat = 0
     private var lastAppliedIsFlying: Bool = false
+    
+    
+    //: MARK: - Grid Location Variables
+    
+    let locationManager = CLLocationManager()
+    let locationLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    
     
     // MARK: - Walk Animaiton Variables
     // controls the walking animation for the user bird
@@ -124,6 +132,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Called when the scene is first presented.
     // Sets up camera, loads textures, and initializes world.
     override func didMove(to view: SKView) {
+        
         self.physicsWorld.contactDelegate = self // <--- ADD THIS LINE
         // Setup camera first
         self.camera = cameraNode
@@ -131,6 +140,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             self.addChild(cameraNode)
             cameraNode.setScale(1.25)
         }
+        
+        //Setup Label
+        locationLabel.position = CGPoint(x: frame.midX, y: frame.midY)
+        locationLabel.text = "Waiting for location..."
+        addChild(locationLabel)
+        
+        // Setup Location Manager
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
 
         if !hasInitializedWorld {
             // Preload the background texture
@@ -833,6 +853,17 @@ extension GameScene {
         circle.zPosition = 100
         addChild(circle)
         circle.run(SKAction.sequence([SKAction.fadeOut(withDuration: 2.0), SKAction.removeFromParent()]))
+    }
+    
+    // Method called whenever location changes
+    func locationManager(_ manager: CLLocationManager, didUpdaterLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            let lat = String(format: "%.4f", location.coordinate.latitude)
+            let lon = String(format: "%.4f", location.coordinate.longitude)
+            
+            locationLabel.text = "Lat: \(lat), Lon: \(lon)"
+
+        }
     }
     
     
