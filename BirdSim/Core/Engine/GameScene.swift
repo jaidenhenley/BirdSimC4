@@ -389,9 +389,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if viewModel?.userFedBabyCount == 2 {
             removeBabyBird()
             //add score for completing a baby
+            removeFinalNest()
+                
+                viewModel?.userFedBabyCount = 0
+                viewModel?.hasFoundMale = false
+                viewModel?.currentMessage = "The baby has grown and left the nest!"
         }
 
-        
+        func removeFinalNest() {
+            guard let nest = self.childNode(withName: "final_nest") else { return }
+            
+            // Prevent multiple triggers if the update loop runs again before removal
+            nest.name = "nest_removing"
+
+            let fadeOut = SKAction.fadeOut(withDuration: 0.8)
+            let scaleDown = SKAction.scale(to: 0.2, duration: 0.8)
+            let group = SKAction.group([fadeOut, scaleDown])
+            let remove = SKAction.removeFromParent()
+            
+            nest.run(SKAction.sequence([group, remove]))
+            
+        }
         
         func clearCollectedItemsFromMap() {
             // Look for any nodes that match your item names
