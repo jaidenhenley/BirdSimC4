@@ -188,7 +188,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func spawnSuccessNest() {
-        let nest = SKSpriteNode(imageNamed: "built_nest") // Make sure you have this image
+        let nest = SKSpriteNode(imageNamed: "nest") // Make sure you have this image
         nest.name = "final_nest"
         nest.size = CGSize(width: 100, height: 100)
         nest.zPosition = 5 // Above the ground
@@ -741,12 +741,12 @@ extension GameScene {
             return
         }
         
-        let baby = SKSpriteNode(imageNamed: "baby_bird_idle")
+        let baby = SKSpriteNode(imageNamed: "babyBird")
         baby.name = "babyBird"
         // Position the baby slightly inside the nest
         baby.position = CGPoint(x: nest.position.x, y: nest.position.y + 10)
         baby.zPosition = nest.zPosition + 1
-        baby.setScale(0.5)
+        baby.setScale(0.2)
         
         // Add physics so the player can "touch" the baby to feed it
         baby.physicsBody = SKPhysicsBody(circleOfRadius: 25)
@@ -772,9 +772,9 @@ extension GameScene {
     func spawnMaleBird() {
             if childNode(withName: "MaleBird") != nil { return }
             
-            let maleBird = SKSpriteNode(imageNamed: "male_bird")
+            let maleBird = SKSpriteNode(imageNamed: "Bird_Ground_Left")
             maleBird.name = "MaleBird"
-            maleBird.size = CGSize(width: 50, height: 50)
+            maleBird.size = CGSize(width: 500, height: 500)
             maleBird.zPosition = 5
             
             // Position him somewhere random but far enough away to be a "quest"
