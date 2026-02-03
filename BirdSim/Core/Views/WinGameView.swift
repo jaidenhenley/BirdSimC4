@@ -19,6 +19,7 @@ struct WinGameView: View {
                     .font(.largeTitle)
                     .bold()
                     .foregroundStyle(.white)
+                Text("\(viewModel.userScore)")
                 
                 Button("Back to Start") {
                     onExit()

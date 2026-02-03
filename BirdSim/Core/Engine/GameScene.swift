@@ -389,8 +389,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if viewModel?.userFedBabyCount == 2 {
             removeBabyBird()
-            //add score for completing a baby
-            removeFinalNest()
+                viewModel?.userScore += 2 // change score amount for build nest minigame here
+                print("added 2 to score")
+                removeFinalNest()
                 
                 viewModel?.userFedBabyCount = 0
                 viewModel?.hasFoundMale = false

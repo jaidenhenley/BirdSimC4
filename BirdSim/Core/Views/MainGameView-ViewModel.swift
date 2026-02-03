@@ -32,6 +32,7 @@ extension MainGameView {
         @Published var showGameOver: Bool = false
         @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
+        @Published var userScore: Int = 0
         
         // SwiftData context & model
         private var modelContext: ModelContext?
@@ -307,6 +308,9 @@ extension MainGameView {
             $showGameWin
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
+            $userScore
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
         }
 
         deinit {
@@ -324,6 +328,7 @@ extension MainGameView {
                 self.showGameWin = state.showGameWin
                 self.health = CGFloat(state.health)
                 self.inventory = ["stick": state.inventoryStick, "leaf": state.inventoryLeaf, "spiderweb": state.inventorySpiderweb]
+                self.userScore = state.userScore
                 
                 // Rebuild collectedItems from persisted inventory counts so UI can drive from the set
                 var rebuilt: Set<String> = []
@@ -353,6 +358,7 @@ extension MainGameView {
             gs.inventoryStick = inventory["stick"] ?? 0
             gs.inventoryLeaf = inventory["leaf"] ?? 0
             gs.inventorySpiderweb = inventory["spiderweb"] ?? 0
+            gs.userScore = userScore
         }
         
         private func scheduleSave() {

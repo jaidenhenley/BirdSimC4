@@ -61,6 +61,8 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+
+    
     func setupUContainer() {
         let bucketWidth: CGFloat = 100
         let bucketHeight: CGFloat = 60
@@ -183,6 +185,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
                 node.removeFromParent()
             }
         }
+    }
+    
+    func addPoints() {
+        viewModel?.userScore += 1 // change score amount for build nest minigame here
+        print("added 1 to score")
     }
     
     func setupBackButton() {

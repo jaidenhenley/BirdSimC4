@@ -102,7 +102,13 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func userHasWon() {
+        addPoints()
         gameWin()
+    }
+    
+    func addPoints() {
+        viewModel?.userScore += 5 // change score amount for build nest minigame here
+        print("added 1 to score")
     }
     
     

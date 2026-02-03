@@ -84,6 +84,9 @@ class PredatorGame: SKScene {
     }
     
     private func handleWin() {
+        
+        addPoints()
+        
         let winLabel = SKLabelNode(text: "SUCCESS!")
         winLabel.fontColor = .green
         winLabel.position = CGPoint(x: frame.midX, y: frame.midY - 80)
@@ -112,6 +115,11 @@ class PredatorGame: SKScene {
         run(SKAction.wait(forDuration: 1.0)) { [weak self] in
             self?.triggerGameOver()
         }
+    }
+    
+    func addPoints() {
+        viewModel?.userScore += 1 // change score amount for build nest minigame here
+        print("added 1 to score")
     }
     
     func triggerGameOver() {
