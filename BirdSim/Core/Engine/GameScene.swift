@@ -124,6 +124,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Called when the scene is first presented.
     // Sets up camera, loads textures, and initializes world.
     override func didMove(to view: SKView) {
+        
         self.physicsWorld.contactDelegate = self // <--- ADD THIS LINE
         // Setup camera first
         self.camera = cameraNode
@@ -834,7 +835,7 @@ extension GameScene {
         addChild(circle)
         circle.run(SKAction.sequence([SKAction.fadeOut(withDuration: 2.0), SKAction.removeFromParent()]))
     }
-    
+        
     
     // End Nest Game//
     

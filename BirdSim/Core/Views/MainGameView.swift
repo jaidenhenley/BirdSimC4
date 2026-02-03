@@ -58,6 +58,18 @@ struct MainGameView: View {
                         HStack {
                             HelpTextView(viewModel: viewModel)
                                 .padding([.top, .leading], 20)
+                            
+                            if let player = scene.childNode(withName: "userBird") {
+                                let x = Int(player.position.x)
+                                let y = Int(player.position.y)
+                                Text("x: \(x), y: \(y)")
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .padding(6)
+                                    .background(Color.black.opacity(0.45))
+                                    .cornerRadius(6)
+                                    .foregroundColor(.green)
+                            }
+                            
                             Spacer()
                         }
                         Spacer()
