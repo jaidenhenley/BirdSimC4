@@ -1553,7 +1553,7 @@ extension GameScene {
         predator.zRotation = -(.pi / 2)
 
         // Simple back-and-forth motion. Facing is handled per-frame by `updatePredatorFacingDirections()`.
-        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
+        let moveRight = SKAction.moveBy(x: 4000, y: 0, duration: 12)
         let moveLeft  = moveRight.reversed()
         let sequence = SKAction.sequence([moveRight, moveLeft])
         predator.run(SKAction.repeatForever(sequence))
