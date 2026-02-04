@@ -1506,7 +1506,7 @@ extension GameScene {
         let position = CGPoint(x: randomX, y: randomY)
 
         occupiedPredatorSpawns.insert(index)
-        setupPredator(at: position, spawnIndex: index)
+        setupPredator(at: position, spawnIndex: index, assetName: randomPredatorAsset())
         return true
     }
     
@@ -1535,24 +1535,36 @@ extension GameScene {
         return closest
     }
     
-    func setupPredator(at position: CGPoint? = nil, spawnIndex: Int? = nil) {
-        let spot = SKSpriteNode(color: .red, size: CGSize(width: 50, height: 50))
+    func setupPredator(at position: CGPoint? = nil, spawnIndex: Int? = nil, assetName: String) {
+        let predator = SKSpriteNode(imageNamed: assetName)
         
-        spot.position = position ?? CGPoint(x: 120, y: 150)
-        spot.name = predatorMini
+        predator.position = position ?? CGPoint(x: 120, y: 150)
+        predator.name = predatorMini
         
-        if spot.userData == nil { spot.userData = [:] }
+        if predator.userData == nil { predator.userData = [:] }
         if let idx = spawnIndex {
-            spot.userData?["spawnIndex"] = idx
+            predator.userData?["spawnIndex"] = idx
         }
-        
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
         let moveLeft = moveRight.reversed()
         let sequence = SKAction.sequence([moveRight, moveLeft])
         let repeatForever = SKAction.repeatForever(sequence)
-        spot.run(repeatForever)
-        addChild(spot)
+        predator.run(repeatForever)
+        addChild(predator)
     }
+    
+    func randomPredatorAsset() -> String {
+        let assetName: [String] = [
+            "Predator/Predator_1",
+            "Predator/Predator_2",
+            "Predator/Predator_3"
+        ]
+        
+        let randomAsset = assetName.randomElement()
+        
+        return randomAsset!
+    }
+    
     func removeAllPredators() {
         for node in children where node.name == predatorMini {
             node.removeFromParent()
