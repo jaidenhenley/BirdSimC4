@@ -43,7 +43,7 @@ class BuildNestScene: SKScene {
     
     func exitMiniGame() {
         // 1. Reset the draggable items visibility for the next time the game opens
-        let items = ["stick", "leaf", "spiderweb"]
+        let items = ["stick", "leaf", "spiderweb", "dandelion"]
         for name in items {
             self.childNode(withName: name)?.isHidden = false
         }
@@ -52,13 +52,13 @@ class BuildNestScene: SKScene {
         
         // 2. ONLY trigger mating if the nest is complete (3 items placed)
         let filledSlots = viewModel?.slots.compactMap { $0 }.count ?? 0
-        if filledSlots == 3 {
+        if filledSlots == 4 {
             // Success path: Trigger the CPU bird spawn
             viewModel?.userScore += 1 // change score amount for build nest minigame here
             print("added 1 to score")
             viewModel?.startMatingPhase()
         } else {
-            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
+            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         }
         
         // 3. Return to the main world
@@ -117,7 +117,7 @@ class BuildNestScene: SKScene {
     // --- 3. THE BUILDING PHASE ---
     func setupBuildingPhase() {
         // 1. The 3 Empty Slots (These Stay)
-        for i in 0..<3 {
+        for i in 0..<4 {
             let slot = SKShapeNode(rectOf: CGSize(width: 90, height: 90))
             slot.name = "slot_\(i)"
             slot.position = CGPoint(x: frame.midX + CGFloat(i - 1) * 110, y: frame.midY)
@@ -127,7 +127,7 @@ class BuildNestScene: SKScene {
         }
         
         // 2. The 3 Draggable Items at the bottom (These Stay)
-        let items = ["stick", "leaf", "spiderweb"]
+        let items = ["stick", "leaf", "spiderweb", "dandelion"]
         for (index, name) in items.enumerated() {
             let draggable = SKSpriteNode(imageNamed: name)
             draggable.name = name
@@ -147,7 +147,7 @@ class BuildNestScene: SKScene {
         
         if node.name == "Back Button" {
             exitMiniGame()
-        } else if ["stick", "leaf", "spiderweb"].contains(node.name) {
+        } else if ["stick", "leaf", "spiderweb", "dandelion"].contains(node.name) {
             draggedNode = node as? SKSpriteNode
             originalPosition = node.position
         }
@@ -217,7 +217,7 @@ class BuildNestScene: SKScene {
         
         run(SKAction.sequence([group, SKAction.fadeOut(withDuration: 0.2), SKAction.removeFromParent()])) { [weak self] in
             // 1. Reset the slots first
-            self?.viewModel?.slots = [nil, nil, nil]
+            self?.viewModel?.slots = [nil, nil, nil, nil]
             
             // 2. Exit the minigame scene
             self?.exitMiniGame()

@@ -25,6 +25,8 @@ final class GameState {
     var inventoryStick: Int = 0
     var inventoryLeaf: Int = 0
     var inventorySpiderweb: Int = 0
+    var inventoryDandelion: Int = 0
+
     
     var userScore: Int = 0
     

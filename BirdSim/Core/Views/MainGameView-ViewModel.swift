@@ -26,7 +26,7 @@ extension MainGameView {
         @Published var mainScene: GameScene?
         @Published var health: CGFloat = 1
         @Published var showInventory: Bool = false
-        @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0]
+        @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
         @Published var gameStarted: Bool = false
         @Published var showGameOver: Bool = false
@@ -103,9 +103,11 @@ extension MainGameView {
             let sticks = inventory["stick"] ?? 0
             let leaves = inventory["leaf"] ?? 0
             let webs = inventory["spiderweb"] ?? 0
+            let dandelions = inventory["dandelion"] ?? 0
+
             
-            return sticks >= 1 && leaves >= 1 && webs >= 1
-        }
+            
+            return sticks >= 1 && leaves >= 1 && webs >= 1 && dandelions >= 1        }
         // Update this in your ViewModel
         func updateSlot(at index: Int, with itemName: String) {
             // 1. Standardize the name
@@ -150,7 +152,7 @@ extension MainGameView {
             self.startMatingPhase()
 
             // Consuming materials after a successful build: clear both counts and set
-            self.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
+            self.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
             self.collectedItems.removeAll()
 
             // 4. Reset temporary game data
@@ -162,6 +164,7 @@ extension MainGameView {
                 gs.inventoryStick = 0
                 gs.inventoryLeaf = 0
                 gs.inventorySpiderweb = 0
+                gs.inventoryDandelion = 0
                 // Ensure your GameState model has this property to remember the progress
                 // gs.isNestBuilt = true
             }
@@ -186,14 +189,14 @@ extension MainGameView {
         
         // Inside your ViewModel class
         func startNewChallenge() {
-            let possibleItems = ["stick", "leaf", "spiderweb"]
+            let possibleItems = ["stick", "leaf", "spiderweb", "dandelion"]
             
             // .shuffled() rearranges the original 3 items randomly
             // This ensures you get one of each, with no duplicates.
             challengeSequence = possibleItems.shuffled()
             
             // Reset state for the new game
-            slots = [nil, nil, nil]
+            slots = [nil, nil, nil, nil]
             playerAttempt = []
             isMemorizing = true
             currentMessageNestGame = "Memorize the order!"
@@ -227,7 +230,7 @@ extension MainGameView {
         func checkWinCondition() {
             // 1. Only check if all 3 slots have an item
             let currentAttempt = slots.compactMap { $0 }
-            guard currentAttempt.count == 3 else { return }
+            guard currentAttempt.count == 4 else { return }
             
             // 2. Compare the filled slots to the target sequence
             if currentAttempt == challengeSequence {
@@ -274,6 +277,8 @@ extension MainGameView {
                 if gs.inventoryStick > 0 { rebuilt.insert("stick") }
                 if gs.inventoryLeaf > 0 { rebuilt.insert("leaf") }
                 if gs.inventorySpiderweb > 0 { rebuilt.insert("spiderweb") }
+                if gs.inventoryDandelion > 0 { rebuilt.insert("dandelion") }
+
                 self.collectedItems = rebuilt
             }
 
@@ -359,7 +364,7 @@ extension MainGameView {
                 self.showGameOver = state.showGameOver
                 self.showGameWin = state.showGameWin
                 self.health = CGFloat(state.health)
-                self.inventory = ["stick": state.inventoryStick, "leaf": state.inventoryLeaf, "spiderweb": state.inventorySpiderweb]
+                self.inventory = ["stick": state.inventoryStick, "leaf": state.inventoryLeaf, "spiderweb": state.inventorySpiderweb, "dandelion": state.inventoryDandelion]
                 self.userScore = state.userScore
                 self.hasFoundMale = state.hasFoundMale
                 self.hasPlayedBabyGame = state.hasPlayedBabyGame
@@ -371,6 +376,8 @@ extension MainGameView {
                 if state.inventoryStick > 0 { rebuilt.insert("stick") }
                 if state.inventoryLeaf > 0 { rebuilt.insert("leaf") }
                 if state.inventorySpiderweb > 0 { rebuilt.insert("spiderweb") }
+                if state.inventoryDandelion > 0 { rebuilt.insert("dandelion") }
+
                 self.collectedItems = rebuilt
             }
             
@@ -414,6 +421,8 @@ extension MainGameView {
             gs.inventoryStick = inventory["stick"] ?? 0
             gs.inventoryLeaf = inventory["leaf"] ?? 0
             gs.inventorySpiderweb = inventory["spiderweb"] ?? 0
+            gs.inventoryDandelion = inventory["dandelion"] ?? 0
+
             gs.userScore = userScore
             gs.hasFoundMale = hasFoundMale
             gs.hasPlayedBabyGame = hasPlayedBabyGame

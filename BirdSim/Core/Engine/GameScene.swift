@@ -395,7 +395,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     var closestItem: SKNode?
                     var closestDistance: CGFloat = 200 // Max pickup range
 
-                    for node in children where ["stick", "leaf", "spiderweb"].contains(node.name) {
+                    for node in children where ["stick", "leaf", "spiderweb","dandelion"].contains(node.name) {
                         let dx = player.position.x - node.position.x
                         let dy = player.position.y - node.position.y
                         let distance = sqrt(dx * dx + dy * dy)
@@ -460,7 +460,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         func clearCollectedItemsFromMap() {
             // Look for any nodes that match your item names
             for node in children {
-                if let name = node.name, ["stick", "leaf", "spiderweb"].contains(name) {
+                if let name = node.name, ["stick", "leaf", "spiderweb", "dandelion"].contains(name) {
                     // Only remove them if the player has actually "built" with them
                     // Or just remove all to 'respawn' them later
                     node.removeFromParent()
@@ -692,7 +692,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     if let items = viewModel?.collectedItems,
                        items.contains("stick"),
                        items.contains("leaf"),
-                       items.contains("spiderweb") {
+                       items.contains("spiderweb"),
+                        items.contains("dandelion")
+                    {
                         transitionToBuildNestScene()
                         viewModel?.controlsAreVisable = false
                         return
@@ -742,7 +744,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // --- 2. HANDLE ITEM PICKUPS ---
             for node in touchedNodes {
                 guard let name = node.name else { continue }
-                if ["stick", "leaf", "spiderweb"].contains(name) {
+                if ["stick", "leaf", "spiderweb","dandelion"].contains(name) {
                     let largerHitArea = node.frame.insetBy(dx: -40, dy: -40)
                     if largerHitArea.contains(location), let player = self.childNode(withName: "userBird") {
                         let dx = player.position.x - node.position.x
@@ -1025,7 +1027,7 @@ extension GameScene {
             viewModel?.health = 1
             viewModel?.isFlying = false
             viewModel?.gameStarted = true
-            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0]
+            viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0,"dandelion": 0]
             viewModel?.collectedItems.removeAll()
             viewModel?.savedPlayerPosition = nil
             viewModel?.showGameWin = false
@@ -1057,6 +1059,8 @@ extension GameScene {
         spawnItem(at: CGPoint(x: -400, y: 300), type: "leaf")
         spawnItem(at: CGPoint(x: -700, y: 400), type: "spiderweb")
         spawnItem(at: CGPoint(x: 700, y: 200), type: "spiderweb")
+        spawnItem(at: CGPoint(x: -500, y: 200), type: "dandelion")
+        spawnItem(at: CGPoint(x: -4500, y: 300), type: "dandelion")
         
         
         spawnItem(at: CGPoint(x: 900, y: 900), type: "tree1")
