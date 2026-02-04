@@ -125,7 +125,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // Sets up camera, loads textures, and initializes world.
     override func didMove(to view: SKView) {
         
-        self.physicsWorld.contactDelegate = self // <--- ADD THIS LINE
+        // Start background music if it isn't already playing
+        SoundManager.shared.startBackgroundMusic(track: .mainMap)
+        
+        self.physicsWorld.contactDelegate = self 
         // Setup camera first
         self.camera = cameraNode
         if cameraNode.parent == nil {

@@ -28,6 +28,8 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     var bird = SKSpriteNode(color: .yellow, size: CGSize(width: 40, height: 40))
     
     override func didMove(to view: SKView) {
+        SoundManager.shared.startBackgroundMusic(track: .leaveMap)
+
         
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -5.0)
         self.physicsWorld.contactDelegate = self

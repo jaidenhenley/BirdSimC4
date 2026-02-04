@@ -29,6 +29,9 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     let badItemCategory: UInt32 = 0x1 << 2
 
     override func didMove(to view: SKView) {
+        
+        SoundManager.shared.startBackgroundMusic(track: .feedingUser)
+
         backgroundColor = .darkGray
         
         // 1. Setup Physics World

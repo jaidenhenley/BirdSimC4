@@ -250,6 +250,11 @@ extension MainGameView {
         
         init(context: ModelContext) {
             self.modelContext = context
+            
+            UserDefaults.standard.register(defaults: [
+                    "is_music_enabled": true,
+                    "is_sound_enabled": true
+                ])
 
             if let existing = try? context.fetch(FetchDescriptor<GameState>()).first {
                 self.gameState = existing
