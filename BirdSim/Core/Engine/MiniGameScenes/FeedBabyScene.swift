@@ -28,6 +28,9 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     let bucketCategory: UInt32 = 0x1 << 2
     
     override func didMove(to view: SKView) {
+        
+        SoundManager.shared.startBackgroundMusic(track: .feedingBaby)
+
         backgroundColor = .black
         physicsWorld.contactDelegate = self
         physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)

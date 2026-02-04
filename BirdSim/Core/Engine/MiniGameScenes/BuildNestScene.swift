@@ -15,6 +15,8 @@ class BuildNestScene: SKScene {
     // This connects the ViewModel's success to the Scene's transition
     // Inside BuildNestScene.swift
     override func didMove(to view: SKView) {
+        
+        SoundManager.shared.startBackgroundMusic(track: .nestBuilding)
         // Success path
         viewModel?.onChallengeComplete = { [weak self] in
             

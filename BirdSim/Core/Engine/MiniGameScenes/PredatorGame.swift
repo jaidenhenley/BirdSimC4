@@ -20,6 +20,8 @@ class PredatorGame: SKScene {
     private var isResolved = false
 
     override func didMove(to view: SKView) {
+        SoundManager.shared.startBackgroundMusic(track: .predator)
+
         backgroundColor = .black // Dark background for contrast
         setupTimingBar()
         startNeedleMovement()
