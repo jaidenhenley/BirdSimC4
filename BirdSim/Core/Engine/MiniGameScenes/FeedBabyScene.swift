@@ -55,7 +55,9 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = nil
         
         if success {
-            viewModel?.userFedBabyCount += 1
+            // Increment the count for the SPECIFIC nest currently being interacted with
+            viewModel?.incrementFeedingForCurrentNest()
+            
             if let currentSpawn = viewModel?.babySpawnDate {
                 let bonus: TimeInterval = 60
                 viewModel?.babySpawnDate = min(Date(), currentSpawn.addingTimeInterval(bonus))

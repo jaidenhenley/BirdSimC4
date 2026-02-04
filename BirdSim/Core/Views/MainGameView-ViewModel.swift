@@ -46,6 +46,25 @@ extension MainGameView {
         @Published var hasPlayedBabyGame: Bool = false
         @Published var isBabyReadyToGrow: Bool = false
         @Published var userFedBabyCount: Int = 0
+        // Inside MainGameView.ViewModel
+        // Inside MainGameView.ViewModel
+        @Published var activeNestNode: SKNode?
+
+        func incrementFeedingForCurrentNest() {
+            guard let nest = activeNestNode else { return }
+            
+            // Initialize userData if it doesn't exist
+            if nest.userData == nil { nest.userData = NSMutableDictionary() }
+            
+            // Get the individual count for THIS nest
+            let currentCount = (nest.userData?["fedCount"] as? Int) ?? 0
+            let newCount = currentCount + 1
+            
+            // Save the new count back to the nest node itself
+            nest.userData?["fedCount"] = newCount
+            
+            print("Individual nest fed: \(newCount)/2")
+        }
         
         
         @Published var nestPosition: CGPoint?
