@@ -185,7 +185,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 // If there are multiple nests in the world, hatch into the *next empty nest*.
                 // (Empty = no babyBird child inside it.)
                 if let emptyNest = nextEmptyNest() {
-                    spawnBabyInNest(in: emptyNest)
+                    spawnBabyInNest()
                 } else {
                     viewModel?.currentMessage = "No empty nests available!"
                 }
@@ -238,7 +238,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func finishBuildingNest(newNest: SKNode) {
         newNest.name = "final_nest"
         
-        spawnBabyInNest(in: newNest)
+        spawnBabyInNest()
     }
     
     // Called when leaving this scene.
