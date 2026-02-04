@@ -21,56 +21,71 @@ enum GameTrack: String {
 class SoundManager {
     static let shared = SoundManager()
     
-    private var musicPlayer: AVAudioPlayer?
+    // Two players to allow for overlapping transitions
+    private var musicPlayerA: AVAudioPlayer?
+    private var musicPlayerB: AVAudioPlayer?
+    private var isUsingPlayerA = true
+    
     private var effectPlayers: [String: AVAudioPlayer] = [:]
     private(set) var currentTrack: String?
 
     private init() {
-        // Change to .playback so the physical silent switch doesn't mute the game
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
     }
     
-    // MARK: - Background Music
-    func startBackgroundMusic(track: GameTrack) {
+    func startBackgroundMusic(track: GameTrack, fadeDuration: TimeInterval = 1.5) {
         let filename = track.fileName
         
-        guard currentTrack != filename || musicPlayer?.isPlaying == false else { return }
+        // Don't restart if already playing
+        guard currentTrack != filename else { return }
         guard UserDefaults.standard.bool(forKey: "is_music_enabled") else { return }
 
+        // Find file
         let extensions = ["wav", "mp3", "m4a"]
         var foundURL: URL?
-        
         for ext in extensions {
             if let url = Bundle.main.url(forResource: filename, withExtension: ext) {
                 foundURL = url
                 break
             }
         }
-
-        guard let url = foundURL else {
-            print("❌ Audio Error: \(filename) not found")
-            return
-        }
+        guard let url = foundURL else { return }
 
         do {
-            musicPlayer = try AVAudioPlayer(contentsOf: url)
-            musicPlayer?.numberOfLoops = -1
-            musicPlayer?.volume = 0.0
-            musicPlayer?.prepareToPlay()
-            musicPlayer?.play()
+            // 1. Identify which player is new and which is old
+            let newPlayer = isUsingPlayerA ? musicPlayerB : musicPlayerA
+            let oldPlayer = isUsingPlayerA ? musicPlayerA : musicPlayerB
             
-            // Smoothly ramp up volume
-            musicPlayer?.setVolume(0.5, fadeDuration: 1.5)
+            // 2. Setup the new player
+            let freshlyLoadedPlayer = try AVAudioPlayer(contentsOf: url)
+            freshlyLoadedPlayer.numberOfLoops = -1
+            freshlyLoadedPlayer.volume = 0
+            freshlyLoadedPlayer.prepareToPlay()
+            freshlyLoadedPlayer.play()
             
+            // 3. Crossfade
+            freshlyLoadedPlayer.setVolume(0.5, fadeDuration: fadeDuration)
+            oldPlayer?.setVolume(0, fadeDuration: fadeDuration)
+            
+            // 4. Clean up the old player after the fade
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
+                oldPlayer?.stop()
+            }
+            
+            // 5. Update state
+            if isUsingPlayerA { musicPlayerB = freshlyLoadedPlayer } else { musicPlayerA = freshlyLoadedPlayer }
+            isUsingPlayerA.toggle()
             currentTrack = filename
+            
         } catch {
-            print("❌ Could not play music: \(error)")
+            print("❌ Crossfade Error: \(error)")
         }
     }
-    
+
     func stopMusic() {
-        musicPlayer?.stop()
+        musicPlayerA?.stop()
+        musicPlayerB?.stop()
         currentTrack = nil
     }
     
