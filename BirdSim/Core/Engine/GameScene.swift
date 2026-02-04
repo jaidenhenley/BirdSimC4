@@ -29,6 +29,11 @@ struct PhysicsCategory {
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
 
+    // Finds the baby bird even if it's nested under another node (like the nest).
+    private func babyBirdNode() -> SKSpriteNode? {
+        return self.childNode(withName: "//babyBird") as? SKSpriteNode
+    }
+
     // MARK: - Defaults
     private let defaultPlayerStartPosition = CGPoint(x: 800, y: -400)
     private let defaultCameraScale: CGFloat = 1.25
@@ -129,7 +134,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Start background music if it isn't already playing
         SoundManager.shared.startBackgroundMusic(track: .mainMap)
         
-        self.physicsWorld.contactDelegate = self 
+        self.physicsWorld.contactDelegate = self
         // Setup camera first
         self.camera = cameraNode
         if cameraNode.parent == nil {
@@ -296,35 +301,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
-        if let spawnTime = babySpawnTime, let baby = self.childNode(withName: "babyBird") {
+        if let spawnTime = babySpawnTime, let baby = babyBirdNode() {
             let elapsed = Date().timeIntervalSince(spawnTime)
             let remainingPercentage = CGFloat(1.0 - (elapsed / timeLimit))
+
             if let bar = baby.childNode(withName: "hungerBar") as? BabyHungerBar {
-                    bar.updateBar(percentage: remainingPercentage)
+                bar.updateBar(percentage: remainingPercentage)
                 if remainingPercentage > 0.25 {
-                        bar.stopPanic()
-                    }
+                    bar.stopPanic()
                 }
-            
+            }
+
             // Check if the 2-minute limit has passed
             if elapsed > timeLimit {
-                // 1. Remove the Baby
-                if let baby = self.childNode(withName: "babyBird") {
-                    baby.removeFromParent()
-                }
-                
+                // 1. Remove the Baby (works even if it's inside the nest)
+                baby.removeFromParent()
+
                 // 2. Remove the Nest
                 if let nest = self.childNode(withName: "final_nest") {
-                    // Optional: Add a fade-out effect before removing
                     let fadeOut = SKAction.fadeOut(withDuration: 0.5)
                     let remove = SKAction.removeFromParent()
                     nest.run(SKAction.sequence([fadeOut, remove]))
                 }
-                
+
                 // 3. Reset State
                 babySpawnTime = nil
                 viewModel?.clearNestAndBabyState()
-                viewModel?.hasFoundMale = false // Reset this so they have to try again
+                viewModel?.hasFoundMale = false
                 viewModel?.currentMessage = "The nest was abandoned..."
                 print("Nest and Baby disappeared due to timeout.")
             }
@@ -355,6 +358,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Single distance check function to reduce code duplication
         // Proximity-based interaction messages
         func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
+            // Special-case baby because it lives under the nest.
+            if nodeName == "babyBird", let baby = babyBirdNode() {
+                let babyWorldPos = baby.convert(.null, to: self)
+                let dx = player.position.x - babyWorldPos.minX
+                let dy = player.position.y - babyWorldPos.minY
+                return sqrt(dx*dx + dy*dy) < threshold
+            }
+
             guard let node = self.childNode(withName: nodeName) else { return false }
             let dx = player.position.x - node.position.x
             let dy = player.position.y - node.position.y
@@ -713,13 +724,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 
                 // Feed Baby Logic
-                if (node.name == feedBabyBirdMini || node.name == "babyBird") {
+                if node.name == feedBabyBirdMini || node.name == "babyBird" {
+                    guard viewModel?.isFlying != true else { continue }
+
                     if let player = self.childNode(withName: "userBird") {
-                        let dx = player.position.x - node.position.x
-                        let dy = player.position.y - node.position.y
+                        // If they tapped the baby, it may be nested. Use world coords.
+                        let targetPos: CGPoint
+                        if node.name == "babyBird" {
+                            targetPos = node.convert(.zero, to: self)
+                        } else {
+                            targetPos = node.position
+                        }
+
+                        let dx = player.position.x - targetPos.x
+                        let dy = player.position.y - targetPos.y
                         let distance = sqrt(dx*dx + dy*dy)
-                        if distance > 200 || viewModel?.isFlying == true { continue }
+                        if distance > 200 { continue }
                     }
+
                     transitionToFeedBabyScene()
                     viewModel?.controlsAreVisable = false
                     return
@@ -785,17 +807,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Add any missing transition functions below this line
     func transitionToFeedBabyScene() {
         guard let view = self.view else { return }
-        
+
         saveReturnState()
         let minigameScene = FeedBabyScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
-        
+
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
     }
 
-    } // End of GameScene Class
+} // End of GameScene Class
 
 // MARK: - World Setup & Utilities
 // All helper methods for spawning, clamping, camera, transitions, etc.
