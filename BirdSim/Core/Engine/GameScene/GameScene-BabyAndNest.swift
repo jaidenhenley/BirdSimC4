@@ -67,30 +67,33 @@ extension GameScene {
     }
     
     func checkBabyWinCondition() {
+        // Only proceed if the count has reached 2
         guard let fedCount = viewModel?.userFedBabyCount, fedCount >= 2 else { return }
         
-        // 1. Find the baby using the recursive search helper you already have
-        if let baby = babyBirdNode(), let nest = baby.parent {
+        // 1. Find the baby currently near the player (the one they just fed)
+        // We use the recursive //babyBird to find it inside any nest
+        if let baby = babyBirdNode() {
+            let nest = baby.parent
             
-            // Prevent multiple triggers by clearing this immediately
+            // 2. STOP the specific timer logic for this cycle
             self.babySpawnTime = nil
             self.isBabySpawned = false
             
-            // 2. Play the Success Animation
-            let scaleUp = SKAction.scale(to: 1.2, duration: 0.2)
-            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-            let remove = SKAction.removeFromParent()
+            // 3. Reset ViewModel counters immediately
+            viewModel?.userFedBabyCount = 0
+            viewModel?.hasBaby = false
             
-            nest.run(SKAction.sequence([scaleUp, fadeOut, remove])) { [weak self] in
-                // 3. Reset Game State AFTER animation finishes
-                self?.viewModel?.userScore += 2
-                self?.viewModel?.userFedBabyCount = 0
-                self?.viewModel?.hasFoundMale = false
-                self?.viewModel?.clearNestAndBabyState()
-                self?.viewModel?.currentMessage = "The baby has grown and left the nest!"
+            // 4. Visual Removal of the specific nest
+            if let targetNest = nest {
+                let scaleUp = SKAction.scale(to: 1.2, duration: 0.2)
+                let fadeOut = SKAction.fadeOut(withDuration: 0.4)
+                let remove = SKAction.removeFromParent()
+                
+                targetNest.run(SKAction.sequence([scaleUp, fadeOut, remove])) { [weak self] in
+                    self?.viewModel?.userScore += 5 // Reward for finishing a nest!
+                    self?.viewModel?.currentMessage = "A baby has grown and left the nest!"
+                }
             }
-            
-            print("DEBUG: Baby fed twice. Nest and baby removed.")
         }
     }
     

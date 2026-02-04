@@ -128,6 +128,8 @@ extension GameScene {
     // Single distance check function to reduce code duplication
     // Proximity-based interaction messages
     func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
+        
+        guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return false }
         // Special-case baby because it lives under the nest.
         if nodeName == "babyBird", let baby = babyBirdNode() {
             // Convert the baby's center (zero) to the scene's coordinate system
