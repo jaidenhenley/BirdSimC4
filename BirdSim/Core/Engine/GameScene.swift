@@ -354,6 +354,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         }
+
+        // (Predator facing is now updated in didEvaluateActions.)
         
         // Single distance check function to reduce code duplication
         // Proximity-based interaction messages
@@ -1537,22 +1539,26 @@ extension GameScene {
     
     func setupPredator(at position: CGPoint? = nil, spawnIndex: Int? = nil, assetName: String) {
         let predator = SKSpriteNode(imageNamed: assetName)
-        
         predator.position = position ?? CGPoint(x: 120, y: 150)
         predator.name = predatorMini
-        
+
         if predator.userData == nil { predator.userData = [:] }
         if let idx = spawnIndex {
             predator.userData?["spawnIndex"] = idx
         }
+        predator.userData?["lastX"] = NSNumber(value: Double(predator.position.x))
+
+        // Face right initially
+        predator.xScale = abs(predator.xScale)
+        predator.zRotation = -(.pi / 2)
+
+        // Simple back-and-forth motion. Facing is handled per-frame by `updatePredatorFacingDirections()`.
         let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 3)
-        let moveLeft = moveRight.reversed()
+        let moveLeft  = moveRight.reversed()
         let sequence = SKAction.sequence([moveRight, moveLeft])
-        let repeatForever = SKAction.repeatForever(sequence)
-        predator.run(repeatForever)
+        predator.run(SKAction.repeatForever(sequence))
         addChild(predator)
     }
-    
     func randomPredatorAsset() -> String {
         let assetName: [String] = [
             "Predator/Predator_1",
@@ -1724,8 +1730,47 @@ extension GameScene {
         }
     }
 
+    /// Makes every predator flip to face the direction it is moving.
+    /// We track the last X position in `userData` and compare it each frame.
+    ///
+    /// NOTE: We search recursively (`//`) so this works even if predators are under `worldNode`.
+    func updatePredatorFacingDirections() {
+        enumerateChildNodes(withName: "//\(predatorMini)") { node, _ in
+            guard let predator = node as? SKSpriteNode else { return }
+
+            if predator.userData == nil { predator.userData = [:] }
+
+            let currentX = predator.position.x
+            let lastXNumber = predator.userData?["lastX"] as? NSNumber
+            let lastX = lastXNumber.map { CGFloat($0.doubleValue) } ?? currentX
+
+            let dx = currentX - lastX
+ 
+            // Small threshold prevents rapid flipping from tiny jitter
+            if dx > 0.5 {
+                predator.zRotation = -(.pi / 2)
+            } else if dx < -0.5 {
+                predator.zRotation = .pi / 2
+            }
+
+            predator.userData?["lastX"] = NSNumber(value: Double(currentX))
+        }
+    }
+    
+    
+    // Called after SpriteKit has evaluated SKActions for this frame.
+    // We must flip here (not in `update`) because action-driven movement hasn't been applied yet during `update`.
+    override func didEvaluateActions() {
+        super.didEvaluateActions()
+        updatePredatorFacingDirections()
+    }
+
+
     
 }
 
   
+
+
+
 
