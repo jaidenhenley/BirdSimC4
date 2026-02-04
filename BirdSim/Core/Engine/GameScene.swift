@@ -14,6 +14,7 @@ struct PhysicsCategory {
     static let player: UInt32 = 0b1      // 1
     static let mate:   UInt32 = 0b10     // 2
     static let nest:   UInt32 = 0b100    // 4
+    static let baby:   UInt32 = 0b1000   // 8
 }
 
 
@@ -153,6 +154,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         restoreReturnStateIfNeeded()
+        viewModel?.controlsAreVisable = true
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
@@ -172,7 +174,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 maleNode?.removeFromParent()
                 viewModel?.hasFoundMale = true
                 viewModel?.currentMessage = "Found him! The baby has hatched."
-                spawnBabyInNest()
+
+                // If there are multiple nests in the world, hatch into the *next empty nest*.
+                // (Empty = no babyBird child inside it.)
+                if let emptyNest = nextEmptyNest() {
+                    spawnBabyInNest(in: emptyNest)
+                } else {
+                    viewModel?.currentMessage = "No empty nests available!"
+                }
             }
         }
         
@@ -214,6 +223,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         nest.run(appear)
         
         print("Nest spawned at: \(nest.position)")
+    }
+    
+    func finishBuildingNest(newNest: SKNode) {
+        newNest.name = "final_nest"
+        
+        spawnBabyInNest(in: newNest)
     }
     
     // Called when leaving this scene.
@@ -339,7 +354,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     feedBabyBirdMiniIsInRange = true
                     viewModel?.currentMessage = "Tap to feed baby bird"
                     
-                } else if checkDistance(to: "final_nest") {
+                } else if checkDistance(to: "newNest") {
                     // Check if we found the mate yet
                     if viewModel?.hasFoundMale == true {
                         viewModel?.currentMessage = "The baby has hatched!"
@@ -643,7 +658,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 
                 // Build Nest Logic
-                if (node.name == buildNestMini || node.name == "final_nest"), buildNestMiniIsInRange {
+                if (node.name == buildNestMini || node.name == "final_nest") {
+                    if let player = self.childNode(withName: "userBird") {
+                        let dx = player.position.x - node.position.x
+                        let dy = player.position.y - node.position.y
+                        let distance = sqrt(dx*dx + dy*dy)
+                        if distance > 220 || viewModel?.isFlying == true { continue }
+                    }
                     if let items = viewModel?.collectedItems,
                        items.contains("stick"),
                        items.contains("leaf"),
@@ -655,21 +676,39 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 
                 // Feed Self Logic
-                if node.name == feedUserBirdMini, feedUserBirdMiniIsInRange {
+                if node.name == feedUserBirdMini {
+                    if let player = self.childNode(withName: "userBird") {
+                        let dx = player.position.x - node.position.x
+                        let dy = player.position.y - node.position.y
+                        let distance = sqrt(dx*dx + dy*dy)
+                        if distance > 220 || viewModel?.isFlying == true { continue }
+                    }
                     transitionToFeedUserScene()
                     viewModel?.controlsAreVisable = false
                     return
                 }
                 
                 // Feed Baby Logic
-                if (node.name == feedBabyBirdMini || node.name == "babyBird"), feedBabyBirdMiniIsInRange {
+                if (node.name == feedBabyBirdMini || node.name == "babyBird") {
+                    if let player = self.childNode(withName: "userBird") {
+                        let dx = player.position.x - node.position.x
+                        let dy = player.position.y - node.position.y
+                        let distance = sqrt(dx*dx + dy*dy)
+                        if distance > 200 || viewModel?.isFlying == true { continue }
+                    }
                     transitionToFeedBabyScene()
                     viewModel?.controlsAreVisable = false
                     return
                 }
                 
                 // Leave Island Logic
-                if node.name == leaveIslandMini, leaveIslandMiniIsInRange {
+                if node.name == leaveIslandMini {
+                    if let player = self.childNode(withName: "userBird") {
+                        let dx = player.position.x - node.position.x
+                        let dy = player.position.y - node.position.y
+                        let distance = sqrt(dx*dx + dy*dy)
+                        if distance > 220 || viewModel?.isFlying == true { continue }
+                    }
                     transitionToLeaveIslandMini()
                     viewModel?.controlsAreVisable = false
                     return
@@ -738,43 +777,68 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 extension GameScene {
     
     // Nest game //
-        
-    func spawnBabyInNest() {
-        // Look for "final_nest" (the name used in spawnSuccessNest)
-        guard let nest = self.childNode(withName: "final_nest") else {
-            print("Error: Could not find 'final_nest' to spawn the baby.")
+    
+    func spawnBabyInNest(in nest: SKNode) {
+        // Safety: only 1 baby per nest.
+        if nest.childNode(withName: "babyBird") != nil {
             return
         }
-        
+
         let baby = SKSpriteNode(imageNamed: "babyBird")
         baby.name = "babyBird"
-        // Position the baby slightly inside the nest
-        baby.position = CGPoint(x: nest.position.x, y: nest.position.y + 10)
-        baby.zPosition = nest.zPosition + 1
         baby.setScale(0.2)
-        
+
+        // Because baby is a child of the nest, position is LOCAL to the nest.
+        baby.position = CGPoint(x: 0, y: 10)
+        baby.zPosition = 1
+
         // Add physics so the player can "touch" the baby to feed it
-        baby.physicsBody = SKPhysicsBody(circleOfRadius: 25)
-        baby.physicsBody?.isDynamic = false
-        baby.physicsBody?.categoryBitMask = PhysicsCategory.nest
-        baby.physicsBody?.contactTestBitMask = PhysicsCategory.player
+        let body = SKPhysicsBody(circleOfRadius: 25)
+        body.isDynamic = false
+        body.categoryBitMask = PhysicsCategory.baby
+        body.contactTestBitMask = PhysicsCategory.player
+        body.collisionBitMask = PhysicsCategory.none
+        baby.physicsBody = body
+
         babySpawnTime = Date()
-            print("Baby spawned! Timer started.")
-        addChild(baby)
+        print("Baby spawned! Timer started.")
+
+        nest.addChild(baby)
+
         viewModel?.hasBaby = true
-        viewModel?.babyPosition = baby.position
+        // Save baby's WORLD position (scene coordinates)
+        viewModel?.babyPosition = baby.convert(.zero, to: self)
         viewModel?.babySpawnDate = babySpawnTime
         viewModel?.scheduleSave()
-        
+
         // Visual Hatch Effect
         baby.alpha = 0
         baby.run(SKAction.fadeIn(withDuration: 1.0))
-        
+
         viewModel?.currentMessage = "The baby has hatched! Now keep it fed."
     }
-    
+
+    /// Returns the next available nest that does not already contain a baby.
+    /// No distance checks — just finds an empty nest.
+    func nextEmptyNest() -> SKNode? {
+        // Prefer the newest nests (reverse order) so the latest built one fills first.
+        for node in children.reversed() where node.name == "final_nest" {
+            if node.childNode(withName: "babyBird") == nil {
+                return node
+            }
+        }
+        return nil
+    }
+
     func removeBabyBird() {
-        self.childNode(withName: "babyBird")?.removeFromParent()
+        // Remove babies that are nested inside any nest
+        for nest in children where nest.name == "final_nest" {
+            nest.childNode(withName: "babyBird")?.removeFromParent()
+        }
+        // Also remove any stray babies added directly to the scene (safety)
+        for node in children where node.name == "babyBird" {
+            node.removeFromParent()
+        }
     }
     
     
@@ -1124,23 +1188,49 @@ extension GameScene {
         }
 
         // Restore Baby
-        if viewModel.hasBaby, let pos = viewModel.babyPosition {
+        if viewModel.hasBaby, let worldPos = viewModel.babyPosition {
+            // Try to find an existing nest to parent the baby (prefer exact match to saved nestPosition)
+            var targetNest: SKNode? = nil
+            if let savedNestPos = viewModel.nestPosition {
+                targetNest = children.first(where: { $0.name == "final_nest" && $0.position == savedNestPos })
+            }
+            if targetNest == nil {
+                // Fallback: nearest nest to the saved baby position
+                let nests = children.filter { $0.name == "final_nest" }
+                targetNest = nests.min(by: { lhs, rhs in
+                    let dx1 = lhs.position.x - worldPos.x
+                    let dy1 = lhs.position.y - worldPos.y
+                    let d1 = dx1*dx1 + dy1*dy1
+                    let dx2 = rhs.position.x - worldPos.x
+                    let dy2 = rhs.position.y - worldPos.y
+                    let d2 = dx2*dx2 + dy2*dy2
+                    return d1 < d2
+                })
+            }
+
             let baby = SKSpriteNode(imageNamed: "babyBird")
             baby.name = "babyBird"
-            baby.position = pos
             baby.zPosition = 6
             baby.setScale(0.2)
 
-            // Match the physics used in spawnBabyInNest()
             let body = SKPhysicsBody(circleOfRadius: 25)
             body.isDynamic = false
-            body.categoryBitMask = PhysicsCategory.nest
+            body.categoryBitMask = PhysicsCategory.baby
             body.contactTestBitMask = PhysicsCategory.player
+            body.collisionBitMask = PhysicsCategory.none
             baby.physicsBody = body
 
-            addChild(baby)
+            if let nest = targetNest {
+                // Place as child of nest with a local offset similar to spawnBabyInNest
+                baby.position = CGPoint(x: 0, y: 10)
+                nest.addChild(baby)
+            } else {
+                // Fallback: place at saved world position if no nest found
+                baby.position = worldPos
+                addChild(baby)
+            }
 
-            // Restore the hatch timer so your 2-minute logic continues to work
+            // Restore the hatch timer
             self.babySpawnTime = viewModel.babySpawnDate
         }
     }
@@ -1149,10 +1239,21 @@ extension GameScene {
         if self.childNode(withName: "userBird") != nil { return }
         
         let player = SKSpriteNode(imageNamed: birdImage)
+        let shadow = SKSpriteNode(imageNamed: birdImage)
+        
         player.size = CGSize(width: 100, height: 100)
         player.position = defaultPlayerStartPosition
         player.zPosition = 10
         player.name = "userBird"
+        
+        shadow.size = CGSize(width: 100, height: 100)
+        shadow.color = .black
+        shadow.colorBlendFactor = 1.0
+        shadow.alpha = 0.3
+        shadow.zPosition = -1 // relative to player
+        shadow.position = CGPoint(x: 0, y: -8)
+        
+        player.addChild(shadow)
         
         // --- ADD PHYSICS HERE ---
         // Create a circular physics body slightly smaller than the bird for "fair" collisions
@@ -1167,8 +1268,8 @@ extension GameScene {
         // Assign its identity
         player.physicsBody?.categoryBitMask = PhysicsCategory.player
         
-        // Tell it to "report" hits with the male bird
-        player.physicsBody?.contactTestBitMask = PhysicsCategory.mate
+        // Tell it to "report" hits with the male bird and baby bird
+        player.physicsBody?.contactTestBitMask = PhysicsCategory.mate | PhysicsCategory.baby
         
         // 'collisionBitMask' at .none ensures you fly THROUGH the male bird instead of bouncing off
         player.physicsBody?.collisionBitMask = PhysicsCategory.none
@@ -1484,6 +1585,9 @@ extension GameScene {
             }
         }
     }
+
     
 }
+
+  
 
