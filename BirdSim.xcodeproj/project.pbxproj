@@ -6,8 +6,25 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DEE147E72F338E7A009E4A9A /* awesomeness.wav in Resources */ = {isa = PBXBuildFile; fileRef = DEE147E62F338E7A009E4A9A /* awesomeness.wav */; };
+		DEE147E92F3394CA009E4A9A /* song18.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DEE147E82F3394CA009E4A9A /* song18.mp3 */; };
+		DEE147EB2F339515009E4A9A /* Invasion.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DEE147EA2F339515009E4A9A /* Invasion.mp3 */; };
+		DEE147ED2F33956F009E4A9A /* one_0.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DEE147EC2F33956F009E4A9A /* one_0.mp3 */; };
+		DEE147EF2F3395B7009E4A9A /* DST-TowerDefenseTheme.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DEE147EE2F3395B7009E4A9A /* DST-TowerDefenseTheme.mp3 */; };
+		DEE147F12F339606009E4A9A /* Cyberpunk Moonlight Sonata v2.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DEE147F02F339606009E4A9A /* Cyberpunk Moonlight Sonata v2.mp3 */; };
+		DEE1486F2F339A35009E4A9A /* completetask_0.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DEE1486E2F339A35009E4A9A /* completetask_0.mp3 */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		6361688D2F27FCB200384988 /* BirdSim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BirdSim.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DEE147E62F338E7A009E4A9A /* awesomeness.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = awesomeness.wav; sourceTree = "<group>"; };
+		DEE147E82F3394CA009E4A9A /* song18.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = song18.mp3; sourceTree = "<group>"; };
+		DEE147EA2F339515009E4A9A /* Invasion.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = Invasion.mp3; sourceTree = "<group>"; };
+		DEE147EC2F33956F009E4A9A /* one_0.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = one_0.mp3; sourceTree = "<group>"; };
+		DEE147EE2F3395B7009E4A9A /* DST-TowerDefenseTheme.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "DST-TowerDefenseTheme.mp3"; sourceTree = "<group>"; };
+		DEE147F02F339606009E4A9A /* Cyberpunk Moonlight Sonata v2.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "Cyberpunk Moonlight Sonata v2.mp3"; sourceTree = "<group>"; };
+		DEE1486E2F339A35009E4A9A /* completetask_0.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = completetask_0.mp3; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +49,13 @@
 		636168842F27FCB200384988 = {
 			isa = PBXGroup;
 			children = (
+				DEE147E62F338E7A009E4A9A /* awesomeness.wav */,
+				DEE147EE2F3395B7009E4A9A /* DST-TowerDefenseTheme.mp3 */,
+				DEE147F02F339606009E4A9A /* Cyberpunk Moonlight Sonata v2.mp3 */,
+				DEE147EC2F33956F009E4A9A /* one_0.mp3 */,
+				DEE147EA2F339515009E4A9A /* Invasion.mp3 */,
+				DEE147E82F3394CA009E4A9A /* song18.mp3 */,
+				DEE1486E2F339A35009E4A9A /* completetask_0.mp3 */,
 				6361688F2F27FCB200384988 /* BirdSim */,
 				6361688E2F27FCB200384988 /* Products */,
 			);
@@ -109,6 +133,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DEE147E92F3394CA009E4A9A /* song18.mp3 in Resources */,
+				DEE147E72F338E7A009E4A9A /* awesomeness.wav in Resources */,
+				DEE147F12F339606009E4A9A /* Cyberpunk Moonlight Sonata v2.mp3 in Resources */,
+				DEE1486F2F339A35009E4A9A /* completetask_0.mp3 in Resources */,
+				DEE147EB2F339515009E4A9A /* Invasion.mp3 in Resources */,
+				DEE147ED2F33956F009E4A9A /* one_0.mp3 in Resources */,
+				DEE147EF2F3395B7009E4A9A /* DST-TowerDefenseTheme.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

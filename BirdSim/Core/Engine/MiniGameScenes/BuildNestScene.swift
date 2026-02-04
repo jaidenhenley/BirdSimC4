@@ -15,6 +15,8 @@ class BuildNestScene: SKScene {
     // This connects the ViewModel's success to the Scene's transition
     // Inside BuildNestScene.swift
     override func didMove(to view: SKView) {
+        
+        SoundManager.shared.startBackgroundMusic(track: .nestBuilding)
         // Success path
         viewModel?.onChallengeComplete = { [weak self] in
             
@@ -181,6 +183,8 @@ class BuildNestScene: SKScene {
             viewModel?.slots[index] = draggedNode.name
             viewModel?.checkWinCondition()
             
+            SoundManager.shared.playSoundEffect(named: "completetask_0")
+            
         } else {
             // If they missed the slot, move it back and keep it visible
             draggedNode.run(SKAction.move(to: original, duration: 0.2))
@@ -190,6 +194,11 @@ class BuildNestScene: SKScene {
     }
     
     func handleFailure() {
+        
+        SoundManager.shared.playSoundEffect(named: "error_buzz")
+        
+        SoundManager.shared.startBackgroundMusic(track: .mainMap)
+        
         // 1. Visual feedback (Flash & Shake)
         let flash = SKSpriteNode(color: .red, size: self.size)
         flash.position = CGPoint(x: frame.midX, y: frame.midY)

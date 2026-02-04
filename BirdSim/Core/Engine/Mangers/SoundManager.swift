@@ -7,42 +7,92 @@
 
 import AVFoundation
 
+enum GameTrack: String {
+    case mainMap = "awesomeness"
+    case nestBuilding = "song18"
+    case feedingUser = "DST-TowerDefenseTheme"
+    case predator = "Invasion"
+    case leaveMap = "one_0"
+    case feedingBaby = "Cyberpunk Moonlight Sonata v2"
+    
+    var fileName: String { self.rawValue }
+}
+
 class SoundManager {
     static let shared = SoundManager()
     
-    private var musicPlayer: AVAudioPlayer?
-    private var effectPlayers: [String: AVAudioPlayer] = [:]
+    // Two players to allow for overlapping transitions
+    private var musicPlayerA: AVAudioPlayer?
+    private var musicPlayerB: AVAudioPlayer?
+    private var isUsingPlayerA = true
     
+    private var effectPlayers: [String: AVAudioPlayer] = [:]
+    private(set) var currentTrack: String?
+
     private init() {
-        // Set up Audio Session so it plays even if the silent switch is on (optional)
-        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
     }
     
-    // MARK: - Background Music
-    func startBackgroundMusic(named filename: String) {
-        guard UserDefaults.standard.bool(forKey: "is_music_enabled"),
-              let url = Bundle.main.url(forResource: filename, withExtension: "mp3") else { return }
+    func startBackgroundMusic(track: GameTrack, fadeDuration: TimeInterval = 1.5) {
+        let filename = track.fileName
         
+        // Don't restart if already playing
+        guard currentTrack != filename else { return }
+        guard UserDefaults.standard.bool(forKey: "is_music_enabled") else { return }
+
+        // Find file
+        let extensions = ["wav", "mp3", "m4a"]
+        var foundURL: URL?
+        for ext in extensions {
+            if let url = Bundle.main.url(forResource: filename, withExtension: ext) {
+                foundURL = url
+                break
+            }
+        }
+        guard let url = foundURL else { return }
+
         do {
-            musicPlayer = try AVAudioPlayer(contentsOf: url)
-            musicPlayer?.numberOfLoops = -1 // Loop forever
-            musicPlayer?.volume = 0.5
-            musicPlayer?.play()
+            // 1. Identify which player is new and which is old
+            let newPlayer = isUsingPlayerA ? musicPlayerB : musicPlayerA
+            let oldPlayer = isUsingPlayerA ? musicPlayerA : musicPlayerB
+            
+            // 2. Setup the new player
+            let freshlyLoadedPlayer = try AVAudioPlayer(contentsOf: url)
+            freshlyLoadedPlayer.numberOfLoops = -1
+            freshlyLoadedPlayer.volume = 0
+            freshlyLoadedPlayer.prepareToPlay()
+            freshlyLoadedPlayer.play()
+            
+            // 3. Crossfade
+            freshlyLoadedPlayer.setVolume(0.5, fadeDuration: fadeDuration)
+            oldPlayer?.setVolume(0, fadeDuration: fadeDuration)
+            
+            // 4. Clean up the old player after the fade
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
+                oldPlayer?.stop()
+            }
+            
+            // 5. Update state
+            if isUsingPlayerA { musicPlayerB = freshlyLoadedPlayer } else { musicPlayerA = freshlyLoadedPlayer }
+            isUsingPlayerA.toggle()
+            currentTrack = filename
+            
         } catch {
-            print("Could not play music: \(error)")
+            print("❌ Crossfade Error: \(error)")
         }
     }
-    
+
     func stopMusic() {
-        musicPlayer?.stop()
+        musicPlayerA?.stop()
+        musicPlayerB?.stop()
+        currentTrack = nil
     }
     
     // MARK: - Sound Effects
     func playSoundEffect(named filename: String) {
         guard UserDefaults.standard.bool(forKey: "is_sound_enabled") else { return }
         
-        // Cache players for performance
         if let player = effectPlayers[filename] {
             player.currentTime = 0
             player.play()
@@ -56,4 +106,4 @@ class SoundManager {
             }
         }
     }
-}
+} 
