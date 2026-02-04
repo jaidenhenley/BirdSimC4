@@ -167,83 +167,95 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         restoreReturnStateIfNeeded()
         viewModel?.controlsAreVisable = true
+        checkBabyWinCondition()
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
-        // 1. Identify which nodes are involved
         let nodeA = contact.bodyA.node
         let nodeB = contact.bodyB.node
+      
         
-        // 2. Combine categories to see WHAT touched WHAT
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
         
-        // CASE A: Player touches Male Bird (Hatch Baby)
+        // 2. THIS IS THE ONLY PLACE SPAWN SHOULD HAPPEN
         if contactMask == (PhysicsCategory.player | PhysicsCategory.mate) {
             let maleNode = (nodeA?.name == "MaleBird") ? nodeA : nodeB
             
-            // Ensure we only trigger this once
             if maleNode?.parent != nil {
                 maleNode?.removeFromParent()
                 viewModel?.hasFoundMale = true
-                viewModel?.currentMessage = "Found him! The baby has hatched."
-
-                // If there are multiple nests in the world, hatch into the *next empty nest*.
-                // (Empty = no babyBird child inside it.)
+                
+                // Search for the nest ONLY when the male is touched
                 if let emptyNest = nextEmptyNest() {
-                    spawnBabyInNest()
+                    spawnBabyInNest(in: emptyNest)
+                    viewModel?.currentMessage = "Found him! The baby has hatched."
                 } else {
-                    viewModel?.currentMessage = "No empty nests available!"
+                    viewModel?.currentMessage = "Found him! Now go finish your nest."
                 }
             }
         }
+    }
+    func checkBabyWinCondition() {
+        guard let fedCount = viewModel?.userFedBabyCount, fedCount >= 2 else { return }
         
-        // CASE B: Player touches Predator (Example logic)
-        /*
-        if contactMask == (PhysicsCategory.player | PhysicsCategory.predator) {
-            let predatorNode = (nodeA?.name == predatorMini) ? nodeA : nodeB
-            if let predator = predatorNode {
-                transitionToPredatorGame(triggeringPredator: predator)
+        // 1. Find the baby using the recursive search helper you already have
+        if let baby = babyBirdNode(), let nest = baby.parent {
+            
+            // Prevent multiple triggers by clearing this immediately
+            self.babySpawnTime = nil
+            self.isBabySpawned = false
+            
+            // 2. Play the Success Animation
+            let scaleUp = SKAction.scale(to: 1.2, duration: 0.2)
+            let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+            let remove = SKAction.removeFromParent()
+            
+            nest.run(SKAction.sequence([scaleUp, fadeOut, remove])) { [weak self] in
+                // 3. Reset Game State AFTER animation finishes
+                self?.viewModel?.userScore += 2
+                self?.viewModel?.userFedBabyCount = 0
+                self?.viewModel?.hasFoundMale = false
+                self?.viewModel?.clearNestAndBabyState()
+                self?.viewModel?.currentMessage = "The baby has grown and left the nest!"
             }
+            
+            print("DEBUG: Baby fed twice. Nest and baby removed.")
         }
-        */
     }
     
     func spawnSuccessNest() {
-        // 1. Rename any existing nests so they are no longer the "active" target
-        self.enumerateChildNodes(withName: "final_nest") { node, _ in
-            node.name = "old_nest"
-        }
-
+        // Generate a unique ID for this specific nest instance
+        let nestID = UUID().uuidString
         let nest = SKSpriteNode(imageNamed: "nest")
-        nest.name = "final_nest" // Now this is the ONLY node with this name
+        
+        nest.name = "nest_active" // Generic name for proximity checks
+        nest.userData = ["nestID": nestID, "hasEgg": false] // Track state per nest
+        
         nest.size = CGSize(width: 100, height: 100)
         nest.zPosition = 5
         
+        // Spawn near player or at random
         let randomX = CGFloat.random(in: -1000...1000)
         let randomY = CGFloat.random(in: -1000...1000)
         nest.position = CGPoint(x: randomX, y: randomY)
         
-        // Add a little "poof" animation so it doesn't just pop in
+        addChild(nest)
+        
+        // Visual "Poof"
         nest.alpha = 0
         nest.setScale(0.1)
-        addChild(nest)
-        viewModel?.hasNest = true
-        viewModel?.nestPosition = nest.position
-        viewModel?.scheduleSave()
-        
-        let appear = SKAction.group([
+        nest.run(SKAction.group([
             SKAction.fadeIn(withDuration: 1.0),
             SKAction.scale(to: 1.0, duration: 1.0)
-        ])
-        nest.run(appear)
-        
-        print("Nest spawned at: \(nest.position)")
+        ]))
     }
     
     func finishBuildingNest(newNest: SKNode) {
+        // 1. Label the nest so your other logic can identify it as complete
         newNest.name = "final_nest"
         
-        spawnBabyInNest()
+        // 2. Pass this specific nest instance to the spawn function
+        spawnBabyInNest(in: newNest)
     }
     
     // Called when leaving this scene.
@@ -318,11 +330,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 baby.removeFromParent()
 
                 // 2. Remove the Nest
-                if let nest = self.childNode(withName: "final_nest") {
-                    let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-                    let remove = SKAction.removeFromParent()
-                    nest.run(SKAction.sequence([fadeOut, remove]))
-                }
+                // Inside the 'if elapsed > timeLimit' block
+                let nestToRemove = self.childNode(withName: "final_nest") ?? self.childNode(withName: "nest_active")
+                nestToRemove?.removeFromParent()
 
                 // 3. Reset State
                 babySpawnTime = nil
@@ -360,9 +370,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
             // Special-case baby because it lives under the nest.
             if nodeName == "babyBird", let baby = babyBirdNode() {
-                let babyWorldPos = baby.convert(.null, to: self)
-                let dx = player.position.x - babyWorldPos.minX
-                let dy = player.position.y - babyWorldPos.minY
+                // Convert the baby's center (zero) to the scene's coordinate system
+                let babyWorldPos = baby.convert(CGPoint.zero, to: self)
+                let dx = player.position.x - babyWorldPos.x
+                let dy = player.position.y - babyWorldPos.y
                 return sqrt(dx*dx + dy*dy) < threshold
             }
 
@@ -434,28 +445,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         
         if viewModel?.userFedBabyCount == 2 {
-            // 1. Find the baby before we remove it to get its position
-            if let baby = self.childNode(withName: "babyBird") {
-                let babyPos = baby.position
+            // 1. Find the baby using the recursive search helper
+            if let baby = babyBirdNode() {
                 
-                // 2. Find the nest at this specific location
-                // We look for both "final_nest" AND "old_nest"
-                let nodesAtPos = nodes(at: babyPos)
-                for node in nodesAtPos {
-                    if node.name == "final_nest" || node.name == "old_nest" {
-                        removeSpecificNest(node)
-                    }
-                }
+                // 2. Identify the nest (the baby's parent)
+                let nest = baby.parent
+                
+                // 3. STOP THE TIMER IMMEDIATELY
+                // This prevents the "abandoned" timeout logic from firing
+                self.babySpawnTime = nil
+                self.isBabySpawned = false
+                
+                // 4. Update Game State
+                viewModel?.userScore += 2
+                viewModel?.userFedBabyCount = 0
+                viewModel?.hasFoundMale = false
+                viewModel?.clearNestAndBabyState()
+                viewModel?.currentMessage = "The baby has grown and left the nest!"
+                
+                // 5. Visual Removal
+                let fade = SKAction.fadeOut(withDuration: 0.5)
+                let remove = SKAction.removeFromParent()
+                
+                // Removing the nest automatically removes the baby and the hunger bar
+                nest?.run(SKAction.sequence([fade, remove]))
+                
+                print("DEBUG: Successfully cleared nest and baby after 2 feedings.")
             }
-
-            removeBabyBird()
-            viewModel?.userScore += 2
-            viewModel?.clearNestAndBabyState()
-            viewModel?.userFedBabyCount = 0
-            viewModel?.hasFoundMale = false
-            viewModel?.currentMessage = "The baby has grown and left the nest!"
         }
-
+        
         func removeSpecificNest(_ nest: SKNode) {
             // Change name immediately so the update loop doesn't hit it again
             nest.name = "nest_removing"
@@ -899,24 +917,24 @@ extension GameScene {
         }
     }
         
-    func spawnBabyInNest() {
-        // Look for "final_nest" (the name used in spawnSuccessNest)
-        guard let nest = self.childNode(withName: "final_nest") else {
-            print("Error: Could not find 'final_nest' to spawn the baby.")
-            return
-        }
+    func spawnBabyInNest(in nest: SKNode) {
+        // We no longer need to search for "final_nest" here because we passed it in!
         
         let baby = SKSpriteNode(imageNamed: "babybird")
         baby.name = "babyBird"
         baby.setScale(0.2)
+        baby.zPosition = 1 // Ensure it's above the nest texture
+        
+        // Position it at the center of the nest
+        baby.position = .zero
         
         let hungerBar = BabyHungerBar()
-            hungerBar.name = "hungerBar"
-            hungerBar.setScale(5.0)
-            hungerBar.position = CGPoint(x: 0, y: 350)
-            baby.addChild(hungerBar)
+        hungerBar.name = "hungerBar"
+        hungerBar.setScale(5.0)
+        hungerBar.position = CGPoint(x: 0, y: 350)
+        baby.addChild(hungerBar)
         
-        // Add physics so the player can "touch" the baby to feed it
+        // Physics body for feeding
         let body = SKPhysicsBody(circleOfRadius: 25)
         body.isDynamic = false
         body.categoryBitMask = PhysicsCategory.baby
@@ -925,30 +943,27 @@ extension GameScene {
         baby.physicsBody = body
 
         babySpawnTime = Date()
-        print("Baby spawned! Timer started.")
-
-        nest.addChild(baby)
+        nest.addChild(baby) // Add baby to the specific nest passed in
 
         viewModel?.hasBaby = true
-        // Save baby's WORLD position (scene coordinates)
         viewModel?.babyPosition = baby.convert(.zero, to: self)
         viewModel?.babySpawnDate = babySpawnTime
-        viewModel?.scheduleSave()
+        viewModel?.saveState()
 
-        // Visual Hatch Effect
         baby.alpha = 0
         baby.run(SKAction.fadeIn(withDuration: 1.0))
-
         viewModel?.currentMessage = "The baby has hatched! Now keep it fed."
     }
 
     /// Returns the next available nest that does not already contain a baby.
     /// No distance checks — just finds an empty nest.
     func nextEmptyNest() -> SKNode? {
-        // Prefer the newest nests (reverse order) so the latest built one fills first.
-        for node in children.reversed() where node.name == "final_nest" {
-            if node.childNode(withName: "babyBird") == nil {
-                return node
+        // Check for both the "active" build site and the "final" completed nest
+        for node in children.reversed() {
+            if node.name == "final_nest" || node.name == "nest_active" {
+                if node.childNode(withName: "babyBird") == nil {
+                    return node
+                }
             }
         }
         return nil
@@ -985,6 +1000,9 @@ extension GameScene {
             maleBird.physicsBody?.categoryBitMask = PhysicsCategory.mate
             maleBird.physicsBody?.contactTestBitMask = PhysicsCategory.player
             maleBird.physicsBody?.collisionBitMask = PhysicsCategory.none
+        maleBird.physicsBody?.categoryBitMask = PhysicsCategory.mate
+        // The male bird must be looking for the player
+        maleBird.physicsBody?.contactTestBitMask = PhysicsCategory.player
             
             addChild(maleBird)
         }
