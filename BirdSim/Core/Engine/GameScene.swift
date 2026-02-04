@@ -155,6 +155,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     self?.spawnSuccessNest()
                 }
             }
+        if let savedDate = viewModel?.babySpawnDate {
+                self.babySpawnTime = savedDate
+                self.isBabySpawned = true
+            }
         restoreReturnStateIfNeeded()
     }
     
@@ -191,13 +195,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func spawnSuccessNest() {
-        let nest = SKSpriteNode(imageNamed: "nest") // Make sure you have this image
-        nest.name = "final_nest"
+        // 1. Rename any existing nests so they are no longer the "active" target
+        self.enumerateChildNodes(withName: "final_nest") { node, _ in
+            node.name = "old_nest"
+        }
+
+        let nest = SKSpriteNode(imageNamed: "nest")
+        nest.name = "final_nest" // Now this is the ONLY node with this name
         nest.size = CGSize(width: 100, height: 100)
-        nest.zPosition = 5 // Above the ground
+        nest.zPosition = 5
         
-        // Pick a random spot within a specific range
-        // Adjust these numbers based on where your island "land" actually is
         let randomX = CGFloat.random(in: -1000...1000)
         let randomY = CGFloat.random(in: -1000...1000)
         nest.position = CGPoint(x: randomX, y: randomY)
@@ -274,8 +281,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
-        if let spawnTime = babySpawnTime {
+        if let spawnTime = babySpawnTime, let baby = self.childNode(withName: "babyBird") {
             let elapsed = Date().timeIntervalSince(spawnTime)
+            let remainingPercentage = CGFloat(1.0 - (elapsed / timeLimit))
+            if let bar = baby.childNode(withName: "hungerBar") as? BabyHungerBar {
+                    bar.updateBar(percentage: remainingPercentage)
+                if remainingPercentage > 0.25 {
+                        bar.stopPanic()
+                    }
+                }
             
             // Check if the 2-minute limit has passed
             if elapsed > timeLimit {
@@ -342,8 +356,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     feedBabyBirdMiniIsInRange = true
                     viewModel?.currentMessage = "Tap to feed baby bird"
                     
-                } else if checkDistance(to: "final_nest") {
-                    // Check if we found the mate yet
+                } else if checkDistance(to: "final_nest") || checkDistance(to: "old_nest") {
                     if viewModel?.hasFoundMale == true {
                         viewModel?.currentMessage = "The baby has hatched!"
                     } else {
@@ -395,21 +408,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         
         if viewModel?.userFedBabyCount == 2 {
-            removeBabyBird()
-                viewModel?.userScore += 2 // change score amount for build nest minigame here
-                print("added 2 to score")
-                removeFinalNest()
-                viewModel?.clearNestAndBabyState()
+            // 1. Find the baby before we remove it to get its position
+            if let baby = self.childNode(withName: "babyBird") {
+                let babyPos = baby.position
                 
-                viewModel?.userFedBabyCount = 0
-                viewModel?.hasFoundMale = false
-                viewModel?.currentMessage = "The baby has grown and left the nest!"
+                // 2. Find the nest at this specific location
+                // We look for both "final_nest" AND "old_nest"
+                let nodesAtPos = nodes(at: babyPos)
+                for node in nodesAtPos {
+                    if node.name == "final_nest" || node.name == "old_nest" {
+                        removeSpecificNest(node)
+                    }
+                }
+            }
+
+            removeBabyBird()
+            viewModel?.userScore += 2
+            viewModel?.clearNestAndBabyState()
+            viewModel?.userFedBabyCount = 0
+            viewModel?.hasFoundMale = false
+            viewModel?.currentMessage = "The baby has grown and left the nest!"
         }
 
-        func removeFinalNest() {
-            guard let nest = self.childNode(withName: "final_nest") else { return }
-            
-            // Prevent multiple triggers if the update loop runs again before removal
+        func removeSpecificNest(_ nest: SKNode) {
+            // Change name immediately so the update loop doesn't hit it again
             nest.name = "nest_removing"
 
             let fadeOut = SKAction.fadeOut(withDuration: 0.8)
@@ -418,7 +440,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let remove = SKAction.removeFromParent()
             
             nest.run(SKAction.sequence([group, remove]))
-            
         }
         
         func clearCollectedItemsFromMap() {
@@ -725,6 +746,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Add any missing transition functions below this line
     func transitionToFeedBabyScene() {
         guard let view = self.view else { return }
+        
         saveReturnState()
         let minigameScene = FeedBabyScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
@@ -741,6 +763,78 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 extension GameScene {
     
     // Nest game //
+    
+    class BabyHungerBar: SKNode {
+        private let barWidth: CGFloat = 60
+        private let barHeight: CGFloat = 8
+        private let fillNode = SKSpriteNode(color: .green, size: CGSize(width: 60, height: 8))
+        private var isPanicking = false
+        
+        override init() {
+            super.init()
+            
+            // 1. The background (the empty track)
+            let bgNode = SKSpriteNode(color: .black, size: CGSize(width: barWidth + 2, height: barHeight + 2))
+            bgNode.alpha = 0.5
+            bgNode.zPosition = -1 // Ensure it stays behind the fill
+            addChild(bgNode)
+            
+            // 2. The fill (the actual hunger level)
+            fillNode.anchorPoint = CGPoint(x: 0, y: 0.5)
+            fillNode.position = CGPoint(x: -barWidth / 2, y: 0)
+            addChild(fillNode)
+        }
+        
+        required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        
+        func updateBar(percentage: CGFloat) {
+            // Update the scale of the bar
+            fillNode.xScale = max(0, percentage)
+            
+            // --- Urgency Logic ---
+            if percentage > 0.6 {
+                fillNode.color = .green
+                stopPanic()
+            } else if percentage > 0.25 {
+                fillNode.color = .yellow
+                stopPanic()
+            } else {
+                fillNode.color = .red
+                triggerPanic() // Start the visual alarm
+            }
+        }
+        
+        private func triggerPanic() {
+            // Prevent stacking animations if already panicking
+            guard !isPanicking else { return }
+            isPanicking = true
+            
+            // A. Pulse the scale of the entire bar
+            let pulseUp = SKAction.scale(to: 1.25, duration: 0.25)
+            let pulseDown = SKAction.scale(to: 1.0, duration: 0.25)
+            let pulseSequence = SKAction.sequence([pulseUp, pulseDown])
+            self.run(SKAction.repeatForever(pulseSequence), withKey: "panicPulse")
+            
+            // B. Flash the fill color between Red and White
+            let flashWhite = SKAction.colorize(with: .white, colorBlendFactor: 1.0, duration: 0.15)
+            let flashRed = SKAction.colorize(with: .red, colorBlendFactor: 1.0, duration: 0.15)
+            let flashSequence = SKAction.sequence([flashWhite, flashRed])
+            fillNode.run(SKAction.repeatForever(flashSequence), withKey: "panicFlash")
+        }
+        
+        func stopPanic() {
+            guard isPanicking else { return }
+            isPanicking = false
+            
+            // Remove the animations and reset scale/color
+            self.removeAction(forKey: "panicPulse")
+            fillNode.removeAction(forKey: "panicFlash")
+            
+            // Reset to natural state
+            let resetScale = SKAction.scale(to: 1.0, duration: 0.2)
+            self.run(resetScale)
+        }
+    }
         
     func spawnBabyInNest() {
         // Look for "final_nest" (the name used in spawnSuccessNest)
@@ -749,12 +843,18 @@ extension GameScene {
             return
         }
         
-        let baby = SKSpriteNode(imageNamed: "babyBird")
+        let baby = SKSpriteNode(imageNamed: "babybird")
         baby.name = "babyBird"
         // Position the baby slightly inside the nest
         baby.position = CGPoint(x: nest.position.x, y: nest.position.y + 10)
         baby.zPosition = nest.zPosition + 1
         baby.setScale(0.2)
+        
+        let hungerBar = BabyHungerBar()
+            hungerBar.name = "hungerBar"
+            hungerBar.setScale(5.0)
+            hungerBar.position = CGPoint(x: 0, y: 350)
+            baby.addChild(hungerBar)
         
         // Add physics so the player can "touch" the baby to feed it
         baby.physicsBody = SKPhysicsBody(circleOfRadius: 25)
