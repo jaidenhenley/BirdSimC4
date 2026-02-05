@@ -397,8 +397,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
 
                     if let item = closestItem {
-                        viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "")"
+                        let key = item.name?.lowercased() ?? ""
+                        let count = viewModel?.inventory[key] ?? 0
+                        if count > 0 {
+                            viewModel?.currentMessage = "You already have a \(key)."
+                        } else {
+                            viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "Item")"
+                        }
                     }
+                }
+                if viewModel?.inventory == ["stick": 1, "leaf": 1, "spiderweb": 1, "dandelion": 1]  {
+                    viewModel?.currentMessage = "Inventory is full Build a nest"
                 }
             }
         } else {

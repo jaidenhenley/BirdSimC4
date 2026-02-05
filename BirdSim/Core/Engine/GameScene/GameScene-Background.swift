@@ -38,10 +38,8 @@ extension GameScene {
         waterBackground.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         waterBackground.position = .zero
         waterBackground.zPosition = -2
-        waterBackground.size = CGSize(width: 12000, height: 12000)
-        
         // Treat map as fixed world size (no scaling hacks)
-        waterBackground.size = CGSize(width: 10000, height: 8000)
+        waterBackground.size = CGSize(width: 10000, height: 6000)
         waterBackground.xScale = 1
         waterBackground.yScale = 1
         
