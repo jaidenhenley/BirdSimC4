@@ -83,8 +83,4 @@ extension GameScene {
             }
         }
     }
-
-
-    
-    
 }
