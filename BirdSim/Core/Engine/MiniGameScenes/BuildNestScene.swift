@@ -11,10 +11,12 @@ class BuildNestScene: SKScene {
     var viewModel: MainGameView.ViewModel?
     var draggedNode: SKSpriteNode?
     var originalPosition: CGPoint?
+    private var backgroundNode: SKSpriteNode?
     
     // This connects the ViewModel's success to the Scene's transition
     // Inside BuildNestScene.swift
     override func didMove(to view: SKView) {
+        self.scaleMode = .resizeFill
         
         SoundManager.shared.startBackgroundMusic(track: .nestBuilding)
         // Success path
@@ -70,13 +72,15 @@ class BuildNestScene: SKScene {
     
     // --- 1. SETUP THE INITIAL VIEW ---
     func setupGame() {
-        backgroundColor = .systemBlue
+        setupBackground()
+
         
         let backLabel = SKLabelNode(text: "EXIT MINI-GAME")
         backLabel.position = CGPoint(x: frame.midX - 100, y: 100) // Moved slightly left
         backLabel.fontName = "AvenirNext-Bold"
         backLabel.fontSize = 20
         backLabel.name = "Back Button"
+        backLabel.zPosition = 50
         addChild(backLabel)
         
         
@@ -84,6 +88,31 @@ class BuildNestScene: SKScene {
         viewModel?.startNewChallenge()
     }
     
+    func setupBackground() {
+        // If the background already exists (e.g., on rotation/resize), just update its size/position
+        if let bg = backgroundNode {
+            bg.size = self.size
+            bg.position = CGPoint(x: frame.midX, y: frame.midY)
+            return
+        }
+
+        // Create the background sprite using your asset
+        let backgroundtexture = SKTexture(image: .background)
+        let background = SKSpriteNode(texture: backgroundtexture)
+
+        background.zPosition = -100 // Behind everything
+        background.size = self.size
+        background.position = CGPoint(x: frame.midX, y: frame.midY)
+
+        addChild(background)
+        backgroundNode = background
+    }
+    
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        backgroundNode?.size = self.size
+        backgroundNode?.position = CGPoint(x: frame.midX, y: frame.midY)
+    }
     
     // --- 2. THE MEMORIZATION PHASE ---
     func showMemorizationPhase() {
@@ -116,28 +145,53 @@ class BuildNestScene: SKScene {
     
     // --- 3. THE BUILDING PHASE ---
     func setupBuildingPhase() {
-        // 1. The 3 Empty Slots (These Stay)
+        // Remove any previous UI background if present
+        self.childNode(withName: "BuildBG")?.removeFromParent()
+
+        // Layout constants
+        let slotSize = CGSize(width: 90, height: 90)
+        let draggableSize = CGSize(width: 70, height: 70)
+        let spacingX: CGFloat = 110
+        let slotsY: CGFloat = 60
+        let draggablesY: CGFloat = -120
+
+        // Background size (wide enough for 4 columns + padding)
+        let bgWidth = (3 * spacingX) + slotSize.width + 120 // 3 gaps + slot width + padding
+        let bgHeight = slotSize.height + draggableSize.height + 200 // rows + vertical padding
+        let bg = SKShapeNode(rectOf: CGSize(width: bgWidth, height: bgHeight), cornerRadius: 16)
+        bg.name = "BuildBG"
+        bg.fillColor = .black
+        bg.strokeColor = .clear
+        bg.alpha = 0.3
+        bg.position = CGPoint(x: frame.midX, y: frame.midY)
+        bg.zPosition = 5
+        addChild(bg)
+
+        // 1. The 4 Empty Slots (Centered)
         for i in 0..<4 {
-            let slot = SKShapeNode(rectOf: CGSize(width: 90, height: 90))
+            let slot = SKShapeNode(rectOf: slotSize, cornerRadius: 8)
             slot.name = "slot_\(i)"
-            slot.position = CGPoint(x: frame.midX + CGFloat(i - 1) * 110, y: frame.midY)
+            let x = (CGFloat(i) - 1.5) * spacingX
+            slot.position = CGPoint(x: frame.midX + x, y: frame.midY + slotsY)
             slot.strokeColor = .white
-            slot.fillColor = .clear // NO yellow circle
+            slot.fillColor = .clear
+            slot.zPosition = 6
             addChild(slot)
         }
-        
-        // 2. The 3 Draggable Items at the bottom (These Stay)
+
+        // 2. The 4 Draggable Items (Centered below)
         let items = ["stick", "leaf", "spiderweb", "dandelion"]
         for (index, name) in items.enumerated() {
             let draggable = SKSpriteNode(imageNamed: name)
             draggable.name = name
-            draggable.size = CGSize(width: 70, height: 70)
-            // Positioned at the BOTTOM of the screen
-            draggable.position = CGPoint(x: frame.midX + CGFloat(index - 1) * 110, y: 200)
-            draggable.zPosition = 10
+            draggable.size = draggableSize
+            let x = (CGFloat(index) - 1.5) * spacingX
+            draggable.position = CGPoint(x: frame.midX + x, y: frame.midY + draggablesY)
+            draggable.zPosition = 7
             addChild(draggable)
         }
     }
+    
     
     // --- 4. TOUCH CONTROLS ---
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -171,6 +225,7 @@ class BuildNestScene: SKScene {
             placedItem.size = CGSize(width: 80, height: 80)
             placedItem.position = slot.position
             placedItem.name = "placed_item"
+            placedItem.zPosition = 8
             // Store the name of the source button so we can find it later to reset
             placedItem.userData = ["sourceButton": draggedNode.name!]
             addChild(placedItem)
@@ -230,3 +285,4 @@ class BuildNestScene: SKScene {
         }
     }
 }
+
