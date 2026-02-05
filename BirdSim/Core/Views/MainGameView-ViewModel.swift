@@ -47,6 +47,8 @@ extension MainGameView {
         // Inside MainGameView.ViewModel
         // Inside MainGameView.ViewModel
         @Published var activeNestNode: SKNode?
+        @Published var pendingNestWorldPosition: CGPoint?
+        @Published var pendingNestAnchorTreeName: String?
 
         // Inside your ViewModel
         

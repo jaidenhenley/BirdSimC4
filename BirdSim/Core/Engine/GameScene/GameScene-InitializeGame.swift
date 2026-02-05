@@ -41,9 +41,17 @@ extension GameScene {
         while spawned < min(desiredPredatorCount, predatorSpawnPoints.count) && spawnPredatorAtAvailableSpot() {
             spawned += 1
         }
-        setupBuildNestSpot()
-        setupFeedUserBirdSpot()
-        setupFeedBabyBirdSpot()
+        setupBuildNestTree(in: CGPoint(x: -200, y: 0))
+        setupBuildNestTree(in: CGPoint(x: -2000, y: 1100))
+        setupBuildNestTree(in: CGPoint(x: -1600, y: -1000))
+        setupBuildNestTree(in: CGPoint(x: 2900, y: -180))
+        setupBuildNestTree(in: CGPoint(x: 1709, y: 378))
+
+        setupFeedUserBirdSpot(in: CGPoint(x: 180, y: -1600))
+        setupFeedUserBirdSpot(in: CGPoint(x: -3000, y: 100))
+        setupFeedUserBirdSpot(in: CGPoint(x: 1621, y: 1539))
+
+
         setupLeaveIslandSpot()
         
         spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
@@ -56,8 +64,44 @@ extension GameScene {
         spawnItem(at: CGPoint(x: -4500, y: 300), type: "dandelion")
         
         
-        spawnItem(at: CGPoint(x: 900, y: 900), type: "tree1")
+        //Spawns building
+        spawnItem(at: CGPoint(x: -1650, y: -1100), type: "aquarium")
+        spawnItem(at: CGPoint(x: -500, y: -1100), type: "casino")
+        spawnItem(at: CGPoint(x: -865, y: 1000), type: "fountain")
 
+        
+        
+        //Spawns the path
+        
+        
+        
+        spawnItem(at: CGPoint(x: -450, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -550, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -650, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -750, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -850, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1313), type: "stonePath")
+        
+        spawnItem(at: CGPoint(x: -950, y: -1213), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1113), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1013), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -913), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -813), type: "stonePath")
+
+        spawnItem(at: CGPoint(x: -1050, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1150, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1250, y: -1313), type: "stonePath")
+        
+        spawnItem(at: CGPoint(x: -1350, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1450, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1550, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1650, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1750, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1850, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1950, y: -1313), type: "stonePath")
+
+        
+        
         // If we're resetting, force the player + camera back to defaults and
         // overwrite any previously persisted return state.
         if resetState {
@@ -83,33 +127,25 @@ extension GameScene {
     
     func setupLeaveIslandSpot() {
         if self.childNode(withName: leaveIslandMini) != nil { return }
-        let spot = SKSpriteNode(color: .systemCyan, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 200, y: -450)
+        let spot = SKSpriteNode(imageNamed: "bridge")
+        spot.position = CGPoint(x: 0, y: -2150)
         spot.name = leaveIslandMini
         addChild(spot)
     }
     
-    func setupBuildNestSpot() {
-        if self.childNode(withName: buildNestMini) != nil { return }
-        let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: -200, y: -150)
-        spot.name = buildNestMini
-        addChild(spot)
+    func setupBuildNestTree(in position: CGPoint) {
+        let tree = SKSpriteNode(imageNamed: "tree1")
+        tree.position = position
+        tree.name = buildNestMini
+        addChild(tree)
     }
     
-    func setupFeedUserBirdSpot() {
-        if self.childNode(withName: feedUserBirdMini) != nil { return }
-        let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: -200, y: 150)
+    func setupFeedUserBirdSpot(in position: CGPoint) {
+        let spot = SKSpriteNode(imageNamed: "caterpiller")
+        spot.position = position
         spot.name = feedUserBirdMini
+        spot.size = CGSize(width: 120, height: 120)
         addChild(spot)
     }
     
-    func setupFeedBabyBirdSpot() {
-        if self.childNode(withName: feedBabyBirdMini) != nil { return }
-        let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 200, y: -150)
-        spot.name = feedBabyBirdMini
-        addChild(spot)
-    }
 }

@@ -40,6 +40,8 @@ struct InventoryView: View {
                                     Text("🍃")
                                 } else if name == "spiderweb" {
                                     Text("🕸️")
+                                } else if name == "dandelion" {
+                                    Text("🌼")
                                 }
                                 
                                 Text(name.capitalized)

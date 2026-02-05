@@ -38,46 +38,12 @@ extension GameScene {
         waterBackground.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         waterBackground.position = .zero
         waterBackground.zPosition = -2
-        waterBackground.size = CGSize(width: 12000, height: 12000)
-        
         // Treat map as fixed world size (no scaling hacks)
-        waterBackground.size = CGSize(width: 10000, height: 5000)
+        waterBackground.size = CGSize(width: 10000, height: 6000)
         waterBackground.xScale = 1
         waterBackground.yScale = 1
         
-        
-        
         addChild(grassBackground)
         addChild(waterBackground)
-        
-        // DEBUG: visualize world bounds
-        // let mapFrame = SKShapeNode(rect: background.frame)
-        // mapFrame.strokeColor = .green
-        // mapFrame.lineWidth = 8
-        // mapFrame.zPosition = 1000
-        // addChild(mapFrame)
     }
-    
-    // Dynamically resizes water background so it always fills the visible camera area.
-    // Prevents black edges when zooming or panning.
-    func resizeWaterToFillScreen() {
-        guard let view = self.view else { return }
-        
-        let padding: CGFloat = 150.0 // extra buffer to prevent black edges
-        let visibleWidth = view.bounds.width * cameraNode.xScale + padding
-        let visibleHeight = view.bounds.height * cameraNode.yScale + padding
-        
-        for node in children where node.name == "background1" {
-            if let water = node as? SKSpriteNode {
-                water.size = CGSize(
-                    width: max(water.size.width, visibleWidth),
-                    height: max(water.size.height, visibleHeight)
-                )
-                
-                // Center water on camera, plus small offset to ensure coverage
-                water.position = cameraNode.position
-            }
-        }
-    }
-
 }

@@ -46,11 +46,24 @@ extension GameScene {
         nest.size = CGSize(width: 100, height: 100)
         nest.zPosition = 5
         
-        let randomX = CGFloat.random(in: -1000...1000)
-        let randomY = CGFloat.random(in: -1000...1000)
-        nest.position = CGPoint(x: randomX, y: randomY)
+        // Preferred spawn point: the bottom of the tapped tree computed earlier
+        var spawnPoint: CGPoint = .zero
+        if let pos = viewModel?.pendingNestWorldPosition {
+            spawnPoint = pos
+        } else if let player = self.childNode(withName: "userBird") {
+            // Fallback: nearest tree base to the player
+            let (_, bottom) = nearestTreeBase(from: player.position)
+            spawnPoint = bottom ?? player.position
+        }
+        nest.position = spawnPoint
         
         addChild(nest)
+        registerActiveNest(nest)
+        
+        // Persist the nest position and clear the temporary pending values
+        viewModel?.nestPosition = spawnPoint
+        viewModel?.pendingNestWorldPosition = nil
+        viewModel?.pendingNestAnchorTreeName = nil
         
         nest.alpha = 0
         nest.setScale(0.1)
@@ -73,11 +86,11 @@ extension GameScene {
     func checkBabyWinCondition() {
         // We now check the fedCount inside the specific nest being interacted with
         guard let nest = viewModel?.activeNestNode,
-              let data = nest.userData as? NSMutableDictionary,
+              let data = nest.userData,
               let fedCount = data["fedCount"] as? Int,
               fedCount >= 2 else { return }
         
-        if let baby = nest.childNode(withName: "babyBird") {
+        if nest.childNode(withName: "babyBird") != nil {
             // Logic for a baby growing up
             self.isBabySpawned = false // Reference to local Scene property
             
@@ -91,6 +104,8 @@ extension GameScene {
                 self?.viewModel?.userScore += 5
                 self?.viewModel?.currentMessage = "A baby has grown and left the nest!"
                 self?.viewModel?.activeNestNode = nil
+                self?.currentActiveNest = nil
+                self?.viewModel?.clearNestAndBabyState()
             }
         }
     }
@@ -111,7 +126,7 @@ extension GameScene {
         baby.addChild(hungerBar)
         
         // IMPORTANT: The individual timer is born here
-        let data = (nest.userData as? NSMutableDictionary) ?? NSMutableDictionary()
+        let data = (nest.userData) ?? NSMutableDictionary()
         data["spawnDate"] = Date()
         data["fedCount"] = 0
         nest.userData = data
@@ -166,6 +181,8 @@ extension GameScene {
             
             addChild(nest)
 
+            registerActiveNest(nest)
+            
             if viewModel.hasBaby {
                 let baby = SKSpriteNode(imageNamed: "babybird")
                 baby.name = "babyBird"
@@ -189,3 +206,4 @@ extension GameScene {
         }
     }
 }
+

@@ -25,7 +25,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
 
     var viewModel: MainGameView.ViewModel?
     
-    var bird = SKSpriteNode(color: .yellow, size: CGSize(width: 40, height: 40))
+    var bird = SKSpriteNode(imageNamed: "User_BirdFlappy")
     
     override func didMove(to view: SKView) {
         SoundManager.shared.startBackgroundMusic(track: .leaveMap)
@@ -41,6 +41,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     
     func setupBird() {
         bird.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
+        bird.size = CGSize(width: 100, height: 100)
         bird.physicsBody = SKPhysicsBody(circleOfRadius: 20)
         bird.physicsBody?.isDynamic = true
         bird.physicsBody?.categoryBitMask = 1
@@ -62,7 +63,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createObstaclePair() {
-        let gapHeight: CGFloat = 200.0
+        let gapHeight: CGFloat = 300.0
             let pipeWidth: CGFloat = 60.0
             let pipeOffset = CGFloat.random(in: -150...150)
             
