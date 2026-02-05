@@ -424,7 +424,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         updatePlayerPosition(deltaTime: deltaTime)
         clampPlayerToMap()
         updateCameraFollow(target: player.position, deltaTime: deltaTime)
-        resizeWaterToFillScreen()
         clampCameraToMap()
     }
     

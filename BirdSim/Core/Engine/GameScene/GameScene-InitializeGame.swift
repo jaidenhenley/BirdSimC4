@@ -43,7 +43,6 @@ extension GameScene {
         }
         setupBuildNestSpot()
         setupFeedUserBirdSpot()
-        setupFeedBabyBirdSpot()
         setupLeaveIslandSpot()
         
         spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
@@ -55,9 +54,6 @@ extension GameScene {
         spawnItem(at: CGPoint(x: -500, y: 200), type: "dandelion")
         spawnItem(at: CGPoint(x: -4500, y: 300), type: "dandelion")
         
-        
-        spawnItem(at: CGPoint(x: 900, y: 900), type: "tree1")
-
         // If we're resetting, force the player + camera back to defaults and
         // overwrite any previously persisted return state.
         if resetState {
@@ -91,10 +87,10 @@ extension GameScene {
     
     func setupBuildNestSpot() {
         if self.childNode(withName: buildNestMini) != nil { return }
-        let spot = SKSpriteNode(color: .blue, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: -200, y: -150)
-        spot.name = buildNestMini
-        addChild(spot)
+        let tree = SKSpriteNode(imageNamed: "tree1")
+        tree.position = CGPoint(x: -200, y: -150)
+        tree.name = buildNestMini
+        addChild(tree)
     }
     
     func setupFeedUserBirdSpot() {
@@ -105,11 +101,4 @@ extension GameScene {
         addChild(spot)
     }
     
-    func setupFeedBabyBirdSpot() {
-        if self.childNode(withName: feedBabyBirdMini) != nil { return }
-        let spot = SKSpriteNode(color: .yellow, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 200, y: -150)
-        spot.name = feedBabyBirdMini
-        addChild(spot)
-    }
 }
