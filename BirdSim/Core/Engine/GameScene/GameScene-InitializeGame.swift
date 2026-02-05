@@ -41,8 +41,17 @@ extension GameScene {
         while spawned < min(desiredPredatorCount, predatorSpawnPoints.count) && spawnPredatorAtAvailableSpot() {
             spawned += 1
         }
-        setupBuildNestSpot()
-        setupFeedUserBirdSpot()
+        setupBuildNestTree(in: CGPoint(x: -200, y: 0))
+        setupBuildNestTree(in: CGPoint(x: -2000, y: 1100))
+        setupBuildNestTree(in: CGPoint(x: -1600, y: -1000))
+        setupBuildNestTree(in: CGPoint(x: 2900, y: -180))
+        setupBuildNestTree(in: CGPoint(x: 1709, y: 378))
+
+        setupFeedUserBirdSpot(in: CGPoint(x: 180, y: -1600))
+        setupFeedUserBirdSpot(in: CGPoint(x: -3000, y: 100))
+        setupFeedUserBirdSpot(in: CGPoint(x: 1621, y: 1239))
+
+
         setupLeaveIslandSpot()
         
         spawnItem(at: CGPoint(x: 400, y: 100), type: "leaf")
@@ -79,25 +88,24 @@ extension GameScene {
     
     func setupLeaveIslandSpot() {
         if self.childNode(withName: leaveIslandMini) != nil { return }
-        let spot = SKSpriteNode(color: .systemCyan, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: 200, y: -450)
+        let spot = SKSpriteNode(imageNamed: "bridge")
+        spot.position = CGPoint(x: 0, y: -2150)
         spot.name = leaveIslandMini
         addChild(spot)
     }
     
-    func setupBuildNestSpot() {
-        if self.childNode(withName: buildNestMini) != nil { return }
+    func setupBuildNestTree(in position: CGPoint) {
         let tree = SKSpriteNode(imageNamed: "tree1")
-        tree.position = CGPoint(x: -200, y: -150)
+        tree.position = position
         tree.name = buildNestMini
         addChild(tree)
     }
     
-    func setupFeedUserBirdSpot() {
-        if self.childNode(withName: feedUserBirdMini) != nil { return }
-        let spot = SKSpriteNode(color: .green, size: CGSize(width: 50, height: 50))
-        spot.position = CGPoint(x: -200, y: 150)
+    func setupFeedUserBirdSpot(in position: CGPoint) {
+        let spot = SKSpriteNode(imageNamed: "caterpiller")
+        spot.position = position
         spot.name = feedUserBirdMini
+        spot.size = CGSize(width: 120, height: 120)
         addChild(spot)
     }
     
