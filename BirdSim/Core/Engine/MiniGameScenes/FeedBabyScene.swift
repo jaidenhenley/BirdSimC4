@@ -6,12 +6,7 @@
 //
 
 
-//
-//  MiniGameScene3.swift
-//  BirdSimulator
-//
-//  Created by Jaiden Henley on 1/26/26.
-//
+
 
 import SpriteKit
 
@@ -55,11 +50,8 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = nil
         
         if success {
-            viewModel?.userFedBabyCount += 1
-            if let currentSpawn = viewModel?.babySpawnDate {
-                let bonus: TimeInterval = 60
-                viewModel?.babySpawnDate = min(Date(), currentSpawn.addingTimeInterval(bonus))
-            }
+            // This is the "Magic Button" that resets the timer for the active nest
+            viewModel?.incrementFeedingForCurrentNest()
         }
         
         let endLabel = SKLabelNode(text: success ? "SUCCESS!" : "TRY AGAIN!")
@@ -72,7 +64,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         
         let wait = SKAction.wait(forDuration: 1.0)
         let transitionAction = SKAction.run { [weak self] in
-            // This now works because the function exists below
             self?.returnToMainGame()
         }
         

@@ -145,10 +145,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     self?.spawnSuccessNest()
                 }
             }
-        if let savedDate = viewModel?.babySpawnDate {
-                self.babySpawnTime = savedDate
-                self.isBabySpawned = true
-            }
+        
         restoreReturnStateIfNeeded()
         viewModel?.controlsAreVisable = true
         checkBabyWinCondition()
@@ -199,14 +196,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // - Movement & camera follow
     // - UI message updates
     override func update(_ currentTime: TimeInterval) {
+        // 1. Reset proximity booleans at the start of every frame
         buildNestMiniIsInRange = false
         feedUserBirdMiniIsInRange = false
         feedBabyBirdMiniIsInRange = false
         leaveIslandMiniIsInRange = false
         
-        // Clear the message at the start of the frame so it goes away when out of range
+        // Clear the message so it only shows when the player is actually in range of something
         viewModel?.currentMessage = ""
         
+        // 2. Delta Time Calculation
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
         }
@@ -215,7 +214,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let deltaTime = min(max(rawDelta, 1.0/120.0), 1.0/30.0)
         lastUpdateTime = currentTime
         
-        // Periodically persist player & camera positions (once per second)
+        // 3. Periodic State Persistence (Once per second)
         positionPersistAccumulator += deltaTime
         if positionPersistAccumulator >= 1.0 {
             positionPersistAccumulator = 0
@@ -226,7 +225,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             viewModel?.saveState()
         }
         
-        // Gradual health drain over time (frame-rate independent)
+        // 4. Gradual Health Drain (Frame-rate independent)
         if var health = viewModel?.health, health > 0 {
             let drainThisFrame = 0.01 * deltaTime
             health = max(0, health - drainThisFrame)
@@ -234,46 +233,82 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 viewModel?.health = health
             }
         }
-        
-        if let spawnTime = babySpawnTime, let baby = babyBirdNode() {
-            let elapsed = Date().timeIntervalSince(spawnTime)
-            let remainingPercentage = CGFloat(1.0 - (elapsed / timeLimit))
 
-            if let bar = baby.childNode(withName: "hungerBar") as? BabyHungerBar {
-                bar.updateBar(percentage: remainingPercentage)
-                if remainingPercentage > 0.25 {
-                    bar.stopPanic()
+        // --- 5. MULTI-NEST & BABY SYSTEM ---
+        // We loop through all children to manage every nest independently
+        // Inside override func update(_ currentTime: TimeInterval)
+        for node in children {
+            // Only look for nests that are active
+            guard node.name == "final_nest" || node.name == "nest_active" else { continue }
+            
+            // Attempt to pull the unique timer for THIS nest
+            if let nestData = node.userData,
+               let spawnTime = nestData["spawnDate"] as? Date {
+                
+                let timeLimit: TimeInterval = 120 // 2 minutes
+                let elapsed = Date().timeIntervalSince(spawnTime)
+                let remainingPercentage = CGFloat(1.0 - (elapsed / timeLimit))
+                
+                // --- FIX STARTS HERE ---
+                // 1. Search specifically inside THIS nest for the baby
+                if let baby = node.childNode(withName: "babyBird") {
+                    // 2. Search specifically inside THAT baby for the hunger bar (no //)
+                    if let bar = baby.childNode(withName: "hungerBar") as? BabyHungerBar {
+                        bar.updateBar(percentage: remainingPercentage)
+                    }
+                }
+                // --- FIX ENDS HERE ---
+                
+                // Abandonment check
+                if elapsed > timeLimit {
+                    node.removeFromParent()
+                    viewModel?.currentMessage = "A nest was abandoned..."
                 }
             }
-
-            // Check if the 2-minute limit has passed
-            if elapsed > timeLimit {
-                // 1. Remove the Baby (works even if it's inside the nest)
-                baby.removeFromParent()
-
-                // 2. Remove the Nest
-                // Inside the 'if elapsed > timeLimit' block
-                let nestToRemove = self.childNode(withName: "final_nest") ?? self.childNode(withName: "nest_active")
-                nestToRemove?.removeFromParent()
-
-                // 3. Reset State
-                babySpawnTime = nil
-                viewModel?.clearNestAndBabyState()
-                viewModel?.hasFoundMale = false
-                viewModel?.currentMessage = "The nest was abandoned..."
-                print("Nest and Baby disappeared due to timeout.")
+            
+            func feedSpecificBaby(nest: SKNode) {
+                // Only reset the timer for the nest we are interacting with
+                if let data = nest.userData as? NSMutableDictionary {
+                    data["spawnDate"] = Date() // Resetting the 'birthday' refills the bar
+                    
+                    // Increment the specific fed count for this nest
+                    let currentFed = (data["fedCount"] as? Int) ?? 0
+                    data["fedCount"] = currentFed + 1
+                }
+            }
+        
+            
+            // B. Handle Individual Success (Fed 2 times)
+            // We look for "fedCount" inside the nest's own userData
+            let fedCount = (node.userData?["fedCount"] as? Int) ?? 0
+            if fedCount >= 2 {
+                // Change name immediately so the loop doesn't process it again
+                node.name = "nest_leaving"
+                
+                viewModel?.userScore += 5
+                viewModel?.currentMessage = "The baby has grown and left the nest!"
+                
+                // Visual feedback: Nest and Baby fade away together
+                let grow = SKAction.scale(to: 1.1, duration: 0.2)
+                let fade = SKAction.fadeOut(withDuration: 0.5)
+                let remove = SKAction.removeFromParent()
+                
+                node.run(SKAction.sequence([grow, fade, remove]))
+                print("DEBUG: Nest successfully completed and cleared.")
+                continue
             }
         }
-        
-        // Get player once instead of multiple times
+        // --- END MULTI-NEST SYSTEM ---
+
+        // 6. Core Movement & Camera Preparation
         guard let player = self.childNode(withName: "userBird") else { return }
 
-        // Check for nearby predators and trigger minigame
+        // 7. Predator & Mini-game Triggering
         if !predatorHit, let predator = closestPredator(to: player, within: 200) {
             transitionToPredatorGame(triggeringPredator: predator)
         }
         
-        // Resolve predator cooldown and respawn up to desired count
+        // Resolve predator cooldown and respawn
         if predatorHit, let end = predatorCooldownEnd, Date() >= end {
             predatorHit = false
             predatorCooldownEnd = nil
@@ -286,23 +321,47 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         }
-        // Minigame checks
-        // This usually lives inside the update() function or a dedicated checkProximity() function
+
+        // 8. Interaction Logic (When not flying)
         if viewModel?.isFlying == false {
             if viewModel?.messageIsLocked == false {
                 
-                // --- 1. Priority: Mini-Games & Objectives ---
-                if checkDistance(to: "babyBird") {
-                    feedBabyBirdMiniIsInRange = true
-                    viewModel?.currentMessage = "Tap to feed baby bird"
+                // --- NEW TARGETED NEST DETECTION ---
+                var closestNest: SKNode? = nil
+                var minNestDist: CGFloat = 120 // Sensitivity radius
+                
+                // Search specifically for nest nodes
+                for node in children where node.name == "final_nest" || node.name == "nest_active" {
+                    let dx = player.position.x - node.position.x
+                    let dy = player.position.y - node.position.y
+                    let dist = sqrt(dx * dx + dy * dy)
                     
-                } else if checkDistance(to: "final_nest") || checkDistance(to: "old_nest") {
-                    if viewModel?.hasFoundMale == true {
-                        viewModel?.currentMessage = "The baby has hatched!"
+                    if dist < minNestDist {
+                        minNestDist = dist
+                        closestNest = node
+                    }
+                }
+                
+                // Priority 1: If we found a nest, check if it has a baby
+                if let nest = closestNest {
+                    // Check if THIS specific nest has a baby child
+                    if let baby = nest.childNode(withName: "babyBird") {
+                        feedBabyBirdMiniIsInRange = true
+                        viewModel?.currentMessage = "Tap to feed baby bird"
+                        
+                        // IMPORTANT: Tell the ViewModel exactly WHICH nest this is
+                        viewModel?.activeNestNode = nest
+                        
                     } else {
-                        viewModel?.currentMessage = "Nest complete! Find your mate."
+                        // Nest exists but no baby (Priority 2: Nest Status)
+                        if viewModel?.hasFoundMale == true {
+                            viewModel?.currentMessage = "The baby has hatched!"
+                        } else {
+                            viewModel?.currentMessage = "Nest complete! Find your mate."
+                        }
                     }
                     
+                // Priority 3: Other Mini-games (Stays the same)
                 } else if checkDistance(to: buildNestMini) {
                     buildNestMiniIsInRange = true
                     viewModel?.currentMessage = "Tap to build a nest"
@@ -316,26 +375,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     viewModel?.currentMessage = "Tap to leave island"
                     
                 } else {
-                    // --- 2. Secondary: Item Pickups ---
+                    // Secondary: Item Pickups
                     var closestItem: SKNode?
-                    var closestDistance: CGFloat = 200 // Max pickup range
+                    var minDistance: CGFloat = 200
 
-                    for node in children where ["stick", "leaf", "spiderweb","dandelion"].contains(node.name) {
-                        let dx = player.position.x - node.position.x
-                        let dy = player.position.y - node.position.y
-                        let distance = sqrt(dx * dx + dy * dy)
+                    for itemNode in children where ["stick", "leaf", "spiderweb", "dandelion"].contains(itemNode.name) {
+                        let dx = player.position.x - itemNode.position.x
+                        let dy = player.position.y - itemNode.position.y
+                        let dist = sqrt(dx * dx + dy * dy)
 
-                        if distance < closestDistance {
-                            closestDistance = distance
-                            closestItem = node
+                        if dist < minDistance {
+                            minDistance = dist
+                            closestItem = itemNode
                         }
                     }
 
                     if let item = closestItem {
                         viewModel?.currentMessage = "Pick up \(item.name?.capitalized ?? "")"
-                    } else {
-                        // 3. Clear message if nothing is nearby
-                        viewModel?.currentMessage = ""
                     }
                 }
             }
@@ -346,66 +402,34 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
+        // 9. Interaction Label UI Sync
+        let displayMessage = viewModel?.currentMessage ?? ""
+        interactionLabel.text = displayMessage
         
-        if viewModel?.userFedBabyCount == 2 {
-            // 1. Find the baby using the recursive search helper
-            if let baby = babyBirdNode() {
-                
-                // 2. Identify the nest (the baby's parent)
-                let nest = baby.parent
-                
-                // 3. STOP THE TIMER IMMEDIATELY
-                // This prevents the "abandoned" timeout logic from firing
-                self.babySpawnTime = nil
-                self.isBabySpawned = false
-                
-                // 4. Update Game State
-                viewModel?.userScore += 2
-                viewModel?.userFedBabyCount = 0
-                viewModel?.hasFoundMale = false
-                viewModel?.clearNestAndBabyState()
-                viewModel?.currentMessage = "The baby has grown and left the nest!"
-                
-                // 5. Visual Removal
-                let fade = SKAction.fadeOut(withDuration: 0.5)
-                let remove = SKAction.removeFromParent()
-                
-                // Removing the nest automatically removes the baby and the hunger bar
-                nest?.run(SKAction.sequence([fade, remove]))
-                
-                print("DEBUG: Successfully cleared nest and baby after 2 feedings.")
-            }
-        }
-        
-        let message = viewModel?.currentMessage ?? ""
-        interactionLabel.text = message
-        if message.isEmpty {
+        if displayMessage.isEmpty {
             if interactionLabel.alpha != 0 {
                 interactionLabel.removeAction(forKey: "msgFade")
-                let fade = SKAction.fadeOut(withDuration: 0.2)
-                interactionLabel.run(fade, withKey: "msgFade")
+                interactionLabel.run(SKAction.fadeOut(withDuration: 0.2), withKey: "msgFade")
             }
         } else {
             if interactionLabel.alpha != 1 {
                 interactionLabel.removeAction(forKey: "msgFade")
-                let fade = SKAction.fadeIn(withDuration: 0.1)
-                interactionLabel.run(fade, withKey: "msgFade")
+                interactionLabel.run(SKAction.fadeIn(withDuration: 0.1), withKey: "msgFade")
             }
         }
         
+        // 10. Visual State Updates
         if let delta = viewModel?.pendingScaleDelta, delta != 0 {
             adjustPlayerScale(by: delta)
             viewModel?.pendingScaleDelta = 0
         }
         
-        if let vm = viewModel {
-            if vm.isFlying != lastAppliedIsFlying {
-                lastAppliedIsFlying = vm.isFlying
-                applyBirdState(isFlying: vm.isFlying)
-            }
+        if let vm = viewModel, vm.isFlying != lastAppliedIsFlying {
+            lastAppliedIsFlying = vm.isFlying
+            applyBirdState(isFlying: vm.isFlying)
         }
         
-        // Core movement + camera systems
+        // 11. Physics & Camera Movement
         updatePlayerPosition(deltaTime: deltaTime)
         clampPlayerToMap()
         updateCameraFollow(target: player.position, deltaTime: deltaTime)
@@ -466,23 +490,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 
                 // Feed Baby Logic
-                if node.name == feedBabyBirdMini || node.name == "babyBird" {
+                if node.name == "feedBabyBirdMini" || node.name == "babyBird" {
                     guard viewModel?.isFlying != true else { continue }
 
                     if let player = self.childNode(withName: "userBird") {
-                        // If they tapped the baby, it may be nested. Use world coords.
-                        let targetPos: CGPoint
-                        if node.name == "babyBird" {
-                            targetPos = node.convert(.zero, to: self)
-                        } else {
-                            targetPos = node.position
-                        }
+                        // Calculate world position to handle nested nodes
+                        let targetPos = (node.name == "babyBird") ? node.convert(.zero, to: self) : node.position
 
                         let dx = player.position.x - targetPos.x
                         let dy = player.position.y - targetPos.y
                         let distance = sqrt(dx*dx + dy*dy)
+                        
+                        // Ensure player is close enough to interact
                         if distance > 200 { continue }
                     }
+
+                    // --- MULTI-NEST LOGIC START ---
+                    // 1. Identify the specific nest. If the user tapped the baby, the nest is its parent.
+                    let specificNest = (node.name == "babyBird") ? node.parent : node
+                    
+                    // 2. Tell the ViewModel: "This is the nest we are currently feeding"
+                    viewModel?.activeNestNode = specificNest
+                    // --- MULTI-NEST LOGIC END ---
 
                     transitionToFeedBabyScene()
                     viewModel?.controlsAreVisable = false
