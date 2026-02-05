@@ -49,7 +49,7 @@ extension GameScene {
 
         setupFeedUserBirdSpot(in: CGPoint(x: 180, y: -1600))
         setupFeedUserBirdSpot(in: CGPoint(x: -3000, y: 100))
-        setupFeedUserBirdSpot(in: CGPoint(x: 1621, y: 1239))
+        setupFeedUserBirdSpot(in: CGPoint(x: 1621, y: 1539))
 
 
         setupLeaveIslandSpot()
@@ -62,6 +62,53 @@ extension GameScene {
         spawnItem(at: CGPoint(x: 700, y: 200), type: "spiderweb")
         spawnItem(at: CGPoint(x: -500, y: 200), type: "dandelion")
         spawnItem(at: CGPoint(x: -4500, y: 300), type: "dandelion")
+        
+        
+        //Spawns building
+        spawnItem(at: CGPoint(x: -1650, y: -1100), type: "aquarium")
+        spawnItem(at: CGPoint(x: -500, y: -1100), type: "casino")
+
+        
+        
+        //Spawns the path
+        
+        
+        
+        spawnItem(at: CGPoint(x: -450, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -450, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -550, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -550, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -650, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -650, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -750, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -750, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -850, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -850, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1050, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1050, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1150, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1150, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1250, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1250, y: -1313), type: "stonePath")
+        
+        spawnItem(at: CGPoint(x: -1350, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1350, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1450, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1450, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1550, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1550, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1650, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1650, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1750, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1750, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1850, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1850, y: -1313), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1950, y: -1403), type: "stonePath")
+        spawnItem(at: CGPoint(x: -1950, y: -1313), type: "stonePath")
+
+        
         
         // If we're resetting, force the player + camera back to defaults and
         // overwrite any previously persisted return state.

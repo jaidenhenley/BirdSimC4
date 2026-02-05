@@ -37,6 +37,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var healthAccumulator: CGFloat = 0
     var positionPersistAccumulator: CGFloat = 0
     var lastAppliedIsFlying: Bool = false
+
+    // Only one active nest can exist at a time
+    weak var currentActiveNest: SKNode?
     
     // MARK: - Walk Animaiton Variables
     // controls the walking animation for the user bird
@@ -241,6 +244,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // Only look for nests that are active
             guard node.name == "final_nest" || node.name == "nest_active" else { continue }
             
+            if self.currentActiveNest == nil { self.currentActiveNest = node }
+            
             // Attempt to pull the unique timer for THIS nest
             if let nestData = node.userData,
                let spawnTime = nestData["spawnDate"] as? Date {
@@ -261,6 +266,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
                 // Abandonment check
                 if elapsed > timeLimit {
+                    if self.currentActiveNest === node {
+                        self.currentActiveNest = nil
+                    }
                     node.removeFromParent()
                     viewModel?.currentMessage = "A nest was abandoned..."
                 }
@@ -282,7 +290,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 // Visual feedback: Nest and Baby fade away together
                 let grow = SKAction.scale(to: 1.1, duration: 0.2)
                 let fade = SKAction.fadeOut(withDuration: 0.5)
-                let remove = SKAction.removeFromParent()
+                let remove = SKAction.run { [weak self, weak node] in
+                    if let node, self?.currentActiveNest === node {
+                        self?.currentActiveNest = nil
+                    }
+                    node?.removeFromParent()
+                }
+                
+                viewModel?.clearNestAndBabyState()
                 
                 node.run(SKAction.sequence([grow, fade, remove]))
                 print("DEBUG: Nest successfully completed and cleared.")
@@ -336,7 +351,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 // Priority 1: If we found a nest, check if it has a baby
                 if let nest = closestNest {
                     // Check if THIS specific nest has a baby child
-                    if let baby = nest.childNode(withName: "babyBird") {
+                    if nest.childNode(withName: "babyBird") != nil {
                         feedBabyBirdMiniIsInRange = true
                         viewModel?.currentMessage = "Tap to feed baby bird"
                         
@@ -454,12 +469,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         let distance = sqrt(dx*dx + dy*dy)
                         if distance > 220 || viewModel?.isFlying == true { continue }
                     }
+
+                    // Prevent building if a nest is already active
+                    if self.currentActiveNest != nil {
+                        self.viewModel?.currentMessage = "You already have a nest. Wait until it’s gone."
+                        continue
+                    }
+
+                    // Require all items
                     if let items = viewModel?.collectedItems,
                        items.contains("stick"),
                        items.contains("leaf"),
                        items.contains("spiderweb"),
-                        items.contains("dandelion")
-                    {
+                       items.contains("dandelion") {
+
+                        // Prefer the tapped tree's bottom if available; otherwise fall back to nearest tree to player
+                        if node.name == self.buildNestMini {
+                            let frame = node.calculateAccumulatedFrame()
+                            let bottom = CGPoint(x: frame.midX, y: frame.minY)
+                            self.viewModel?.pendingNestWorldPosition = bottom
+                            self.viewModel?.pendingNestAnchorTreeName = node.name
+                        } else if let player = self.childNode(withName: "userBird") {
+                            let (tree, bottomPoint) = self.nearestTreeBase(from: player.position)
+                            self.viewModel?.pendingNestWorldPosition = bottomPoint ?? player.position
+                            self.viewModel?.pendingNestAnchorTreeName = tree?.name
+                        }
+
                         transitionToBuildNestScene()
                         viewModel?.controlsAreVisable = false
                         return
@@ -541,10 +576,44 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         } // End of touchesBegan
 
+
+    // MARK: - Tree / Nest Placement Helpers
+    // Finds the nearest node named like a tree and returns the node and a point at its visual bottom.
+    // Tree nodes are expected to have names containing "tree" (case-insensitive) and a non-zero frame.
+    func nearestTreeBase(from position: CGPoint) -> (SKNode?, CGPoint?) {
+        var closest: SKNode? = nil
+        var minDist: CGFloat = .greatestFiniteMagnitude
+        for node in children {
+            guard let rawName = node.name else { continue }
+            let name = rawName.lowercased()
+            let isTreeByName = name.contains("tree") || rawName == buildNestMini
+            guard isTreeByName else { continue }
+            // Use world-space position of the node's frame bottom
+            let frame = node.calculateAccumulatedFrame()
+            if frame.isEmpty { continue }
+            let bottom = CGPoint(x: frame.midX, y: frame.minY)
+            let dx = position.x - bottom.x
+            let dy = position.y - bottom.y
+            let dist = sqrt(dx*dx + dy*dy)
+            if dist < minDist {
+                minDist = dist
+                closest = node
+            }
+        }
+        if let node = closest {
+            let frame = node.calculateAccumulatedFrame()
+            let bottom = CGPoint(x: frame.midX, y: frame.minY)
+            return (node, bottom)
+        }
+        return (nil, nil)
+    }
+
+    // Call this whenever a new nest is spawned to track exclusivity
+    func registerActiveNest(_ nest: SKNode) {
+        currentActiveNest = nest
+    }
+
 } // End of GameScene Class
-
-  
-
 
 
 
