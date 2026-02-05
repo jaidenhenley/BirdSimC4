@@ -21,6 +21,17 @@ extension GameScene {
         return nil
     }
     
+    func feedSpecificBaby(nest: SKNode) {
+        // Only reset the timer for the nest we are interacting with
+        if let data = nest.userData as? NSMutableDictionary {
+            data["spawnDate"] = Date() // Resetting the 'birthday' refills the bar
+            
+            // Increment the specific fed count for this nest
+            let currentFed = (data["fedCount"] as? Int) ?? 0
+            data["fedCount"] = currentFed + 1
+        }
+    }
+    
     func spawnSuccessNest() {
         let nestID = UUID().uuidString
         let nest = SKSpriteNode(imageNamed: "nest")
