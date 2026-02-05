@@ -84,6 +84,8 @@ extension GameScene {
         }
     }
     
+    
+    
     func spawnBabyInNest(in nest: SKNode) {
         let baby = SKSpriteNode(imageNamed: "babybird")
         baby.name = "babyBird"

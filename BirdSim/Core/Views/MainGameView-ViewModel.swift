@@ -32,7 +32,6 @@ extension MainGameView {
         @Published var showGameOver: Bool = false
         @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
-        @Published var userScore: Int = 0
         
         // SwiftData context & model
         private var modelContext: ModelContext?
@@ -50,6 +49,33 @@ extension MainGameView {
         @Published var activeNestNode: SKNode?
 
         // Inside your ViewModel
+        
+        
+        @Published var nestPosition: CGPoint?
+        // Inside MainGameView.ViewModel
+        @Published var scoreAnimating: Bool = false
+
+        @Published var highScore: Int = UserDefaults.standard.integer(forKey: "highScore")
+        @Published var isNewRecord: Bool = false
+
+        // Update your userScore property to include this logic:
+        @Published var userScore: Int = 0 {
+            didSet {
+                // Trigger Animation Flag
+                scoreAnimating = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.scoreAnimating = false
+                }
+
+                // High Score Logic
+                if userScore > highScore {
+                    highScore = userScore
+                    UserDefaults.standard.set(highScore, forKey: "highScore")
+                    isNewRecord = true
+                }
+            }
+        }
+        
         func incrementFeedingForCurrentNest() {
             // 1. Identify WHICH nest we are interacting with
             guard let nest = activeNestNode else { return }
@@ -66,8 +92,6 @@ extension MainGameView {
                 print("DEBUG: Refilled hunger for specific nest. Total feeds: \(currentFed + 1)")
             }
         }
-        
-        @Published var nestPosition: CGPoint?
 
         
         
@@ -290,6 +314,8 @@ extension MainGameView {
                 mapFromModel(gs)
             }
             
+            self.highScore = UserDefaults.standard.integer(forKey: "highScore")
+            
             if let gs = gameState, self.collectedItems.isEmpty {
                 var rebuilt: Set<String> = []
                 if gs.inventoryStick > 0 { rebuilt.insert("stick") }
@@ -383,6 +409,7 @@ extension MainGameView {
             gs.inventorySpiderweb = inventory["spiderweb"] ?? 0
             gs.inventoryDandelion = inventory["dandelion"] ?? 0
 
+            
             gs.userScore = userScore
             gs.hasFoundMale = hasFoundMale
             gs.hasNest = hasNest
