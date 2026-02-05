@@ -145,10 +145,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     self?.spawnSuccessNest()
                 }
             }
-        if let savedDate = viewModel?.babySpawnDate {
-                self.babySpawnTime = savedDate
-                self.isBabySpawned = true
-            }
+        
         restoreReturnStateIfNeeded()
         viewModel?.controlsAreVisable = true
         checkBabyWinCondition()
@@ -239,33 +236,47 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // --- 5. MULTI-NEST & BABY SYSTEM ---
         // We loop through all children to manage every nest independently
+        // Inside override func update(_ currentTime: TimeInterval)
         for node in children {
+            // Only look for nests that are active
             guard node.name == "final_nest" || node.name == "nest_active" else { continue }
             
-            // A. Handle Individual Hunger & Abandonment Timer
-            // We look for "spawnDate" inside the nest's own userData
-            if let spawnTime = node.userData?["spawnDate"] as? Date {
+            // Attempt to pull the unique timer for THIS nest
+            if let nestData = node.userData,
+               let spawnTime = nestData["spawnDate"] as? Date {
+                
+                let timeLimit: TimeInterval = 120 // 2 minutes
                 let elapsed = Date().timeIntervalSince(spawnTime)
                 let remainingPercentage = CGFloat(1.0 - (elapsed / timeLimit))
                 
-                // Find the babyBird inside THIS specific nest
-                if let baby = node.childNode(withName: "//babyBird") as? SKSpriteNode {
+                // --- FIX STARTS HERE ---
+                // 1. Search specifically inside THIS nest for the baby
+                if let baby = node.childNode(withName: "babyBird") {
+                    // 2. Search specifically inside THAT baby for the hunger bar (no //)
                     if let bar = baby.childNode(withName: "hungerBar") as? BabyHungerBar {
                         bar.updateBar(percentage: remainingPercentage)
-                        if remainingPercentage > 0.25 {
-                            bar.stopPanic()
-                        }
                     }
                 }
+                // --- FIX ENDS HERE ---
                 
-                // Check if THIS nest has been abandoned (Timeout)
+                // Abandonment check
                 if elapsed > timeLimit {
                     node.removeFromParent()
                     viewModel?.currentMessage = "A nest was abandoned..."
-                    print("DEBUG: Nest \(node) removed due to timeout.")
-                    continue
                 }
             }
+            
+            func feedSpecificBaby(nest: SKNode) {
+                // Only reset the timer for the nest we are interacting with
+                if let data = nest.userData as? NSMutableDictionary {
+                    data["spawnDate"] = Date() // Resetting the 'birthday' refills the bar
+                    
+                    // Increment the specific fed count for this nest
+                    let currentFed = (data["fedCount"] as? Int) ?? 0
+                    data["fedCount"] = currentFed + 1
+                }
+            }
+        
             
             // B. Handle Individual Success (Fed 2 times)
             // We look for "fedCount" inside the nest's own userData
@@ -315,20 +326,42 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if viewModel?.isFlying == false {
             if viewModel?.messageIsLocked == false {
                 
-                // Priority 1: Feeding the Baby
-                if checkDistance(to: "babyBird") {
-                    feedBabyBirdMiniIsInRange = true
-                    viewModel?.currentMessage = "Tap to feed baby bird"
+                // --- NEW TARGETED NEST DETECTION ---
+                var closestNest: SKNode? = nil
+                var minNestDist: CGFloat = 120 // Sensitivity radius
+                
+                // Search specifically for nest nodes
+                for node in children where node.name == "final_nest" || node.name == "nest_active" {
+                    let dx = player.position.x - node.position.x
+                    let dy = player.position.y - node.position.y
+                    let dist = sqrt(dx * dx + dy * dy)
                     
-                // Priority 2: Nest Status
-                } else if checkDistance(to: "final_nest") || checkDistance(to: "nest_active") {
-                    if viewModel?.hasFoundMale == true {
-                        viewModel?.currentMessage = "The baby has hatched!"
+                    if dist < minNestDist {
+                        minNestDist = dist
+                        closestNest = node
+                    }
+                }
+                
+                // Priority 1: If we found a nest, check if it has a baby
+                if let nest = closestNest {
+                    // Check if THIS specific nest has a baby child
+                    if let baby = nest.childNode(withName: "babyBird") {
+                        feedBabyBirdMiniIsInRange = true
+                        viewModel?.currentMessage = "Tap to feed baby bird"
+                        
+                        // IMPORTANT: Tell the ViewModel exactly WHICH nest this is
+                        viewModel?.activeNestNode = nest
+                        
                     } else {
-                        viewModel?.currentMessage = "Nest complete! Find your mate."
+                        // Nest exists but no baby (Priority 2: Nest Status)
+                        if viewModel?.hasFoundMale == true {
+                            viewModel?.currentMessage = "The baby has hatched!"
+                        } else {
+                            viewModel?.currentMessage = "Nest complete! Find your mate."
+                        }
                     }
                     
-                // Priority 3: Other Mini-games
+                // Priority 3: Other Mini-games (Stays the same)
                 } else if checkDistance(to: buildNestMini) {
                     buildNestMiniIsInRange = true
                     viewModel?.currentMessage = "Tap to build a nest"
