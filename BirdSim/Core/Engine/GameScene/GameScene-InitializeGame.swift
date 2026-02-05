@@ -67,6 +67,7 @@ extension GameScene {
         //Spawns building
         spawnItem(at: CGPoint(x: -1650, y: -1100), type: "aquarium")
         spawnItem(at: CGPoint(x: -500, y: -1100), type: "casino")
+        spawnItem(at: CGPoint(x: -865, y: 1000), type: "fountain")
 
         
         
@@ -74,38 +75,29 @@ extension GameScene {
         
         
         
-        spawnItem(at: CGPoint(x: -450, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -450, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -550, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -550, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -650, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -650, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -750, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -750, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -850, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -850, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -950, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -950, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1050, y: -1403), type: "stonePath")
+        
+        spawnItem(at: CGPoint(x: -950, y: -1213), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1113), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -1013), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -913), type: "stonePath")
+        spawnItem(at: CGPoint(x: -950, y: -813), type: "stonePath")
+
         spawnItem(at: CGPoint(x: -1050, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1150, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1150, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1250, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1250, y: -1313), type: "stonePath")
         
-        spawnItem(at: CGPoint(x: -1350, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1350, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1450, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1450, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1550, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1550, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1650, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1650, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1750, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1750, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1850, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1850, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1950, y: -1403), type: "stonePath")
         spawnItem(at: CGPoint(x: -1950, y: -1313), type: "stonePath")
 
         

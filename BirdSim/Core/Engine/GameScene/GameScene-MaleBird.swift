@@ -11,9 +11,9 @@ extension GameScene {
     func spawnMaleBird() {
             if childNode(withName: "MaleBird") != nil { return }
             
-            let maleBird = SKSpriteNode(imageNamed: "Bird_Ground_Left")
+            let maleBird = SKSpriteNode(imageNamed: "Predator/MaleBird")
             maleBird.name = "MaleBird"
-            maleBird.size = CGSize(width: 500, height: 500)
+            maleBird.size = CGSize(width: 200, height: 200)
             maleBird.zPosition = 5
             
             // Position him somewhere random but far enough away to be a "quest"

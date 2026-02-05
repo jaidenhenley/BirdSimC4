@@ -59,7 +59,7 @@ extension GameScene {
         let position = CGPoint(x: randomX, y: randomY)
 
         occupiedPredatorSpawns.insert(index)
-        setupPredator(at: position, spawnIndex: index, assetName: randomPredatorAsset())
+        setupPredator(at: position, spawnIndex: index, assetName: "Predator/Predator")
         return true
     }
     
@@ -111,17 +111,6 @@ extension GameScene {
         let sequence = SKAction.sequence([moveRight, moveLeft])
         predator.run(SKAction.repeatForever(sequence))
         addChild(predator)
-    }
-    func randomPredatorAsset() -> String {
-        let assetName: [String] = [
-            "Predator/Predator_1",
-            "Predator/Predator_2",
-            "Predator/Predator_3"
-        ]
-        
-        let randomAsset = assetName.randomElement()
-        
-        return randomAsset!
     }
     
     func removeAllPredators() {

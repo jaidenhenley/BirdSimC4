@@ -16,6 +16,8 @@ class PredatorGame: SKScene {
     private let dangerZone = SKSpriteNode(color: .systemRed, size: CGSize(width: 100, height: 40))
     private let safeZone = SKSpriteNode(color: .systemGreen, size: CGSize(width: 300, height: 40))
     private let needle = SKSpriteNode(color: .white, size: CGSize(width: 8, height: 60))
+    private let predator = SKSpriteNode(imageNamed: "Predator/PredatorHead")
+    
     
     private var isResolved = false
 
@@ -40,6 +42,10 @@ class PredatorGame: SKScene {
         dangerZone.position = .zero
         dangerZone.name = "danger"
         bar.addChild(dangerZone)
+        
+        predator.position = .zero
+        predator.size = CGSize(width: 200, height: 200)
+        bar.addChild(predator)
         
         // 4. Setup the needle
         needle.position = CGPoint(x: bar.frame.minX, y: frame.midY)
