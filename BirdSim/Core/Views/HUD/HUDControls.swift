@@ -41,8 +41,13 @@ struct HUDControls: View {
                         
                         Spacer()
 
-                        FlyButtonView(viewModel: viewModel)
-                            .frame(width: buttonSize, height: buttonSize)
+                        HStack(spacing: 16) {
+                            PickupButtonView(viewModel: viewModel)
+                                .frame(width: buttonSize, height: buttonSize)
+                            
+                            FlyButtonView(viewModel: viewModel)
+                                .frame(width: buttonSize, height: buttonSize)
+                        }
                     }
                     .padding(.horizontal, isiPad ? 40 : 24)
                     .padding(.bottom, isiPad ? 32 : 20)

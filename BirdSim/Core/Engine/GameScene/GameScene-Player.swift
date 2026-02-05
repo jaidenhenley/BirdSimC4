@@ -130,6 +130,7 @@ extension GameScene {
     func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
         
         guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return false }
+
         // Special-case baby because it lives under the nest.
         if nodeName == "babyBird", let baby = babyBirdNode() {
             // Convert the baby's center (zero) to the scene's coordinate system
@@ -144,7 +145,6 @@ extension GameScene {
         let dy = player.position.y - node.position.y
         return sqrt(dx*dx + dy*dy) < threshold
     }
-
     
     // MARK: Player Spawn
     func setupUserBird() {
@@ -260,5 +260,102 @@ extension GameScene {
         
     }
 
+    func attemptInteract() {
+        guard let viewModel = viewModel else { return }
+        guard let player = self.childNode(withName: "userBird") else { return }
+        
+        // 1) Feed baby (either baby node or feed spot) - grounded only
+        if viewModel.isFlying == false {
+            // Check baby directly (handles nested baby via checkDistance special-case)
+            if checkDistance(to: "babyBird", threshold: 200) {
+                transitionToFeedBabyScene()
+                viewModel.controlsAreVisable = false
+                return
+            }
+            if let spot = self.childNode(withName: feedBabyBirdMini) {
+                let dx = player.position.x - spot.position.x
+                let dy = player.position.y - spot.position.y
+                let dist = sqrt(dx*dx + dy*dy)
+                if dist <= 200 {
+                    transitionToFeedBabyScene()
+                    viewModel.controlsAreVisable = false
+                    return
+                }
+            }
+        }
+        
+        // 2) Build nest (build site or existing nest) - requires materials and grounded
+        if viewModel.isFlying == false {
+            var nearestNestLike: SKNode?
+            var nearestDist: CGFloat = 220
+            for node in children {
+                if node.name == buildNestMini || node.name == "final_nest" {
+                    let dx = player.position.x - node.position.x
+                    let dy = player.position.y - node.position.y
+                    let dist = sqrt(dx*dx + dy*dy)
+                    if dist < nearestDist {
+                        nearestDist = dist
+                        nearestNestLike = node
+                    }
+                }
+            }
+            if nearestNestLike != nil {
+                let items = viewModel.collectedItems
+                if items.contains("stick") &&
+                    items.contains("leaf") &&
+                    items.contains("spiderweb") &&
+                    items.contains("dandelion") {
+                    transitionToBuildNestScene()
+                    viewModel.controlsAreVisable = false
+                    return
+                }
+            }
+        }
+        
+        // 3) Feed user - grounded only
+        if viewModel.isFlying == false, let spot = self.childNode(withName: feedUserBirdMini) {
+            let dx = player.position.x - spot.position.x
+            let dy = player.position.y - spot.position.y
+            let dist = sqrt(dx*dx + dy*dy)
+            if dist <= 220 {
+                transitionToFeedUserScene()
+                viewModel.controlsAreVisable = false
+                return
+            }
+        }
+        
+        // 4) Leave island - grounded only
+        if viewModel.isFlying == false, let spot = self.childNode(withName: leaveIslandMini) {
+            let dx = player.position.x - spot.position.x
+            let dy = player.position.y - spot.position.y
+            let dist = sqrt(dx*dx + dy*dy)
+            if dist <= 220 {
+                transitionToLeaveIslandMini()
+                viewModel.controlsAreVisable = false
+                return
+            }
+        }
+        
+        // 5) Item pickup - grounded only
+        if viewModel.isFlying == false {
+            var closest: SKNode?
+            var best: CGFloat = 200
+            for node in children {
+                if let name = node.name, ["stick", "leaf", "spiderweb", "dandelion"].contains(name) {
+                    let dx = player.position.x - node.position.x
+                    let dy = player.position.y - node.position.y
+                    let dist = sqrt(dx*dx + dy*dy)
+                    if dist < best {
+                        best = dist
+                        closest = node
+                    }
+                }
+            }
+            if let item = closest {
+                pickupItem(item)
+                return
+            }
+        }
+    }
 
 }
