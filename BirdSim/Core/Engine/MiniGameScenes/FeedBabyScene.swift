@@ -12,8 +12,15 @@ import SpriteKit
 
 class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
-    var item: SKSpriteNode?
     var isSceneTransitioning = false
+    
+    // --- Win/Loss Tracking ---
+    var caughtCount = 0
+    var missedCount = 0
+    let totalRopes = 3
+    let requiredToWin = 2
+    
+    var scoreLabel: SKLabelNode!
     
     let ropeCategory: UInt32 = 0x1 << 0
     let itemCategory: UInt32 = 0x1 << 1
@@ -25,22 +32,110 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = self
         physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         
-        setupRopeAndItem()
-        setupUContainer()
+        // --- Setup UI ---
+        setupScoreLabel()
         setupBackButton()
+        
+        // --- Setup Ropes ---
+        let padding: CGFloat = 80
+        createRope(at: frame.minX + padding)
+        createRope(at: frame.midX)
+        createRope(at: frame.maxX - padding)
+        
+        setupUContainer()
+    }
+    
+    func setupScoreLabel() {
+        scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        scoreLabel.fontSize = 24
+        scoreLabel.text = "Caught: 0/\(requiredToWin)"
+        scoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 50)
+        scoreLabel.fontColor = .white
+        addChild(scoreLabel)
+    }
+    
+    func createRope(at xPos: CGFloat) {
+        let anchor = SKSpriteNode(color: .red, size: CGSize(width: 20, height: 10))
+        anchor.position = CGPoint(x: xPos, y: frame.maxY - 120)
+        anchor.physicsBody = SKPhysicsBody(rectangleOf: anchor.size)
+        anchor.physicsBody?.isDynamic = false
+        addChild(anchor)
+        
+        var lastNode: SKNode = anchor
+        
+        for i in 0..<12 {
+            let link = SKSpriteNode(color: .white, size: CGSize(width: 2, height: 20))
+            link.position = CGPoint(x: anchor.position.x, y: anchor.position.y - CGFloat(i * 20) - 10)
+            link.name = "rope_link"
+            link.physicsBody = SKPhysicsBody(rectangleOf: link.size)
+            link.physicsBody?.linearDamping = 0.5
+            link.physicsBody?.angularDamping = 0.5
+            link.physicsBody?.categoryBitMask = ropeCategory
+            link.physicsBody?.collisionBitMask = 0
+            addChild(link)
+            
+            let joint = SKPhysicsJointPin.joint(withBodyA: lastNode.physicsBody!,
+                                                bodyB: link.physicsBody!,
+                                                anchor: CGPoint(x: link.position.x, y: link.position.y + 10))
+            physicsWorld.add(joint)
+            lastNode = link
+        }
+        
+        let itemNode = SKSpriteNode(color: .orange, size: CGSize(width: 30, height: 30))
+        itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - 20)
+        itemNode.name = "food_item"
+        
+        itemNode.physicsBody = SKPhysicsBody(rectangleOf: itemNode.size)
+        itemNode.physicsBody?.categoryBitMask = itemCategory
+        itemNode.physicsBody?.contactTestBitMask = bucketCategory
+        itemNode.physicsBody?.collisionBitMask = bucketCategory
+        itemNode.physicsBody?.restitution = 0.2
+        addChild(itemNode)
+        
+        let lastJoint = SKPhysicsJointPin.joint(withBodyA: lastNode.physicsBody!,
+                                                bodyB: itemNode.physicsBody!,
+                                                anchor: CGPoint(x: itemNode.position.x, y: itemNode.position.y + 15))
+        physicsWorld.add(lastJoint)
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
         guard !isSceneTransitioning else { return }
-        let otherBody = (contact.bodyA.categoryBitMask == itemCategory) ? contact.bodyB : contact.bodyA
-        if otherBody.categoryBitMask == bucketCategory {
-            handleGameOver(success: true)
+        
+        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+        
+        if contactMask == (itemCategory | bucketCategory) {
+            let itemNode = (contact.bodyA.categoryBitMask == itemCategory) ? contact.bodyA.node : contact.bodyB.node
+            
+            if itemNode?.parent != nil {
+                itemNode?.removeFromParent()
+                caughtCount += 1
+                scoreLabel.text = "Caught: \(caughtCount)/\(requiredToWin)"
+                
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                
+                checkWinCondition()
+            }
         }
     }
     
     override func update(_ currentTime: TimeInterval) {
-        guard let item = item, !isSceneTransitioning else { return }
-        if item.position.y < 0 {
+        guard !isSceneTransitioning else { return }
+        
+        enumerateChildNodes(withName: "food_item") { node, _ in
+            if node.position.y < 0 {
+                node.removeFromParent()
+                self.missedCount += 1
+                self.checkWinCondition()
+            }
+        }
+    }
+    
+    func checkWinCondition() {
+        if caughtCount >= requiredToWin {
+            handleGameOver(success: true)
+        } else if missedCount > (totalRopes - requiredToWin) {
+            // If you miss more than 1 (in a 3-rope game), you can't get 2.
             handleGameOver(success: false)
         }
     }
@@ -50,7 +145,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = nil
         
         if success {
-            // This is the "Magic Button" that resets the timer for the active nest
             viewModel?.incrementFeedingForCurrentNest()
         }
         
@@ -62,7 +156,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         endLabel.zPosition = 100
         addChild(endLabel)
         
-        let wait = SKAction.wait(forDuration: 1.0)
+        let wait = SKAction.wait(forDuration: 1.5)
         let transitionAction = SKAction.run { [weak self] in
             self?.returnToMainGame()
         }
@@ -70,14 +164,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         self.run(SKAction.sequence([wait, transitionAction]))
     }
 
-    // --- THIS WAS MISSING OR OUTSIDE THE BRACKETS ---
     func returnToMainGame() {
         guard let view = self.view else { return }
-        
         if let existing = viewModel?.mainScene {
             viewModel?.joystickVelocity = .zero
             viewModel?.controlsAreVisable = true
-            
             let transition = SKTransition.crossFade(withDuration: 0.5)
             view.presentScene(existing, transition: transition)
         }
@@ -88,7 +179,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         let bucketHeight: CGFloat = 60
         let thickness: CGFloat = 5
         let container = SKNode()
-        container.position = CGPoint(x: frame.midX, y: 150)
+        
+        let leftEdge = frame.minX + (bucketWidth / 2)
+        let rightEdge = frame.maxX - (bucketWidth / 2)
+        
+        container.position = CGPoint(x: leftEdge, y: 150)
         container.name = "bucket"
         
         let bottom = SKSpriteNode(color: .blue, size: CGSize(width: bucketWidth, height: thickness))
@@ -110,46 +205,15 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         container.physicsBody?.categoryBitMask = bucketCategory
         container.physicsBody?.contactTestBitMask = itemCategory
         addChild(container)
-    }
+        
+        let slowDuration: TimeInterval = 4.5
+        let moveRight = SKAction.moveTo(x: rightEdge, duration: slowDuration)
+        let moveLeft = SKAction.moveTo(x: leftEdge, duration: slowDuration)
+        moveRight.timingMode = .easeInEaseOut
+        moveLeft.timingMode = .easeInEaseOut
 
-    func setupRopeAndItem() {
-        let anchor = SKSpriteNode(color: .red, size: CGSize(width: 10, height: 10))
-        anchor.position = CGPoint(x: frame.midX, y: frame.maxY - 100)
-        anchor.physicsBody = SKPhysicsBody(rectangleOf: anchor.size)
-        anchor.physicsBody?.isDynamic = false
-        addChild(anchor)
-        
-        var lastNode: SKNode = anchor
-        for i in 0..<12 {
-            let link = SKSpriteNode(color: .white, size: CGSize(width: 2, height: 20))
-            link.position = CGPoint(x: anchor.position.x, y: anchor.position.y - CGFloat(i * 20) - 10)
-            link.name = "rope_link"
-            link.physicsBody = SKPhysicsBody(rectangleOf: link.size)
-            link.physicsBody?.categoryBitMask = ropeCategory
-            link.physicsBody?.collisionBitMask = 0
-            addChild(link)
-            
-            let joint = SKPhysicsJointPin.joint(withBodyA: lastNode.physicsBody!,
-                                               bodyB: link.physicsBody!,
-                                               anchor: CGPoint(x: link.position.x, y: link.position.y + 10))
-            physicsWorld.add(joint)
-            lastNode = link
-        }
-        
-        let itemNode = SKSpriteNode(color: .orange, size: CGSize(width: 30, height: 30))
-        itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - 20)
-        itemNode.physicsBody = SKPhysicsBody(circleOfRadius: 15)
-        itemNode.physicsBody?.categoryBitMask = itemCategory
-        itemNode.physicsBody?.contactTestBitMask = bucketCategory
-        itemNode.physicsBody?.restitution = 0.2
-        self.item = itemNode
-        addChild(itemNode)
-        
-        let lastJoint = SKPhysicsJointPin.joint(withBodyA: lastNode.physicsBody!,
-                                               bodyB: itemNode.physicsBody!,
-                                               anchor: CGPoint(x: itemNode.position.x, y: itemNode.position.y + 15))
-        physicsWorld.add(lastJoint)
-        itemNode.physicsBody?.applyImpulse(CGVector(dx: 30, dy: 0))
+        let sequence = SKAction.sequence([moveRight, moveLeft])
+        container.run(SKAction.repeatForever(sequence))
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
