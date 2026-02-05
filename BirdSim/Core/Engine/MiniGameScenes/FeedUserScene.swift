@@ -6,9 +6,14 @@
 //
 
 import SpriteKit
+import CoreMotion
 
 class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
+    
+    // --- Accelerometer Properties ---
+    private let motionManager = CMMotionManager()
+    private var tiltValue: CGFloat = 0.0
     
     // --- Meter Properties ---
     private let meterBackground = SKShapeNode(rectOf: CGSize(width: 200, height: 20), cornerRadius: 5)
@@ -29,9 +34,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     let badItemCategory: UInt32 = 0x1 << 2
 
     override func didMove(to view: SKView) {
-        
         SoundManager.shared.startBackgroundMusic(track: .feedingUser)
-
         backgroundColor = .darkGray
         
         // 1. Setup Physics World
@@ -52,14 +55,50 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         setupMeter()
         setupBackButton()
         
-        // 4. Start Spawning Shapes
+        // 4. Start Accelerometer for Landscape
+        setupAccelerometer()
+        
+        // 5. Start Spawning Shapes
         let spawnAction = SKAction.run { [weak self] in self?.spawnFallingShape() }
         let waitAction = SKAction.wait(forDuration: 0.8)
         run(SKAction.repeatForever(SKAction.sequence([spawnAction, waitAction])), withKey: "spawning")
     }
     
+    // MARK: - Core Motion Setup
+    private func setupAccelerometer() {
+        if motionManager.isAccelerometerAvailable {
+            motionManager.accelerometerUpdateInterval = 0.02
+            motionManager.startAccelerometerUpdates(to: .main) { [weak self] (data, error) in
+                guard let acceleration = data?.acceleration else { return }
+                
+                // LANDSCAPE LOGIC:
+                // Tilting the phone left/right in landscape affects the 'y' property.
+                // We use a simple low-pass filter to smooth the movement.
+                let filterFactor: Double = 0.2
+                let rawTilt = acceleration.y
+                self?.tiltValue = CGFloat((rawTilt * filterFactor) + (Double(self?.tiltValue ?? 0) * (1.0 - filterFactor)))
+            }
+        }
+    }
+
+    // MARK: - Game Loop
+    override func update(_ currentTime: TimeInterval) {
+        // Sensitivity for landscape movement
+        // We multiply by -1.0 because tilting left returns a positive Y in landscape
+        let sensitivity: CGFloat = 80.0
+        let moveAmount = tiltValue * sensitivity * -1.0
+        
+        let newX = player.position.x + moveAmount
+        
+        // Keep player within screen bounds
+        let halfWidth = player.frame.width / 2
+        player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
+        
+        // Visual Juice: Make the player tilt slightly in the direction of movement
+        player.zRotation = tiltValue * 0.4
+    }
+    
     private func setupMeter() {
-        // Meter Container
         meterBackground.position = CGPoint(x: frame.midX, y: frame.height - 50)
         meterBackground.fillColor = .black
         meterBackground.strokeColor = .white
@@ -67,13 +106,10 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         meterBackground.zPosition = 100
         addChild(meterBackground)
 
-        // The Green Fill
         meterFill.fillColor = .green
         meterFill.strokeColor = .clear
-        // Anchor at left so it grows to the right
         meterFill.position = CGPoint(x: frame.midX - 100, y: frame.height - 50)
         meterFill.zPosition = 101
-        // Using a tiny initial rect to establish anchor-like behavior via path
         meterFill.path = CGPath(rect: CGRect(x: 0, y: -10, width: 0.1, height: 20), transform: nil)
         addChild(meterFill)
 
@@ -88,8 +124,6 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     private func updateMeter() {
         let percentage = min(max(fullness / maxFullness, 0), 1.0)
         let newWidth = 200 * percentage
-        
-        // Redraw the green bar path based on current fullness
         meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: newWidth, height: 20),
                                 cornerWidth: 5, cornerHeight: 5, transform: nil)
         
@@ -100,8 +134,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     func spawnFallingShape() {
         let shapeType = Int.random(in: 0...2)
-        let isGood = shapeType != 2 // Triangles are bad
-        
+        let isGood = shapeType != 2
         let size = CGSize(width: 40, height: 40)
         let shapeNode: SKShapeNode
         
@@ -134,32 +167,20 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         shapeNode.run(SKAction.sequence([wait, remove]))
     }
 
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        player.position.x = location.x
-    }
-
     func didBegin(_ contact: SKPhysicsContact) {
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
         let itemNode = (contact.bodyA.categoryBitMask == playerCategory) ? contact.bodyB.node : contact.bodyA.node
         
         if contactMask == (playerCategory | goodItemCategory) {
-            fullness += 10.0 // +10%
-            print("Fullness: \(fullness)%")
+            fullness += 10.0
             itemNode?.removeFromParent()
-            
-            // Pop effect
             player.run(SKAction.sequence([
                 SKAction.scale(to: 1.1, duration: 0.1),
                 SKAction.scale(to: 1.0, duration: 0.1)
             ]))
-            
         } else if contactMask == (playerCategory | badItemCategory) {
-            fullness = max(0, fullness - 15.0) // Penalty
+            fullness = max(0, fullness - 15.0)
             itemNode?.removeFromParent()
-            
-            // Shake effect
             let shake = SKAction.sequence([
                 SKAction.moveBy(x: 10, y: 0, duration: 0.05),
                 SKAction.moveBy(x: -20, y: 0, duration: 0.05),
@@ -170,18 +191,13 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func handleWin() {
-        // Stop the game spawning
         removeAction(forKey: "spawning")
+        motionManager.stopAccelerometerUpdates()
         
-        // REFILL THE HEALTH
-        // We set health back to 1.0 (100%)
         viewModel?.health = 1.0
-        
-        // Add points
         addPoints()
         
-        // 3. UI Feedback in the mini-game
-        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HEALTH ")
+        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HEALTH")
         winLabel.fontSize = 35
         winLabel.fontName = "AvenirNext-Bold"
         winLabel.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -195,10 +211,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         ]))
     }
 
-    
     func addPoints() {
-        viewModel?.userScore += 1 // change score amount for build nest minigame here
-        print("added 1 to score")
+        viewModel?.userScore += 1
     }
     
     func setupBackButton() {
@@ -214,6 +228,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         if atPoint(location).name == "Back Button" {
+            motionManager.stopAccelerometerUpdates()
             returnToMap()
         }
     }
@@ -221,7 +236,6 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     func returnToMap() {
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         viewModel?.controlsAreVisable = true
-        // Optional: Update your health or energy in viewModel here
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
     }
 }
