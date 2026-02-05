@@ -45,32 +45,31 @@ extension MainGameView {
         @Published var hasFoundMale: Bool = false
         @Published var hasPlayedBabyGame: Bool = false
         @Published var isBabyReadyToGrow: Bool = false
-        @Published var userFedBabyCount: Int = 0
         // Inside MainGameView.ViewModel
         // Inside MainGameView.ViewModel
         @Published var activeNestNode: SKNode?
 
+        // Inside your ViewModel
         func incrementFeedingForCurrentNest() {
+            // 1. Identify WHICH nest we are interacting with
             guard let nest = activeNestNode else { return }
             
-            // Initialize userData if it doesn't exist
-            if nest.userData == nil { nest.userData = NSMutableDictionary() }
-            
-            // Get the individual count for THIS nest
-            let currentCount = (nest.userData?["fedCount"] as? Int) ?? 0
-            let newCount = currentCount + 1
-            
-            // Save the new count back to the nest node itself
-            nest.userData?["fedCount"] = newCount
-            
-            print("Individual nest fed: \(newCount)/2")
+            // 2. Update ONLY that nest's local data
+            if let data = nest.userData as? NSMutableDictionary {
+                // This resets the "timer" for just this one bird
+                data["spawnDate"] = Date()
+                
+                // This increments the "score" for just this one bird
+                let currentFed = (data["fedCount"] as? Int) ?? 0
+                data["fedCount"] = currentFed + 1
+                
+                print("DEBUG: Refilled hunger for specific nest. Total feeds: \(currentFed + 1)")
+            }
         }
-        
         
         @Published var nestPosition: CGPoint?
 
-        @Published var babyPosition: CGPoint?
-        @Published var babySpawnDate: Date?
+        
         
         //end baby bird game//
         
@@ -324,10 +323,6 @@ extension MainGameView {
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
 
-            $savedCameraPosition
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-
             $inventory
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
@@ -336,37 +331,15 @@ extension MainGameView {
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
 
-            $controlsAreVisable
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-
-            $showGameOver
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-
-            $showGameWin
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            
             $userScore
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
-    
+
             $hasFoundMale
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
             
-            $hasPlayedBabyGame
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            
-            $isBabyReadyToGrow
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
-            
-            $userFedBabyCount
-                .sink { [weak self] _ in self?.scheduleSave() }
-                .store(in: &cancellables)
+            // REMOVED: $userFedBabyCount, $babyPosition, $babySpawnDate
         }
 
         deinit {
@@ -388,36 +361,12 @@ extension MainGameView {
                 self.hasFoundMale = state.hasFoundMale
                 self.hasPlayedBabyGame = state.hasPlayedBabyGame
                 self.isBabyReadyToGrow = state.isBabyReadyToGrow
-                self.userFedBabyCount = state.userFedBabyCount
                 
-                // Rebuild collectedItems from persisted inventory counts so UI can drive from the set
-                var rebuilt: Set<String> = []
-                if state.inventoryStick > 0 { rebuilt.insert("stick") }
-                if state.inventoryLeaf > 0 { rebuilt.insert("leaf") }
-                if state.inventorySpiderweb > 0 { rebuilt.insert("spiderweb") }
-                if state.inventoryDandelion > 0 { rebuilt.insert("dandelion") }
-
-                self.collectedItems = rebuilt
-            }
-            
-            // Restore nest + baby
-
-            hasNest = state.hasNest
-
-            nestPosition = state.hasNest
-                ? CGPoint(x: state.nestX, y: state.nestY)
-                : nil
-
-            hasBaby = state.hasBaby
-
-            babyPosition = state.hasBaby
-                ? CGPoint(x: state.babyX, y: state.babyY)
-                : nil
-
-            if state.babySpawnTimestamp > 0 {
-                babySpawnDate = Date(timeIntervalSince1970: state.babySpawnTimestamp)
-            } else {
-                babySpawnDate = nil
+                self.hasNest = state.hasNest
+                self.nestPosition = state.hasNest ? CGPoint(x: state.nestX, y: state.nestY) : nil
+                self.hasBaby = state.hasBaby
+                
+                // Note: babyPosition and babySpawnDate removed to fix "Refill All" bug
             }
         }
         
@@ -427,15 +376,7 @@ extension MainGameView {
                 gs.playerX = Double(p.x)
                 gs.playerY = Double(p.y)
             }
-            if let c = savedCameraPosition {
-                gs.cameraX = Double(c.x)
-                gs.cameraY = Double(c.y)
-            }
             gs.isFlying = isFlying
-            gs.controlsAreVisable = controlsAreVisable
-            gs.gameStarted = gameStarted
-            gs.showGameOver = showGameOver
-            gs.showGameWin = showGameWin
             gs.health = Double(health)
             gs.inventoryStick = inventory["stick"] ?? 0
             gs.inventoryLeaf = inventory["leaf"] ?? 0
@@ -444,12 +385,6 @@ extension MainGameView {
 
             gs.userScore = userScore
             gs.hasFoundMale = hasFoundMale
-            gs.hasPlayedBabyGame = hasPlayedBabyGame
-            gs.isBabyReadyToGrow = isBabyReadyToGrow
-            gs.userFedBabyCount  = userFedBabyCount
-            
-            // Save nest + baby
-
             gs.hasNest = hasNest
 
             if let pos = nestPosition {
@@ -458,18 +393,7 @@ extension MainGameView {
             }
 
             gs.hasBaby = hasBaby
-
-            if let pos = babyPosition {
-                gs.babyX = pos.x
-                gs.babyY = pos.y
-            }
-
-            if let date = babySpawnDate {
-                gs.babySpawnTimestamp = date.timeIntervalSince1970
-            } else {
-                gs.babySpawnTimestamp = 0
-            }
-
+            // babySpawnTimestamp and babyX/Y are no longer mapped to global ViewModel vars
         }
         
         func scheduleSave() {
@@ -509,14 +433,18 @@ extension MainGameView {
         }
         
         // MARK: - Nest/Baby Removal (Step 7)
+        // MARK: - Nest/Baby Removal
         func clearNestAndBabyState() {
+            // 1. Reset the high-level flags
             hasBaby = false
-            babyPosition = nil
-            babySpawnDate = nil
-
             hasNest = false
+            
+            // 2. Clear the nest position
             nestPosition = nil
 
+            // Note: babyPosition and babySpawnDate were removed
+            // to allow each bird to have its own independent timer.
+            
             scheduleSave()
         }
         
