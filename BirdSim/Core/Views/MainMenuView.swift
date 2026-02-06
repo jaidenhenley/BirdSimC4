@@ -10,6 +10,8 @@ import SwiftUI
 import SwiftData
 
 struct MainMenuView: View {
+    @State private var showingSettings = false
+    
     let container: ModelContainer
     let onStartNewGame: () -> Void
     let onResumeGame: () -> Void
@@ -29,6 +31,12 @@ struct MainMenuView: View {
                 .font(.title2)
                 .padding(.horizontal, 40)
                 .disabled(!hasSavedGame)
+            Button("Settings") {
+                showingSettings.toggle()
+            }
+                .buttonStyle(.borderedProminent)
+                .font(.title2.bold())
+                .padding(.horizontal, 40)
         }
         .padding(40)
         .background(.thinMaterial)
@@ -37,5 +45,8 @@ struct MainMenuView: View {
         .frame(maxWidth: 400)
         .frame(maxHeight: .infinity)
         .ignoresSafeArea(edges: .all)
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+        }
     }
 }
