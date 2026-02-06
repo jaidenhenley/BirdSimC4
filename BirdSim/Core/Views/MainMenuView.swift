@@ -11,6 +11,8 @@ import SwiftData
 
 struct MainMenuView: View {
     @State private var showingSettings = false
+    @AppStorage("showingInstructions") var showingInstructions = true
+
     
     let container: ModelContainer
     let onStartNewGame: () -> Void
@@ -22,15 +24,21 @@ struct MainMenuView: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            Button("Start New Game", action: onStartNewGame)
-                .buttonStyle(.borderedProminent)
-                .font(.title2.bold())
-                .padding(.horizontal, 40)
             Button("Resume Game", action: onResumeGame)
                 .buttonStyle(.bordered)
                 .font(.title2)
                 .padding(.horizontal, 40)
                 .disabled(!hasSavedGame)
+            Button("Start New Game", action: onStartNewGame)
+                .buttonStyle(.borderedProminent)
+                .font(.title2.bold())
+                .padding(.horizontal, 40)
+            Button("Instructions") {
+                showingInstructions.toggle()
+            }
+                .buttonStyle(.borderedProminent)
+                .font(.title2.bold())
+                .padding(.horizontal, 40)
             Button("Settings") {
                 showingSettings.toggle()
             }
@@ -47,6 +55,9 @@ struct MainMenuView: View {
         .ignoresSafeArea(edges: .all)
         .sheet(isPresented: $showingSettings) {
             SettingsView()
+        }
+        .sheet(isPresented: $showingInstructions) {
+            InstructionsView()
         }
     }
 }
