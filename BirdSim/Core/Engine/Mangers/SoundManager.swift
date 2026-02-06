@@ -5,6 +5,7 @@
 //  Created by George Clinkscales on 2/3/26.
 //
 
+import SwiftData
 import AVFoundation
 
 enum GameTrack: String {
@@ -29,6 +30,9 @@ class SoundManager {
     private var effectPlayers: [String: AVAudioPlayer] = [:]
     private(set) var currentTrack: String?
 
+    private var isMusicEnabled: Bool = true
+    private var musicVolume: Float = 0.5
+
     private init() {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
@@ -39,7 +43,7 @@ class SoundManager {
         
         // Don't restart if already playing
         guard currentTrack != filename else { return }
-        guard UserDefaults.standard.bool(forKey: "is_music_enabled") else { return }
+        guard isMusicEnabled else { return }
 
         // Find file
         let extensions = ["wav", "mp3", "m4a"]
@@ -65,7 +69,7 @@ class SoundManager {
             freshlyLoadedPlayer.play()
             
             // 3. Crossfade
-            freshlyLoadedPlayer.setVolume(0.5, fadeDuration: fadeDuration)
+            freshlyLoadedPlayer.setVolume(musicVolume, fadeDuration: fadeDuration)
             oldPlayer?.setVolume(0, fadeDuration: fadeDuration)
             
             // 4. Clean up the old player after the fade
@@ -89,9 +93,22 @@ class SoundManager {
         currentTrack = nil
     }
     
+    func setMusicEnabled(_ enabled: Bool) {
+        isMusicEnabled = enabled
+        if !enabled {
+            stopMusic()
+        }
+    }
+
+    func setMusicVolume(_ volume: Float) {
+        musicVolume = volume
+        musicPlayerA?.volume = volume
+        musicPlayerB?.volume = volume
+    }
+    
     // MARK: - Sound Effects
     func playSoundEffect(named filename: String) {
-        guard UserDefaults.standard.bool(forKey: "is_sound_enabled") else { return }
+        guard isMusicEnabled else { return }
         
         if let player = effectPlayers[filename] {
             player.currentTime = 0
@@ -107,3 +124,4 @@ class SoundManager {
         }
     }
 } 
+

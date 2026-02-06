@@ -14,7 +14,7 @@ struct BirdSimulatorApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: GameState.self)
+            container = try ModelContainer(for: GameState.self, GameSettings.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
