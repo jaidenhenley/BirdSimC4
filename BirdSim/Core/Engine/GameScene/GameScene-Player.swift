@@ -264,6 +264,8 @@ extension GameScene {
         guard let viewModel = viewModel else { return }
         guard let player = self.childNode(withName: "userBird") else { return }
         
+        print("attemptInteract called. isFlying=\(viewModel.isFlying)")
+        
         // 1) Feed baby (either baby node or feed spot) - grounded only
         if viewModel.isFlying == false {
             // Check baby directly (handles nested baby via checkDistance special-case)
@@ -272,10 +274,12 @@ extension GameScene {
                 viewModel.controlsAreVisable = false
                 return
             }
-            if let spot = self.childNode(withName: feedBabyBirdMini) {
-                let dx = player.position.x - spot.position.x
-                let dy = player.position.y - spot.position.y
-                let dist = sqrt(dx*dx + dy*dy)
+                        
+            if let spot = self.childNode(withName: "//" + feedBabyBirdMini) {
+                let targetPos = spot.convert(CGPoint.zero, to: self)
+                let dx = player.position.x - targetPos.x
+                let dy = player.position.y - targetPos.y
+                let dist = CGFloat(sqrt(Double(dx*dx + dy*dy)))
                 if dist <= 200 {
                     transitionToFeedBabyScene()
                     viewModel.controlsAreVisable = false
@@ -312,18 +316,21 @@ extension GameScene {
             }
         }
         
-        // 3) Feed user - grounded only
-        if viewModel.isFlying == false, let spot = self.childNode(withName: feedUserBirdMini) {
-            let dx = player.position.x - spot.position.x
-            let dy = player.position.y - spot.position.y
-            let dist = sqrt(dx*dx + dy*dy)
-            if dist <= 220 {
-                transitionToFeedUserScene()
-                viewModel.controlsAreVisable = false
-                return
+        if viewModel.isFlying == false {
+            var nearestDist: CGFloat = 220
+            for node in children {
+                if node.name == feedUserBirdMini || node.name == "feedUserBirdMini" {
+                    let dx = player.position.x - node.position.x
+                    let dy = player.position.y - node.position.y
+                    let dist = sqrt(dx*dx + dy*dy)
+                    if dist < nearestDist {
+                        nearestDist = dist
+                        transitionToFeedUserScene()
+                        viewModel.controlsAreVisable = false
+                    }
+                }
             }
         }
-        
         // 4) Leave island - grounded only
         if viewModel.isFlying == false, let spot = self.childNode(withName: leaveIslandMini) {
             let dx = player.position.x - spot.position.x
@@ -335,6 +342,18 @@ extension GameScene {
                 return
             }
         }
+        
+        if viewModel.isFlying == false, let spot = self.childNode(withName: feedUserBirdMini) {
+            let dx = player.position.x - spot.position.x
+            let dy = player.position.y - spot.position.y
+            let dist = sqrt(dx*dx + dy*dy)
+            if dist <= 220 {
+                transitionToFeedUserScene()
+                viewModel.controlsAreVisable = false
+                return
+            }
+        }
+
         
         // 5) Item pickup - grounded only
         if viewModel.isFlying == false {
