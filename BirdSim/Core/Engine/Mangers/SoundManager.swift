@@ -58,7 +58,6 @@ class SoundManager {
 
         do {
             // 1. Identify which player is new and which is old
-            let newPlayer = isUsingPlayerA ? musicPlayerB : musicPlayerA
             let oldPlayer = isUsingPlayerA ? musicPlayerA : musicPlayerB
             
             // 2. Setup the new player

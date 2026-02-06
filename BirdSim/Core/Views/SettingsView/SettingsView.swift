@@ -50,7 +50,7 @@ private struct SettingsForm: View {
             Toggle("Haptics", isOn: $settings.hapticsOn)
             
             Toggle("Music", isOn: $settings.soundOn)
-                .onChange(of: settings.soundOn) { newValue in
+                .onChange(of: settings.soundOn) { oldValue, newValue in
                     SoundManager.shared.setMusicEnabled(newValue)
                     if !newValue {
                         SoundManager.shared.stopMusic()
@@ -60,7 +60,7 @@ private struct SettingsForm: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Volume")
                 Slider(value: $settings.soundVolume, in: 0...1)
-                    .onChange(of: settings.soundVolume) { newValue in
+                    .onChange(of: settings.soundVolume) { _, newValue in
                         SoundManager.shared.setMusicVolume(Float(newValue))
                     }
             }
