@@ -268,6 +268,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 if elapsed > timeLimit {
                     if self.currentActiveNest === node {
                         self.currentActiveNest = nil
+                        self.viewModel?.userScore -= 1
                     }
                     node.removeFromParent()
                     viewModel?.currentMessage = "A nest was abandoned..."
