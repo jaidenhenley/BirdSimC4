@@ -158,6 +158,7 @@ extension GameScene {
         let fadeOut = SKAction.fadeOut(withDuration: 0.8)
         let scaleDown = SKAction.scale(to: 0.2, duration: 0.8)
         let group = SKAction.group([fadeOut, scaleDown])
+        viewModel?.userScore -= 1
         let remove = SKAction.removeFromParent()
         nest.run(SKAction.sequence([group, remove]))
     }
