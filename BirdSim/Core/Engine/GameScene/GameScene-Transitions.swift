@@ -27,6 +27,8 @@ extension GameScene {
         
         // 1. Prepare UI
         vm.controlsAreVisable = false
+        vm.mapIsVisable = false
+
         saveReturnState()
         
         // 2. Clear the items BEFORE moving (Consuming the materials)

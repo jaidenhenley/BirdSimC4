@@ -22,13 +22,13 @@ struct VisualEffectBlur: UIViewRepresentable {
 struct InventoryView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
     var body: some View {
-        VStack {
-            Text("Bird Inventory")
-                .font(.headline)
-                .padding()
+        if viewModel.controlsAreVisable {
             
-            ScrollView {
-                VStack(spacing: 15) {
+            VStack {
+                Text("Bird Inventory")
+                    .font(.headline)
+                    .padding()
+                HStack(spacing: 15) {
                     ForEach(viewModel.inventory.sorted(by: >), id: \.key) { name, count in
                         // ONLY show the row if the count is greater than zero
                         if count > 0 {
@@ -39,6 +39,7 @@ struct InventoryView: View {
                                 } else if name == "leaf" {
                                     Text("🍃")
                                 } else if name == "spiderweb" {
+                                    
                                     Text("🕸️")
                                 } else if name == "dandelion" {
                                     Text("🌼")
@@ -52,23 +53,15 @@ struct InventoryView: View {
                                 Text("x\(count)")
                                     .bold()
                             }
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.1)))
-                            .transition(.scale.combined(with: .opacity)) // Optional: adds a nice pop-out effect
                         }
                     }
                 }
                 .padding()
             }
-            
-            Button("Close") {
-                viewModel.showInventory = false
-            }
-            .padding()
+            .frame(maxWidth: 500, maxHeight: 100)
+            .background(VisualEffectBlur(blurStyle: .systemMaterialDark))
+            .cornerRadius(20)
+            .shadow(radius: 20)
         }
-        .frame(maxWidth: 300, maxHeight: 400)
-        .background(VisualEffectBlur(blurStyle: .systemMaterialDark))
-        .cornerRadius(20)
-        .shadow(radius: 20)
     }
 }

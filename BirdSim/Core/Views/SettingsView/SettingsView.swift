@@ -50,7 +50,7 @@ private struct SettingsForm: View {
             Toggle("Haptics", isOn: $settings.hapticsOn)
             
             Toggle("Music", isOn: $settings.soundOn)
-                .onChange(of: settings.soundOn) { oldValue, newValue in
+                .onChange(of: settings.soundOn) { _, newValue in
                     SoundManager.shared.setMusicEnabled(newValue)
                     if !newValue {
                         SoundManager.shared.stopMusic()

@@ -132,6 +132,7 @@ extension GameScene {
         removePredator(predator, banSpawn: true)
         startPredatorCooldown(duration: 5.0)
         viewModel?.controlsAreVisable = false
+        viewModel?.mapIsVisable = false
         // Removed these lines as per instructions:
         // self.childNode(withName: predatorMini)?.removeFromParent()
         // startPredatorTimer()

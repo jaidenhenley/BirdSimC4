@@ -169,6 +169,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         if let existing = viewModel?.mainScene {
             viewModel?.joystickVelocity = .zero
             viewModel?.controlsAreVisable = true
+            viewModel?.mapIsVisable = true
             let transition = SKTransition.crossFade(withDuration: 0.5)
             view.presentScene(existing, transition: transition)
         }

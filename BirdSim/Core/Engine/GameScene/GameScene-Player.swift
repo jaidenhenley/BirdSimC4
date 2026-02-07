@@ -272,6 +272,8 @@ extension GameScene {
             if checkDistance(to: "babyBird", threshold: 200) {
                 transitionToFeedBabyScene()
                 viewModel.controlsAreVisable = false
+                viewModel.mapIsVisable = false
+
                 return
             }
                         
@@ -283,6 +285,7 @@ extension GameScene {
                 if dist <= 200 {
                     transitionToFeedBabyScene()
                     viewModel.controlsAreVisable = false
+                    viewModel.mapIsVisable = false
                     return
                 }
             }
@@ -311,6 +314,7 @@ extension GameScene {
                     items.contains("dandelion") {
                     transitionToBuildNestScene()
                     viewModel.controlsAreVisable = false
+                    viewModel.mapIsVisable = false
                     return
                 }
             }
@@ -327,6 +331,8 @@ extension GameScene {
                         nearestDist = dist
                         transitionToFeedUserScene()
                         viewModel.controlsAreVisable = false
+                        viewModel.mapIsVisable = false
+
                     }
                 }
             }
@@ -337,8 +343,11 @@ extension GameScene {
             let dy = player.position.y - spot.position.y
             let dist = sqrt(dx*dx + dy*dy)
             if dist <= 220 {
+                
                 transitionToLeaveIslandMini()
                 viewModel.controlsAreVisable = false
+                viewModel.mapIsVisable = false
+
                 return
             }
         }
