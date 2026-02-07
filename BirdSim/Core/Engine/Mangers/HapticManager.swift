@@ -10,6 +10,13 @@ import UIKit
 class HapticManager {
     static let shared = HapticManager()
     
+    // Keep generators in memory for instant response
+    private let selectionFeedback = UISelectionFeedbackGenerator()
+    private let notificationFeedback = UINotificationFeedbackGenerator()
+    private let lightImpact = UIImpactFeedbackGenerator(style: .light)
+    private let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
+    private let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
+    
     private init() {}
     
     enum HapticType {
@@ -17,22 +24,35 @@ class HapticManager {
     }
     
     func trigger(_ type: HapticType) {
-        // Check UserDefaults to respect user settings
-        guard UserDefaults.standard.bool(forKey: "haptics_enabled") else { return }
+        // FIX: Default to TRUE if the key has never been set
+        let hapticsEnabled = UserDefaults.standard.object(forKey: "haptics_enabled") as? Bool ?? true
+        guard hapticsEnabled else { return }
         
         switch type {
         case .light:
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            lightImpact.impactOccurred()
         case .medium:
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            mediumImpact.impactOccurred()
         case .heavy:
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            heavyImpact.impactOccurred()
         case .success:
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            notificationFeedback.notificationOccurred(.success)
         case .error:
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            notificationFeedback.notificationOccurred(.error)
         case .selection:
-            UISelectionFeedbackGenerator().selectionChanged()
+            selectionFeedback.selectionChanged()
         }
+        
+        // Prepare for the next potential tap to reduce latency
+        prepare()
+    }
+    
+    /// Call this when a touch starts to "wake up" the haptic engine
+    func prepare() {
+        selectionFeedback.prepare()
+        notificationFeedback.prepare()
+        lightImpact.prepare()
+        mediumImpact.prepare()
+        heavyImpact.prepare()
     }
 }

@@ -37,11 +37,23 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         SoundManager.shared.startBackgroundMusic(track: .feedingUser)
         backgroundColor = .darkGray
         
-        // 1. Setup Physics World
+        // Prepare haptics for immediate use
+        HapticManager.shared.prepare()
+        
         physicsWorld.gravity = CGVector(dx: 0, dy: -2.0)
         physicsWorld.contactDelegate = self
         
-        // 2. Setup Player
+        setupPlayer()
+        setupUI()
+        setupAccelerometer()
+        
+        // Start Spawning Shapes
+        let spawnAction = SKAction.run { [weak self] in self?.spawnFallingShape() }
+        let waitAction = SKAction.wait(forDuration: 0.8)
+        run(SKAction.repeatForever(SKAction.sequence([spawnAction, waitAction])), withKey: "spawning")
+    }
+    
+    private func setupPlayer() {
         player.fillColor = .cyan
         player.position = CGPoint(x: frame.midX, y: 100)
         player.name = "player"
@@ -50,54 +62,111 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         player.physicsBody?.categoryBitMask = playerCategory
         player.physicsBody?.contactTestBitMask = goodItemCategory | badItemCategory
         addChild(player)
-        
-        // 3. UI Setup
-        setupMeter()
-        setupBackButton()
-        
-        // 4. Start Accelerometer for Landscape
-        setupAccelerometer()
-        
-        // 5. Start Spawning Shapes
-        let spawnAction = SKAction.run { [weak self] in self?.spawnFallingShape() }
-        let waitAction = SKAction.wait(forDuration: 0.8)
-        run(SKAction.repeatForever(SKAction.sequence([spawnAction, waitAction])), withKey: "spawning")
     }
-    
-    // MARK: - Core Motion Setup
+
     private func setupAccelerometer() {
         if motionManager.isAccelerometerAvailable {
             motionManager.accelerometerUpdateInterval = 0.02
             motionManager.startAccelerometerUpdates(to: .main) { [weak self] (data, error) in
-                guard let acceleration = data?.acceleration else { return }
+                guard let acceleration = data?.acceleration, let self = self else { return }
                 
-                // LANDSCAPE LOGIC:
-                // Tilting the phone left/right in landscape affects the 'y' property.
-                // We use a simple low-pass filter to smooth the movement.
                 let filterFactor: Double = 0.2
                 let rawTilt = acceleration.y
-                self?.tiltValue = CGFloat((rawTilt * filterFactor) + (Double(self?.tiltValue ?? 0) * (1.0 - filterFactor)))
+                let previousTilt = self.tiltValue
+                self.tiltValue = CGFloat((rawTilt * filterFactor) + (Double(self.tiltValue) * (1.0 - filterFactor)))
+                
+                // Haptic logic: Pulse when the user changes tilt direction significantly
+                if abs(previousTilt) < 0.01 && abs(self.tiltValue) > 0.1 {
+                    HapticManager.shared.trigger(.selection)
+                }
             }
         }
     }
 
-    // MARK: - Game Loop
     override func update(_ currentTime: TimeInterval) {
-        // Sensitivity for landscape movement
-        // We multiply by -1.0 because tilting left returns a positive Y in landscape
         let sensitivity: CGFloat = 80.0
         let moveAmount = tiltValue * sensitivity * -1.0
-        
         let newX = player.position.x + moveAmount
         
-        // Keep player within screen bounds
         let halfWidth = player.frame.width / 2
-        player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
         
-        // Visual Juice: Make the player tilt slightly in the direction of movement
+        // Detect if we hit the screen edge
+        if newX <= halfWidth || newX >= (frame.width - halfWidth) {
+            // Give a tiny "tick" when the player is stuck at the edge
+            if abs(moveAmount) > 1.0 {
+                HapticManager.shared.trigger(.light)
+            }
+        }
+        
+        player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
         player.zRotation = tiltValue * 0.4
     }
     
+    func didBegin(_ contact: SKPhysicsContact) {
+        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+        let itemNode = (contact.bodyA.categoryBitMask == playerCategory) ? contact.bodyB.node : contact.bodyA.node
+        
+        if contactMask == (playerCategory | goodItemCategory) {
+            // SUCCESS HAPTIC
+            HapticManager.shared.trigger(.medium)
+            
+            fullness += 10.0
+            itemNode?.removeFromParent()
+            
+            // Visual feedback
+            player.run(SKAction.sequence([
+                SKAction.scale(to: 1.1, duration: 0.1),
+                SKAction.scale(to: 1.0, duration: 0.1)
+            ]))
+            
+        } else if contactMask == (playerCategory | badItemCategory) {
+            // ERROR HAPTIC
+            HapticManager.shared.trigger(.error)
+            
+            fullness = max(0, fullness - 15.0)
+            itemNode?.removeFromParent()
+            
+            // Shake effect
+            let shake = SKAction.sequence([
+                SKAction.moveBy(x: 10, y: 0, duration: 0.05),
+                SKAction.moveBy(x: -20, y: 0, duration: 0.05),
+                SKAction.moveBy(x: 10, y: 0, duration: 0.05)
+            ])
+            player.run(shake)
+        }
+    }
+
+    private func handleWin() {
+        // VICTORY HAPTIC
+        HapticManager.shared.trigger(.heavy)
+        
+        removeAction(forKey: "spawning")
+        motionManager.stopAccelerometerUpdates()
+        
+        viewModel?.health = 1.0
+        viewModel?.userScore += 1
+        
+        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HEALTH")
+        winLabel.fontSize = 35
+        winLabel.fontName = "AvenirNext-Bold"
+        winLabel.position = CGPoint(x: frame.midX, y: frame.midY)
+        winLabel.fontColor = .green
+        winLabel.zPosition = 200
+        addChild(winLabel)
+        
+        run(SKAction.sequence([
+            SKAction.wait(forDuration: 2.0),
+            SKAction.run { [weak self] in self?.returnToMap() }
+        ]))
+    }
+
+    // MARK: - UI & Helper Methods
+    
+    private func setupUI() {
+        setupMeter()
+        setupBackButton()
+    }
+
     private func setupMeter() {
         meterBackground.position = CGPoint(x: frame.midX, y: frame.height - 50)
         meterBackground.fillColor = .black
@@ -158,63 +227,15 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         shapeNode.physicsBody = SKPhysicsBody(circleOfRadius: 20)
         shapeNode.physicsBody?.categoryBitMask = isGood ? goodItemCategory : badItemCategory
         shapeNode.physicsBody?.contactTestBitMask = playerCategory
-        
         shapeNode.name = isGood ? "good" : "bad"
         addChild(shapeNode)
         
-        let wait = SKAction.wait(forDuration: 5.0)
-        let remove = SKAction.removeFromParent()
-        shapeNode.run(SKAction.sequence([wait, remove]))
-    }
-
-    func didBegin(_ contact: SKPhysicsContact) {
-        let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
-        let itemNode = (contact.bodyA.categoryBitMask == playerCategory) ? contact.bodyB.node : contact.bodyA.node
-        
-        if contactMask == (playerCategory | goodItemCategory) {
-            fullness += 10.0
-            itemNode?.removeFromParent()
-            player.run(SKAction.sequence([
-                SKAction.scale(to: 1.1, duration: 0.1),
-                SKAction.scale(to: 1.0, duration: 0.1)
-            ]))
-        } else if contactMask == (playerCategory | badItemCategory) {
-            fullness = max(0, fullness - 15.0)
-            itemNode?.removeFromParent()
-            let shake = SKAction.sequence([
-                SKAction.moveBy(x: 10, y: 0, duration: 0.05),
-                SKAction.moveBy(x: -20, y: 0, duration: 0.05),
-                SKAction.moveBy(x: 10, y: 0, duration: 0.05)
-            ])
-            player.run(shake)
-        }
-    }
-
-    private func handleWin() {
-        removeAction(forKey: "spawning")
-        motionManager.stopAccelerometerUpdates()
-        
-        viewModel?.health = 1.0
-        addPoints()
-        
-        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HEALTH")
-        winLabel.fontSize = 35
-        winLabel.fontName = "AvenirNext-Bold"
-        winLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-        winLabel.fontColor = .green
-        winLabel.zPosition = 200
-        addChild(winLabel)
-        
-        run(SKAction.sequence([
-            SKAction.wait(forDuration: 2.0),
-            SKAction.run { [weak self] in self?.returnToMap() }
+        shapeNode.run(SKAction.sequence([
+            SKAction.wait(forDuration: 5.0),
+            SKAction.removeFromParent()
         ]))
     }
 
-    func addPoints() {
-        viewModel?.userScore += 1
-    }
-    
     func setupBackButton() {
         let backLabel = SKLabelNode(text: "← Back")
         backLabel.position = CGPoint(x: 60, y: frame.height - 50)
@@ -228,6 +249,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         if atPoint(location).name == "Back Button" {
+            HapticManager.shared.trigger(.light)
             motionManager.stopAccelerometerUpdates()
             returnToMap()
         }
