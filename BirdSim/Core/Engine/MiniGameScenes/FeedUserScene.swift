@@ -23,7 +23,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
             updateMeter()
         }
     }
-    private let maxFullness: CGFloat = 100.0
+    private let maxFullness: CGFloat = 50
     
     // Player node
     let player = SKShapeNode(rectOf: CGSize(width: 80, height: 40), cornerRadius: 10)
