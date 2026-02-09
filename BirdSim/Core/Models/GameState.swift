@@ -18,8 +18,8 @@ final class GameState {
     var showGameOver: Bool = false
     var showGameWin: Bool = false
 
-    // Health
-    var health: Double = 1.0
+    // Hunger
+    var hunger: Double = 5.0
 
     // Inventory counts (simple fields to avoid complex Codable storage)
     var inventoryStick: Int = 0
@@ -52,3 +52,4 @@ final class GameState {
 
     init() {}
 }
+
