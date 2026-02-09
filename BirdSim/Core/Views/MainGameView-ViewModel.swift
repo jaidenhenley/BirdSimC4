@@ -25,7 +25,7 @@ extension MainGameView {
         @Published var savedCameraPosition: CGPoint?
         @Published var isMapMode: Bool = false
         @Published var mainScene: GameScene?
-        @Published var hunger: CGFloat = 1
+        @Published var hunger = 1
         @Published var showInventory: Bool = false
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
@@ -384,7 +384,7 @@ extension MainGameView {
                 self.gameStarted = state.gameStarted
                 self.showGameOver = state.showGameOver
                 self.showGameWin = state.showGameWin
-                self.hunger = CGFloat(state.hunger)
+                self.hunger = max(0, min(5, Int(state.hunger)))
                 self.inventory = ["stick": state.inventoryStick, "leaf": state.inventoryLeaf, "spiderweb": state.inventorySpiderweb, "dandelion": state.inventoryDandelion]
                 self.userScore = state.userScore
                 self.hasFoundMale = state.hasFoundMale
@@ -476,6 +476,10 @@ extension MainGameView {
             // to allow each bird to have its own independent timer.
             
             scheduleSave()
+        }
+        
+        var hungerSegments: Int {
+            return max(0, min(5, hunger))
         }
         
     }

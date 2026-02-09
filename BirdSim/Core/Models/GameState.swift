@@ -19,7 +19,7 @@ final class GameState {
     var showGameWin: Bool = false
 
     // Hunger
-    var hunger: Double = 1.0
+    var hunger: Double = 5.0
 
     // Inventory counts (simple fields to avoid complex Codable storage)
     var inventoryStick: Int = 0
@@ -52,3 +52,4 @@ final class GameState {
 
     init() {}
 }
+

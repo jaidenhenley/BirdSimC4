@@ -229,11 +229,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         // 4. Gradual Health Drain (Frame-rate independent)
-        if var hunger = viewModel?.hunger, hunger > 0 {
-            let drainThisFrame = 0.01 * deltaTime
-            hunger = max(0, hunger - drainThisFrame)
-            if hunger != viewModel?.hunger {
-                viewModel?.hunger = hunger
+        // Drain one segment approximately every 20 seconds (5 segments over ~100s)
+        healthAccumulator += deltaTime
+        let segmentDrainInterval: CGFloat = 20.0
+        if healthAccumulator >= segmentDrainInterval {
+            healthAccumulator = 0
+            if let current = viewModel?.hunger, current > 0 {
+                viewModel?.hunger = current - 1
             }
         }
 
@@ -627,6 +629,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
 } // End of GameScene Class
+
 
 
 

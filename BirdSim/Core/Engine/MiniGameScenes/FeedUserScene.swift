@@ -143,7 +143,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         removeAction(forKey: "spawning")
         motionManager.stopAccelerometerUpdates()
         
-        viewModel?.hunger = 1.0
+        viewModel?.hunger = 5
         viewModel?.userScore += 1
         
         let winLabel = SKLabelNode(text: "BIRD IS FULL! + HUNGER")
