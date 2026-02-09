@@ -18,7 +18,7 @@ extension GameScene {
             viewModel?.showGameWin = false
             viewModel?.savedCameraPosition = nil
             viewModel?.savedPlayerPosition = nil
-            viewModel?.hunger = 5
+            viewModel?.health = 1
             viewModel?.isFlying = false
             viewModel?.gameStarted = true
             viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0,"dandelion": 0]

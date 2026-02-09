@@ -143,10 +143,10 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         removeAction(forKey: "spawning")
         motionManager.stopAccelerometerUpdates()
         
-        viewModel?.hunger = 5
+        viewModel?.health = 1.0
         viewModel?.userScore += 1
         
-        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HUNGER")
+        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HEALTH")
         winLabel.fontSize = 35
         winLabel.fontName = "AvenirNext-Bold"
         winLabel.position = CGPoint(x: frame.midX, y: frame.midY)

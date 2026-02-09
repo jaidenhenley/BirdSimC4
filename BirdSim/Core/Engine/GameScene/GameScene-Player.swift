@@ -306,16 +306,27 @@ extension GameScene {
                     }
                 }
             }
-            if nearestNestLike != nil {
-                let items = viewModel.collectedItems
-                if items.contains("stick") &&
-                    items.contains("leaf") &&
-                    items.contains("spiderweb") &&
-                    items.contains("dandelion") {
-                    transitionToBuildNestScene()
-                    viewModel.controlsAreVisable = false
-                    viewModel.mapIsVisable = false
-                    return
+            if let targetNode = nearestNestLike {
+                // Check if the target tree or node already has a nest child
+                let alreadyHasNest = targetNode.childNode(withName: "final_nest") != nil ||
+                                     targetNode.childNode(withName: "nest_active") != nil ||
+                                     targetNode.name == "final_nest"
+                
+                if !alreadyHasNest {
+                    let items = viewModel.collectedItems
+                    if items.contains("stick") &&
+                        items.contains("leaf") &&
+                        items.contains("spiderweb") &&
+                        items.contains("dandelion") {
+                        
+                        // Save the tree name so spawnSuccessNest knows where to attach it
+                        viewModel.pendingNestAnchorTreeName = targetNode.name
+                        
+                        transitionToBuildNestScene()
+                        viewModel.controlsAreVisable = false
+                        viewModel.mapIsVisable = false
+                        return
+                    }
                 }
             }
         }

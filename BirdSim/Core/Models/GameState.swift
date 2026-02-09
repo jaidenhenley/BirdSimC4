@@ -18,8 +18,8 @@ final class GameState {
     var showGameOver: Bool = false
     var showGameWin: Bool = false
 
-    // Hunger
-    var hunger: Double = 5.0
+    // Health
+    var health: Double = 1.0
 
     // Inventory counts (simple fields to avoid complex Codable storage)
     var inventoryStick: Int = 0
@@ -35,10 +35,6 @@ final class GameState {
     var hasPlayedBabyGame: Bool = false
     var isBabyReadyToGrow: Bool = false
     var userFedBabyCount: Int = 0
-    
-    var currentBabyAmount: Int = 0
-
-    
     
     // MARK: - Nest Persistence
     
@@ -56,4 +52,3 @@ final class GameState {
 
     init() {}
 }
-

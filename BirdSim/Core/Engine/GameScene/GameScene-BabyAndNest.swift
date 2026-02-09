@@ -102,7 +102,6 @@ extension GameScene {
             
             nest.run(SKAction.sequence([scaleUp, fadeOut, remove])) { [weak self] in
                 self?.viewModel?.userScore += 5
-                self?.viewModel?.currentBabyAmount -= 1
                 self?.viewModel?.currentMessage = "A baby has grown and left the nest!"
                 self?.viewModel?.activeNestNode = nil
                 self?.currentActiveNest = nil
@@ -142,24 +141,28 @@ extension GameScene {
         viewModel?.hasBaby = true
         // Position and SpawnDate are now managed via Node/Persistence, not global variables
         viewModel?.saveState()
-        
-        viewModel?.currentBabyAmount += 1
 
         baby.alpha = 0
         baby.run(SKAction.fadeIn(withDuration: 1.0))
     }
-
-//    func removeSpecificNest(_ nest: SKNode) {
-//        nest.name = "nest_removing"
-//        let fadeOut = SKAction.fadeOut(withDuration: 0.8)
-//        let scaleDown = SKAction.scale(to: 0.2, duration: 0.8)
-//        let group = SKAction.group([fadeOut, scaleDown])
-//        viewModel?.userScore -= 1
-//        viewModel?.currentBabyAmount -= 1
-//        let remove = SKAction.removeFromParent()
-//        nest.run(SKAction.sequence([group, remove]))
-//    }
-//    
+    
+    func removeBabyBird() {
+        // Cleans up all babies in all nests
+        enumerateChildNodes(withName: "//babyBird") { node, _ in
+            node.removeFromParent()
+        }
+    }
+    
+    func removeSpecificNest(_ nest: SKNode) {
+        nest.name = "nest_removing"
+        let fadeOut = SKAction.fadeOut(withDuration: 0.8)
+        let scaleDown = SKAction.scale(to: 0.2, duration: 0.8)
+        let group = SKAction.group([fadeOut, scaleDown])
+        viewModel?.userScore -= 1
+        let remove = SKAction.removeFromParent()
+        nest.run(SKAction.sequence([group, remove]))
+    }
+    
     func restorePersistedNestAndBaby() {
         guard let viewModel = viewModel else { return }
 

@@ -53,19 +53,9 @@ struct MainGameView: View {
                 if viewModel.controlsAreVisable {
                     VStack {
                         HStack {
-                            VStack {
-                                DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger)
-                                    .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
-                                Spacer().frame(height: 6)
-                                BabyBarView(viewModel: viewModel, currentBabies: $viewModel.currentBabyAmount)
-                                    .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
-                                PredatorBarView(viewModel: viewModel, currentDanger: $viewModel.predatorProximitySegments)
-                                    .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
-                                
-                            }
-
+                            DrainingHealthBarView(viewModel: viewModel)
+                                .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
                             Spacer()
-                            
                         }
                         
                         HStack {

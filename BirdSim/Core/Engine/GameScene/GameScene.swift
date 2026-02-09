@@ -229,13 +229,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         // 4. Gradual Health Drain (Frame-rate independent)
-        // Drain one segment approximately every 20 seconds (5 segments over ~100s)
-        healthAccumulator += deltaTime
-        let segmentDrainInterval: CGFloat = 20.0
-        if healthAccumulator >= segmentDrainInterval {
-            healthAccumulator = 0
-            if let current = viewModel?.hunger, current > 0 {
-                viewModel?.hunger = current - 1
+        if var health = viewModel?.health, health > 0 {
+            let drainThisFrame = 0.01 * deltaTime
+            health = max(0, health - drainThisFrame)
+            if health != viewModel?.health {
+                viewModel?.health = health
             }
         }
 
@@ -271,7 +269,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     if self.currentActiveNest === node {
                         self.currentActiveNest = nil
                         self.viewModel?.userScore -= 1
-                        self.viewModel?.currentBabyAmount -= 1
                     }
                     node.removeFromParent()
                     viewModel?.currentMessage = "A nest was abandoned..."
@@ -314,22 +311,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard let player = self.childNode(withName: "userBird") else { return }
 
         // 7. Predator & Mini-game Triggering
-        
-        
-        let showRadius: CGFloat = 1600
-        if predatorHit {
-            viewModel?.predatorProximitySegments = 0
-        } else if let predator = closestPredator(to: player, within: showRadius) {
-            let dx = player.position.x - predator.position.x
-            let dy = player.position.y - predator.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            let normalized = max(0, min(1, 1 - (distance / showRadius)))
-            let segments = Int(round(normalized * 5))
-            viewModel?.predatorProximitySegments = segments
-        } else {
-            viewModel?.predatorProximitySegments = 0
-        }
-        
         if !predatorHit, let predator = closestPredator(to: player, within: 200) {
             transitionToPredatorGame(triggeringPredator: predator)
         }
@@ -646,8 +627,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
 } // End of GameScene Class
-
-
 
 
 
