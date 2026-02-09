@@ -123,7 +123,7 @@ class BuildNestScene: SKScene {
             cardSlot.addChild(frontGroup)
             cardSlot.addChild(backGroup)
             
-            let displayTime = 10.0
+            let displayTime = 5.0
             let flipSpeed = 0.25
             
             frontGroup.run(SKAction.sequence([

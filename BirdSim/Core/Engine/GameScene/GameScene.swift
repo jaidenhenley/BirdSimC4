@@ -644,6 +644,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func registerActiveNest(_ nest: SKNode) {
         currentActiveNest = nest
     }
+    
+    // MARK: - Scale Adjustment
+        func adjustPlayerScale(by delta: CGFloat) {
+            // Use SKSpriteNode as that matches your 'userBird' setup
+            guard let bird = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+            
+            // Define your bounds (adjust 0.7 and 1.1 to your preferred min/max)
+            let targetScale = max(0.7, min(1.1, bird.xScale + delta))
+            
+            // Don't restart the animation if we are already at the target
+            guard abs(targetScale - bird.xScale) > .ulpOfOne else { return }
+            
+            // Stop any currently running scale animations to prevent "stacking" stutters
+            bird.removeAction(forKey: "scaleEase")
+            
+            // Animate the scale change smoothly
+            let duration: TimeInterval = 0.5
+            let scaleAction = SKAction.scale(to: targetScale, duration: duration)
+            scaleAction.timingMode = .easeInEaseOut
+            
+            bird.run(scaleAction, withKey: "scaleEase")
+        }
 
 } // End of GameScene Class
 
