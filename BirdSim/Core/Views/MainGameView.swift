@@ -53,11 +53,15 @@ struct MainGameView: View {
                 if viewModel.controlsAreVisable {
                     VStack {
                         HStack {
-                            DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger)
-                                .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                            VStack {
+                                DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger)
+                                    .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                                BabyBarView(viewModel: viewModel, currentBabies: $viewModel.currentBabyAmount)
+                                    .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                            }
+
                             Spacer()
                             
-                            BabyBarView(viewModel: viewModel)
                         }
                         
                         HStack {
