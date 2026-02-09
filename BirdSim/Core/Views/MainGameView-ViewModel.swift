@@ -26,6 +26,7 @@ extension MainGameView {
         @Published var isMapMode: Bool = false
         @Published var mainScene: GameScene?
         @Published var hunger = 1
+        @Published var predatorProximitySegments: Int = 0
         @Published var showInventory: Bool = false
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
