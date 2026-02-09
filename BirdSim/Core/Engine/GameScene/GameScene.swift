@@ -507,6 +507,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
                         transitionToBuildNestScene()
                         viewModel?.controlsAreVisable = false
+                        viewModel?.mapIsVisable = false
                         return
                     }
                 }
@@ -521,6 +522,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                     transitionToFeedUserScene()
                     viewModel?.controlsAreVisable = false
+                    viewModel?.mapIsVisable = false
                     return
                 }
                 
@@ -549,7 +551,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     // --- MULTI-NEST LOGIC END ---
 
                     transitionToFeedBabyScene()
-                    viewModel?.controlsAreVisable = false
+                    viewModel?.mapIsVisable = false
                     return
                 }
                 
@@ -563,6 +565,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                     transitionToLeaveIslandMini()
                     viewModel?.controlsAreVisable = false
+                    viewModel?.mapIsVisable = false
                     return
                 }
             }

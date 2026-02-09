@@ -49,6 +49,7 @@ class BuildNestScene: SKScene {
         }
         
         viewModel?.controlsAreVisable = true
+        viewModel?.mapIsVisable = true
         let transition = SKTransition.doorsOpenHorizontal(withDuration: 0.5)
         view.presentScene(mainScene, transition: transition)
     }

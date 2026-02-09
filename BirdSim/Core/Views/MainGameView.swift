@@ -80,46 +80,11 @@ struct MainGameView: View {
                 }
                                     
                 VStack {
-                    HStack {
-                        Spacer()
-                        if viewModel.controlsAreVisable {
-                            Button{
-                                viewModel.showInventory = true
-                            } label: {
-                                Image(systemName: "bag.fill")
-                                    .font(.largeTitle)
-                                    .padding()
-                                    .background(Circle().fill(.ultraThinMaterial))
-                            }
-                            .padding()
-                        }
-                        
-                        Button() {
-                            if viewModel.isMapMode == false {
-                                viewModel.mainScene?.enterMapNode()
-                            } else {
-                                viewModel.mainScene?.exitMapMode()
-                            }
-                        } label: {
-                            Image(systemName: "map.fill")
-                                .font(.largeTitle)
-                                .padding()
-                                .background(Circle().fill(.ultraThinMaterial))
-                        }
-                        .padding()
-                        
-                        Button {
-                            onExit()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.largeTitle)
-                                .padding()
-                                .background(Circle().fill(.ultraThinMaterial))
-                        }
-                        .padding()
-                    }
+                ToolbarButtonView(viewModel: viewModel, onExit: onExit)
                     
                     Spacer()
+                    
+                    
                     if viewModel.controlsAreVisable {
                         HUDControls(viewModel: viewModel)
                             .padding(60)

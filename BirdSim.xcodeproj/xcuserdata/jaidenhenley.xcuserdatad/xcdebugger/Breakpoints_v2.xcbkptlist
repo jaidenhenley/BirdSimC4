@@ -3,4 +3,22 @@
    uuid = "2A80E62D-431C-4A16-9D7A-31BF57CA27C3"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "4D606544-D21B-4674-A7A2-9BF7CEE4469B"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "BirdSim/Core/Engine/GameScene/GameScene-Transitions.swift"
+            startingColumnNumber = "10"
+            endingColumnNumber = "35"
+            startingLineNumber = "49"
+            endingLineNumber = "49"
+            landmarkName = "transitionToFeedUserScene()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

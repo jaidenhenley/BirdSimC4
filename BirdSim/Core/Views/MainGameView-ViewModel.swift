@@ -20,6 +20,7 @@ extension MainGameView {
         @Published var pendingScaleDelta: CGFloat = 0
         @Published var isFlying: Bool = false
         @Published var controlsAreVisable: Bool = true
+        @Published var mapIsVisable: Bool = true
         @Published var savedPlayerPosition: CGPoint?
         @Published var savedCameraPosition: CGPoint?
         @Published var isMapMode: Bool = false

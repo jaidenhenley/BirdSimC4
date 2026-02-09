@@ -258,6 +258,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     func returnToMap() {
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         viewModel?.controlsAreVisable = true
+        viewModel?.mapIsVisable = true
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
     }
 }

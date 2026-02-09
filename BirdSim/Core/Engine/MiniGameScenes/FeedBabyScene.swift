@@ -184,6 +184,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        let touchedNodes = nodes(at: location)
+        for node in touchedNodes where node.name == "rope_link" {
+            node.removeFromParent()
+        }
+
         
         // Define how "easy" it is to cut (in points)
         // 30-40 points is usually the sweet spot for fingers
@@ -267,9 +272,63 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     }
 
     func returnToMainGame() {
-        guard let view = self.view, let mainScene = viewModel?.mainScene else { return }
-        viewModel?.controlsAreVisable = true
-        let transition = SKTransition.doorsOpenHorizontal(withDuration: 0.5)
-        view.presentScene(mainScene, transition: transition)
+        guard let view = self.view else { return }
+        if let existing = viewModel?.mainScene {
+            viewModel?.joystickVelocity = .zero
+            viewModel?.controlsAreVisable = true
+            viewModel?.mapIsVisable = true
+            let transition = SKTransition.crossFade(withDuration: 0.5)
+            view.presentScene(existing, transition: transition)
+        }
+    }
+
+    func setupUContainer() {
+        let bucketWidth: CGFloat = 100
+        let bucketHeight: CGFloat = 60
+        let thickness: CGFloat = 5
+        let container = SKNode()
+        
+        let leftEdge = frame.minX + (bucketWidth / 2)
+        let rightEdge = frame.maxX - (bucketWidth / 2)
+        
+        container.position = CGPoint(x: leftEdge, y: 150)
+        container.name = "bucket"
+        
+        let bottom = SKSpriteNode(color: .blue, size: CGSize(width: bucketWidth, height: thickness))
+        let leftSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
+        leftSide.position = CGPoint(x: -bucketWidth/2, y: bucketHeight/2)
+        let rightSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
+        rightSide.position = CGPoint(x: bucketWidth/2, y: bucketHeight/2)
+        
+        container.addChild(bottom)
+        container.addChild(leftSide)
+        container.addChild(rightSide)
+        
+        let bottomBody = SKPhysicsBody(rectangleOf: bottom.size, center: .zero)
+        let leftBody = SKPhysicsBody(rectangleOf: leftSide.size, center: leftSide.position)
+        let rightBody = SKPhysicsBody(rectangleOf: rightSide.size, center: rightSide.position)
+        
+        container.physicsBody = SKPhysicsBody(bodies: [bottomBody, leftBody, rightBody])
+        container.physicsBody?.isDynamic = false
+        container.physicsBody?.categoryBitMask = bucketCategory
+        container.physicsBody?.contactTestBitMask = itemCategory
+        addChild(container)
+        
+        let slowDuration: TimeInterval = 4.5
+        let moveRight = SKAction.moveTo(x: rightEdge, duration: slowDuration)
+        let moveLeft = SKAction.moveTo(x: leftEdge, duration: slowDuration)
+        moveRight.timingMode = .easeInEaseOut
+        moveLeft.timingMode = .easeInEaseOut
+
+        let sequence = SKAction.sequence([moveRight, moveLeft])
+        container.run(SKAction.repeatForever(sequence))
+    }
+    
+    
+    func setupBackButton() {
+        let backLabel = SKLabelNode(text: "Tap to go back")
+        backLabel.position = CGPoint(x: frame.midX, y: 50)
+        backLabel.name = "Back Button"
+        addChild(backLabel)
     }
 }

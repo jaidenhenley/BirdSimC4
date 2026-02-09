@@ -14,6 +14,7 @@ extension GameScene {
         viewModel?.joystickVelocity = .zero
         
         if resetState {
+            viewModel?.controlsAreVisable = true
             viewModel?.showGameWin = false
             viewModel?.savedCameraPosition = nil
             viewModel?.savedPlayerPosition = nil
