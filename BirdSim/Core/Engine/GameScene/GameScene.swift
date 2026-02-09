@@ -229,11 +229,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         // 4. Gradual Health Drain (Frame-rate independent)
-        if var health = viewModel?.health, health > 0 {
+        if var hunger = viewModel?.hunger, hunger > 0 {
             let drainThisFrame = 0.01 * deltaTime
-            health = max(0, health - drainThisFrame)
-            if health != viewModel?.health {
-                viewModel?.health = health
+            hunger = max(0, hunger - drainThisFrame)
+            if hunger != viewModel?.hunger {
+                viewModel?.hunger = hunger
             }
         }
 

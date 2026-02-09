@@ -15,7 +15,6 @@ struct DrainingHealthBarView: View {
             
     
             ZStack(alignment: .leading){
-                // Background (Gray track)
                 VStack{
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 10)
@@ -23,14 +22,12 @@ struct DrainingHealthBarView: View {
                             .foregroundStyle(.gray)
                         // Foreground (The "Health")
                         RoundedRectangle(cornerRadius: 10)
-                            .frame(width: max(0, min(1, viewModel.health)) * 300, height: 20)
-                            .foregroundColor(viewModel.health > 0.6 ? .green : (viewModel.health > 0.3 ? .yellow : .red))
+                            .frame(width: max(0, min(1, viewModel.hunger)) * 300, height: 20)
+                            .foregroundColor(viewModel.hunger > 0.6 ? .green : (viewModel.hunger > 0.3 ? .yellow : .red))
                     }
-                    Text("Health: \(Int(viewModel.health * 100))%")
+                    Text("Hunger: \(Int(viewModel.hunger * 100))%")
                         .font(.caption.monospacedDigit())
                 }
-                
-               
             }
         }
     }
