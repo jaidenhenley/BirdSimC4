@@ -26,6 +26,7 @@ extension MainGameView {
         @Published var isMapMode: Bool = false
         @Published var mainScene: GameScene?
         @Published var hunger = 1
+        @Published var predatorProximitySegments: Int = 0
         @Published var showInventory: Bool = false
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
@@ -33,6 +34,8 @@ extension MainGameView {
         @Published var showGameOver: Bool = false
         @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
+        @Published var currentBabyAmount: Int = 0
+        @Published var currentDanger: Int = 0
         
         // SwiftData context & model
         private var modelContext: ModelContext?
@@ -340,6 +343,10 @@ extension MainGameView {
         }
         
         private func bindAutoSave() {
+            $currentBabyAmount
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+            
             $hunger
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
@@ -390,6 +397,7 @@ extension MainGameView {
                 self.hasFoundMale = state.hasFoundMale
                 self.hasPlayedBabyGame = state.hasPlayedBabyGame
                 self.isBabyReadyToGrow = state.isBabyReadyToGrow
+                self.currentBabyAmount = state.currentBabyAmount
                 
                 self.hasNest = state.hasNest
                 self.nestPosition = state.hasNest ? CGPoint(x: state.nestX, y: state.nestY) : nil
@@ -416,6 +424,7 @@ extension MainGameView {
             gs.userScore = userScore
             gs.hasFoundMale = hasFoundMale
             gs.hasNest = hasNest
+            gs.currentBabyAmount = currentBabyAmount
 
             if let pos = nestPosition {
                 gs.nestX = pos.x

@@ -271,6 +271,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     if self.currentActiveNest === node {
                         self.currentActiveNest = nil
                         self.viewModel?.userScore -= 1
+                        self.viewModel?.currentBabyAmount -= 1
                     }
                     node.removeFromParent()
                     viewModel?.currentMessage = "A nest was abandoned..."
@@ -313,6 +314,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard let player = self.childNode(withName: "userBird") else { return }
 
         // 7. Predator & Mini-game Triggering
+        
+        
+        let showRadius: CGFloat = 1600
+        if predatorHit {
+            viewModel?.predatorProximitySegments = 0
+        } else if let predator = closestPredator(to: player, within: showRadius) {
+            let dx = player.position.x - predator.position.x
+            let dy = player.position.y - predator.position.y
+            let distance = sqrt(dx*dx + dy*dy)
+            let normalized = max(0, min(1, 1 - (distance / showRadius)))
+            let segments = Int(round(normalized * 5))
+            viewModel?.predatorProximitySegments = segments
+        } else {
+            viewModel?.predatorProximitySegments = 0
+        }
+        
         if !predatorHit, let predator = closestPredator(to: player, within: 200) {
             transitionToPredatorGame(triggeringPredator: predator)
         }
@@ -629,6 +646,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
 } // End of GameScene Class
+
 
 
 

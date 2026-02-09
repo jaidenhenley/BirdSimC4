@@ -36,6 +36,10 @@ final class GameState {
     var isBabyReadyToGrow: Bool = false
     var userFedBabyCount: Int = 0
     
+    var currentBabyAmount: Int = 0
+
+    
+    
     // MARK: - Nest Persistence
     
     var hasNest: Bool = false
