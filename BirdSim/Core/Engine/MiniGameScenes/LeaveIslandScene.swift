@@ -13,22 +13,23 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     private var isGameOver = false
     
     // --- Responsive Constants ---
-    // Using the smaller dimension (usually width in portrait) as a base unit
-    private var unit: CGFloat { return min(size.width, size.height) }
+    // We base units on screen height to keep vertical gameplay consistent across devices
+    private var unit: CGFloat { return size.height }
+    private var playableWidth: CGFloat { return size.width }
     
     // Collision Categories
     private let birdCategory: UInt32 = 0x1 << 0
     private let pipeCategory: UInt32 = 0x1 << 1
 
     override func didMove(to view: SKView) {
-        // Essential for iPad/iPhone scaling:
-        self.scaleMode = .aspectFill
+        // .aspectFit ensures the entire game scene is visible on iPad without cropping
+        self.scaleMode = .aspectFit
         
         SoundManager.shared.startBackgroundMusic(track: .leaveMap)
         HapticManager.shared.prepare()
 
-        // Scale gravity relative to screen height
-        self.physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.012)
+        // Physics: Gravity is now relative to height for consistent fall speed
+        self.physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.01)
         self.physicsWorld.contactDelegate = self
         
         setupBird()
@@ -37,17 +38,17 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func setupBird() {
-        // Size the bird relative to the screen size
-        let birdSize = unit * 0.18
-        bird.position = CGPoint(x: size.width * 0.3, y: size.height * 0.5)
+        let birdSize = unit * 0.08 // Smaller multiplier since unit is now height
+        bird.position = CGPoint(x: size.width * 0.25, y: size.height * 0.5)
         bird.size = CGSize(width: birdSize, height: birdSize)
         
-        // Physics body slightly smaller than the sprite for "fairer" collisions
+        // Physics body
         bird.physicsBody = SKPhysicsBody(circleOfRadius: birdSize * 0.4)
         bird.physicsBody?.isDynamic = true
         bird.physicsBody?.categoryBitMask = birdCategory
         bird.physicsBody?.contactTestBitMask = pipeCategory
         bird.physicsBody?.collisionBitMask = pipeCategory
+        bird.physicsBody?.mass = 0.1
         bird.name = "playerBird"
         addChild(bird)
     }
@@ -57,9 +58,10 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         
         HapticManager.shared.trigger(.selection)
         
-        // Impulse scaled to screen size so the jump feels the same on all devices
+        // Velocity reset for snappy controls
         bird.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-        bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.08))
+        // Impulse scaled to height so the "jump" height is the same % of screen
+        bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.045))
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
@@ -86,34 +88,35 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     
     func setupObstacles() {
         let spawn = SKAction.run { [weak self] in self?.createObstaclePair() }
-        let delay = SKAction.wait(forDuration: 1.8) // Slightly faster spawn for modern screens
+        let delay = SKAction.wait(forDuration: 1.5)
         run(SKAction.repeatForever(SKAction.sequence([spawn, delay])), withKey: "pipeSpawn")
     }
     
     func createObstaclePair() {
-        // Gap is relative: 35% of the screen height
-        let gapHeight = size.height * 0.35
-        let pipeWidth = unit * 0.15
-        let pipeHeight = size.height
+        let gapHeight = unit * 0.3 // Gap is 30% of screen height
+        let pipeWidth = unit * 0.12
+        let pipeHeight = unit // Pipe is at least as tall as the screen
         
-        // Random offset restricted to the middle 40% of the screen
-        let maxOffset = size.height * 0.2
-        let pipeOffset = CGFloat.random(in: -maxOffset...maxOffset)
+        // Random offset: Keep the gap within the middle 60% of the screen
+        let playableRange = unit * 0.6
+        let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
             
         // Bottom Pipe
         let bottomPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: pipeHeight))
         bottomPipe.position = CGPoint(x: size.width + pipeWidth,
-                                      y: (size.height / 2) - (pipeHeight / 2) - (gapHeight / 2) + pipeOffset)
+                                      y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
         setupObstaclePhysics(bottomPipe)
             
         // Top Pipe
         let topPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: pipeHeight))
         topPipe.position = CGPoint(x: size.width + pipeWidth,
-                                   y: (size.height / 2) + (pipeHeight / 2) + (gapHeight / 2) + pipeOffset)
+                                   y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
         setupObstaclePhysics(topPipe)
             
-        // Movement duration stays constant, so speed varies naturally by screen width
-        let moveLeft = SKAction.moveBy(x: -size.width - (pipeWidth * 2), y: 0, duration: 3.5)
+        // Movement: Speed is distance/time. Using a duration relative to width
+        // keeps the speed consistent even on wider iPad screens.
+        let distanceToMove = size.width + (pipeWidth * 3)
+        let moveLeft = SKAction.moveBy(x: -distanceToMove, y: 0, duration: 3.0)
         let sequence = SKAction.sequence([moveLeft, .removeFromParent()])
             
         bottomPipe.run(sequence)
@@ -143,13 +146,14 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard !isGameOver else { return }
         
-        // Kill zones relative to frame bounds
-        if bird.position.y < (bird.size.height / 2) || bird.position.y > (size.height - bird.size.height / 2) {
+        // Screen bounds check
+        if bird.position.y < 0 || bird.position.y > size.height {
             gameOver()
         }
         
-        // Visual polish: Tilt the bird based on velocity
-        let value = bird.physicsBody!.velocity.dy * (bird.physicsBody!.velocity.dy < 0 ? 0.003 : 0.001)
-        bird.zRotation = min(max(-1, value), 0.5)
+        // Tilt Logic
+        let velocity = bird.physicsBody?.velocity.dy ?? 0
+        let targetRotation = velocity * (velocity < 0 ? 0.002 : 0.001)
+        bird.zRotation = min(max(-1, targetRotation), 0.5)
     }
 }
