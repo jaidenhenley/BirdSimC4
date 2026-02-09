@@ -56,6 +56,8 @@ struct MainGameView: View {
                             DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger)
                                 .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
                             Spacer()
+                            
+                            BabyBarView(viewModel: viewModel)
                         }
                         
                         HStack {

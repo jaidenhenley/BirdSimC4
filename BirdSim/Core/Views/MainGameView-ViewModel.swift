@@ -33,6 +33,7 @@ extension MainGameView {
         @Published var showGameOver: Bool = false
         @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
+        @Published var currentBabyAmount: Int = 0
         
         // SwiftData context & model
         private var modelContext: ModelContext?
@@ -340,6 +341,10 @@ extension MainGameView {
         }
         
         private func bindAutoSave() {
+            $currentBabyAmount
+                .sink { [weak self] _ in self?.scheduleSave() }
+                .store(in: &cancellables)
+            
             $hunger
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
@@ -390,6 +395,7 @@ extension MainGameView {
                 self.hasFoundMale = state.hasFoundMale
                 self.hasPlayedBabyGame = state.hasPlayedBabyGame
                 self.isBabyReadyToGrow = state.isBabyReadyToGrow
+                self.currentBabyAmount = state.currentBabyAmount
                 
                 self.hasNest = state.hasNest
                 self.nestPosition = state.hasNest ? CGPoint(x: state.nestX, y: state.nestY) : nil
@@ -416,6 +422,7 @@ extension MainGameView {
             gs.userScore = userScore
             gs.hasFoundMale = hasFoundMale
             gs.hasNest = hasNest
+            gs.currentBabyAmount = currentBabyAmount
 
             if let pos = nestPosition {
                 gs.nestX = pos.x
