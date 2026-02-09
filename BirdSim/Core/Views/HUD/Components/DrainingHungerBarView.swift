@@ -46,6 +46,16 @@ struct DrainingHungerBarView: View {
                 }
             }
         }
+        .onAppear {
+            if currentHunger <= 0 {
+                viewModel.showGameOver = true
+            }
+        }
+        .onChange(of: currentHunger) { _, newValue in
+            if newValue <= 0 {
+                viewModel.showGameOver = true
+            }
+        }
     }
         
     
