@@ -9,6 +9,7 @@
 
 
 import SpriteKit
+import UIKit
 
 class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
@@ -22,110 +23,213 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     
     var scoreLabel: SKLabelNode!
     
+    // --- Physics Categories ---
     let ropeCategory: UInt32 = 0x1 << 0
     let itemCategory: UInt32 = 0x1 << 1
     let bucketCategory: UInt32 = 0x1 << 2
     
+    // --- Responsive Constants ---
+    private var unit: CGFloat {
+        return min(size.width, size.height)
+    }
+
     override func didMove(to view: SKView) {
+        self.scaleMode = .aspectFill
+        
+        // Warm up the haptic engine
+        HapticManager.shared.prepare()
+        
         SoundManager.shared.startBackgroundMusic(track: .feedingBaby)
         backgroundColor = .black
+        
         physicsWorld.contactDelegate = self
-        physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+        // Gravity relative to screen height
+        physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.02)
         
-        // --- Setup UI ---
-        setupScoreLabel()
-        setupBackButton()
-        
-        // --- Setup Ropes ---
-        let padding: CGFloat = 80
-        createRope(at: frame.minX + padding)
-        createRope(at: frame.midX)
-        createRope(at: frame.maxX - padding)
-        
-        setupUContainer()
+        setupUI()
+        setupGameElements()
     }
     
-    func setupScoreLabel() {
+    private func setupUI() {
         scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        scoreLabel.fontSize = 24
+        scoreLabel.fontSize = unit * 0.05
         scoreLabel.text = "Caught: 0/\(requiredToWin)"
-        scoreLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 50)
+        scoreLabel.position = CGPoint(x: size.width / 2, y: size.height - (unit * 0.15))
         scoreLabel.fontColor = .white
+        scoreLabel.zPosition = 100
         addChild(scoreLabel)
+        
+        let backLabel = SKLabelNode(text: "EXIT MINI-GAME")
+        backLabel.fontName = "AvenirNext-Bold"
+        backLabel.fontSize = unit * 0.04
+        backLabel.position = CGPoint(x: size.width / 2, y: unit * 0.08)
+        backLabel.name = "Back Button"
+        backLabel.zPosition = 100
+        addChild(backLabel)
     }
     
-    func createRope(at xPos: CGFloat) {
-        let anchor = SKSpriteNode(color: .red, size: CGSize(width: 20, height: 10))
-        anchor.position = CGPoint(x: xPos, y: frame.maxY - 120)
+    private func setupGameElements() {
+        let ropeY = size.height * 0.85
+        let spacing = size.width / 4
+        
+        createRope(at: spacing, yPos: ropeY)
+        createRope(at: spacing * 2, yPos: ropeY)
+        createRope(at: spacing * 3, yPos: ropeY)
+        
+        setupBucket()
+    }
+    
+    func createRope(at xPos: CGFloat, yPos: CGFloat) {
+        let anchorSize = unit * 0.04
+        let anchor = SKSpriteNode(color: .red, size: CGSize(width: anchorSize, height: anchorSize / 2))
+        anchor.position = CGPoint(x: xPos, y: yPos)
         anchor.physicsBody = SKPhysicsBody(rectangleOf: anchor.size)
         anchor.physicsBody?.isDynamic = false
         addChild(anchor)
         
         var lastNode: SKNode = anchor
+        let linkCount = 12
+        let linkWidth = unit * 0.005
+        let linkHeight = (size.height * 0.4) / CGFloat(linkCount)
         
-        for i in 0..<12 {
-            let link = SKSpriteNode(color: .white, size: CGSize(width: 2, height: 20))
-            link.position = CGPoint(x: anchor.position.x, y: anchor.position.y - CGFloat(i * 20) - 10)
+        
+
+        for i in 0..<linkCount {
+            let link = SKSpriteNode(color: .white, size: CGSize(width: linkWidth, height: linkHeight))
+            link.position = CGPoint(x: xPos, y: yPos - (CGFloat(i) * linkHeight) - (linkHeight / 2))
             link.name = "rope_link"
             link.physicsBody = SKPhysicsBody(rectangleOf: link.size)
-            link.physicsBody?.linearDamping = 0.5
-            link.physicsBody?.angularDamping = 0.5
             link.physicsBody?.categoryBitMask = ropeCategory
             link.physicsBody?.collisionBitMask = 0
+            link.physicsBody?.linearDamping = 0.5
             addChild(link)
             
             let joint = SKPhysicsJointPin.joint(withBodyA: lastNode.physicsBody!,
-                                                bodyB: link.physicsBody!,
-                                                anchor: CGPoint(x: link.position.x, y: link.position.y + 10))
+                                               bodyB: link.physicsBody!,
+                                               anchor: CGPoint(x: xPos, y: link.position.y + (linkHeight / 2)))
             physicsWorld.add(joint)
             lastNode = link
         }
         
-        let itemNode = SKSpriteNode(color: .orange, size: CGSize(width: 30, height: 30))
-        itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - 20)
+        let foodSize = unit * 0.08
+        let itemNode = SKSpriteNode(color: .orange, size: CGSize(width: foodSize, height: foodSize))
+        itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - (foodSize / 2))
         itemNode.name = "food_item"
-        
-        itemNode.physicsBody = SKPhysicsBody(rectangleOf: itemNode.size)
+        itemNode.physicsBody = SKPhysicsBody(circleOfRadius: foodSize / 2)
         itemNode.physicsBody?.categoryBitMask = itemCategory
         itemNode.physicsBody?.contactTestBitMask = bucketCategory
         itemNode.physicsBody?.collisionBitMask = bucketCategory
-        itemNode.physicsBody?.restitution = 0.2
+        itemNode.physicsBody?.restitution = 0.3
         addChild(itemNode)
         
         let lastJoint = SKPhysicsJointPin.joint(withBodyA: lastNode.physicsBody!,
-                                                bodyB: itemNode.physicsBody!,
-                                                anchor: CGPoint(x: itemNode.position.x, y: itemNode.position.y + 15))
+                                               bodyB: itemNode.physicsBody!,
+                                               anchor: CGPoint(x: itemNode.position.x, y: itemNode.position.y + (foodSize / 2)))
         physicsWorld.add(lastJoint)
+    }
+    
+    func setupBucket() {
+        let bucketWidth = unit * 0.25
+        let bucketHeight = unit * 0.15
+        let thickness = unit * 0.015
+        
+        let container = SKNode()
+        container.name = "bucket"
+        let leftEdge = bucketWidth
+        let rightEdge = size.width - bucketWidth
+        container.position = CGPoint(x: leftEdge, y: size.height * 0.2)
+        
+        let bottom = SKSpriteNode(color: .blue, size: CGSize(width: bucketWidth, height: thickness))
+        let leftSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
+        leftSide.position = CGPoint(x: -bucketWidth/2, y: bucketHeight/2)
+        let rightSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
+        rightSide.position = CGPoint(x: bucketWidth/2, y: bucketHeight/2)
+        
+        container.addChild(bottom)
+        container.addChild(leftSide)
+        container.addChild(rightSide)
+        
+        let bottomBody = SKPhysicsBody(rectangleOf: bottom.size)
+        let leftBody = SKPhysicsBody(rectangleOf: leftSide.size, center: leftSide.position)
+        let rightBody = SKPhysicsBody(rectangleOf: rightSide.size, center: rightSide.position)
+        
+        container.physicsBody = SKPhysicsBody(bodies: [bottomBody, leftBody, rightBody])
+        container.physicsBody?.isDynamic = false
+        container.physicsBody?.categoryBitMask = bucketCategory
+        addChild(container)
+        
+        let duration: TimeInterval = 3.0
+        let moveRight = SKAction.moveTo(x: rightEdge, duration: duration)
+        let moveLeft = SKAction.moveTo(x: leftEdge, duration: duration)
+        moveRight.timingMode = .easeInEaseOut
+        
+        container.run(SKAction.repeatForever(SKAction.sequence([moveRight, moveLeft])))
+    }
+    
+    // MARK: - Haptic Interactions
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        HapticManager.shared.prepare() // Keep engine awake
+        
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let node = atPoint(location)
+        
+        if node.name == "Back Button" {
+            HapticManager.shared.trigger(.light)
+            returnToMainGame()
+        }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        
+        // Define how "easy" it is to cut (in points)
+        // 30-40 points is usually the sweet spot for fingers
+        let cuttingRadius: CGFloat = unit * 0.05
+        
+        enumerateChildNodes(withName: "rope_link") { node, _ in
+            // Calculate distance between touch and rope link
+            let dx = node.position.x - location.x
+            let dy = node.position.y - location.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            if distance < cuttingRadius {
+                HapticManager.shared.trigger(.selection)
+                node.removeFromParent()
+            }
+        }
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
         guard !isSceneTransitioning else { return }
-        
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
         
         if contactMask == (itemCategory | bucketCategory) {
             let itemNode = (contact.bodyA.categoryBitMask == itemCategory) ? contact.bodyA.node : contact.bodyB.node
             
             if itemNode?.parent != nil {
+                // Trigger 'success' haptic when food is caught
+                HapticManager.shared.trigger(.success)
+                
                 itemNode?.removeFromParent()
                 caughtCount += 1
                 scoreLabel.text = "Caught: \(caughtCount)/\(requiredToWin)"
-                
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                
                 checkWinCondition()
             }
         }
     }
     
     override func update(_ currentTime: TimeInterval) {
-        guard !isSceneTransitioning else { return }
-        
         enumerateChildNodes(withName: "food_item") { node, _ in
-            if node.position.y < 0 {
+            if node.position.y < -50 {
                 node.removeFromParent()
                 self.missedCount += 1
+                
+                // Light 'thud' haptic for a missed item
+                HapticManager.shared.trigger(.light)
+                
                 self.checkWinCondition()
             }
         }
@@ -135,7 +239,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         if caughtCount >= requiredToWin {
             handleGameOver(success: true)
         } else if missedCount > (totalRopes - requiredToWin) {
-            // If you miss more than 1 (in a 3-rope game), you can't get 2.
             handleGameOver(success: false)
         }
     }
@@ -144,24 +247,23 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         isSceneTransitioning = true
         physicsWorld.contactDelegate = nil
         
-        if success {
-            viewModel?.incrementFeedingForCurrentNest()
-        }
+        // Final game result haptic
+        HapticManager.shared.trigger(success ? .heavy : .error)
         
-        let endLabel = SKLabelNode(text: success ? "SUCCESS!" : "TRY AGAIN!")
+        if success { viewModel?.incrementFeedingForCurrentNest() }
+        
+        let endLabel = SKLabelNode(text: success ? "WELL FED!" : "TOO SLOW!")
         endLabel.fontName = "AvenirNext-Bold"
-        endLabel.fontSize = 40
+        endLabel.fontSize = unit * 0.1
         endLabel.fontColor = success ? .green : .red
-        endLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-        endLabel.zPosition = 100
+        endLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        endLabel.zPosition = 200
         addChild(endLabel)
         
-        let wait = SKAction.wait(forDuration: 1.5)
-        let transitionAction = SKAction.run { [weak self] in
-            self?.returnToMainGame()
-        }
-        
-        self.run(SKAction.sequence([wait, transitionAction]))
+        self.run(SKAction.sequence([
+            SKAction.wait(forDuration: 2.0),
+            SKAction.run { [weak self] in self?.returnToMainGame() }
+        ]))
     }
 
     func returnToMainGame() {

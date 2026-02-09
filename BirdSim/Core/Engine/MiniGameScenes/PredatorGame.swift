@@ -19,6 +19,9 @@ class PredatorGame: SKScene {
     private var isResolved = false
 
     override func didMove(to view: SKView) {
+        // Warm up haptics
+        HapticManager.shared.prepare()
+        
         SoundManager.shared.startBackgroundMusic(track: .predator)
         backgroundColor = .black
         
@@ -27,22 +30,18 @@ class PredatorGame: SKScene {
     }
     
     private func setupTimingBar() {
-        // 1. Position the main bar
         bar.position = CGPoint(x: frame.midX, y: frame.midY - 50)
         addChild(bar)
         
-        // 2. Setup Zones (3 Danger, 3 Safe)
         let zoneWidth = bar.size.width / 6
-        // We shuffle to keep the player on their toes
         let zoneTypes = ["danger", "safe", "danger", "safe", "danger", "safe"].shuffled()
         
         for i in 0..<6 {
             let type = zoneTypes[i]
             let isDanger = type == "danger"
             
-            // Create the slot/zone
             let zone = SKSpriteNode(color: isDanger ? .systemRed : .systemGreen,
-                                    size: CGSize(width: zoneWidth - 4, height: 40)) // -4 for a tiny gap
+                                    size: CGSize(width: zoneWidth - 4, height: 40))
             
             let xPos = (-bar.size.width / 2) + (CGFloat(i) * zoneWidth) + (zoneWidth / 2)
             zone.position = CGPoint(x: xPos, y: 0)
@@ -51,26 +50,17 @@ class PredatorGame: SKScene {
             
             if isDanger {
                 dangerZones.append(zone)
-                
-                // 3. Place a Predator Head above every Red Zone
                 let miniPredator = SKSpriteNode(imageNamed: "Predator/PredatorHead")
                 miniPredator.size = CGSize(width: 70, height: 70)
-                // Positioned relative to the zone, slightly above
                 miniPredator.position = CGPoint(x: xPos, y: 70)
                 bar.addChild(miniPredator)
-            } else {
-                // Optional: Place a "Nest" or "Safe" icon above Green zones
-                
             }
         }
         
-        // 4. Setup the needle
-        // We set zPosition high so it stays on top of everything
         needle.position = CGPoint(x: bar.frame.minX, y: bar.position.y)
         needle.zPosition = 100
         addChild(needle)
         
-        // Instruction Label
         let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
         label.text = "AVOID THE PREDATORS!"
         label.fontSize = 28
@@ -80,9 +70,15 @@ class PredatorGame: SKScene {
     }
     
     private func startNeedleMovement() {
+        // HAPTIC BEAT: We trigger a light tick every time the needle reverses
         let moveRight = SKAction.moveTo(x: bar.frame.maxX, duration: 0.9)
         let moveLeft = SKAction.moveTo(x: bar.frame.minX, duration: 0.9)
-        let sequence = SKAction.sequence([moveRight, moveLeft])
+        
+        let hapticTick = SKAction.run {
+            HapticManager.shared.trigger(.selection)
+        }
+        
+        let sequence = SKAction.sequence([hapticTick, moveRight, hapticTick, moveLeft])
         needle.run(SKAction.repeatForever(sequence), withKey: "needleAnim")
     }
     
@@ -114,6 +110,9 @@ class PredatorGame: SKScene {
     }
     
     private func handleWin() {
+        // SUCCESS HAPTIC: A crisp double-pulse
+        HapticManager.shared.trigger(.success)
+        
         addPoints()
         let winLabel = SKLabelNode(text: "ESCAPED!")
         winLabel.fontColor = .green
@@ -127,26 +126,25 @@ class PredatorGame: SKScene {
     }
     
     private func handleLoss() {
-        // 1. Visual Feedback
+        // ERROR HAPTIC: A heavy, jarring triple-pulse
+        HapticManager.shared.trigger(.error)
+        
         let lossLabel = SKLabelNode(text: "CAUGHT!")
         lossLabel.fontColor = .red
         lossLabel.fontName = "AvenirNext-Bold"
         lossLabel.fontSize = 40
         lossLabel.position = CGPoint(x: frame.midX, y: frame.midY - 150)
-        lossLabel.zPosition = 200 // Ensure it's on top of everything
+        lossLabel.zPosition = 200
         addChild(lossLabel)
         
-        // 2. Play a sound effect if you have one
         SoundManager.shared.playSoundEffect(named: "error_buzz")
 
-        // 3. Optional: Flash the screen red
         let flash = SKSpriteNode(color: .red, size: self.size)
         flash.position = CGPoint(x: frame.midX, y: frame.midY)
         flash.alpha = 0.3
         flash.zPosition = 150
         addChild(flash)
 
-        // 4. Delay before exiting
         run(SKAction.wait(forDuration: 1.5)) { [weak self] in
             self?.triggerGameOver()
         }
