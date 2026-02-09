@@ -7,7 +7,6 @@
 
 
 
-
 import SpriteKit
 import UIKit
 
@@ -21,6 +20,9 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     let totalRopes = 3
     let requiredToWin = 2
     
+    // --- Timer Properties ---
+    private var timeLeft = 20
+    private var timerLabel: SKLabelNode!
     var scoreLabel: SKLabelNode!
     
     // --- Physics Categories ---
@@ -29,14 +31,16 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     let bucketCategory: UInt32 = 0x1 << 2
     
     // --- Responsive Constants ---
-    // We use 'unit' based on height to keep vertical proportions identical
     private var unit: CGFloat { return size.height }
-    // A 'playable width' helps prevent elements from being stuck in the corners of an iPad
     private var playableWidth: CGFloat { return min(size.width, size.height * 1.5) }
     private var marginX: CGFloat { return (size.width - playableWidth) / 2 }
 
     override func didMove(to view: SKView) {
-        // .aspectFit prevents the iPad from 'cropping' the top and bottom
+        // --- 1. HIDE OVERLAY UI ---
+        // This ensures the joystick and inventory disappear immediately
+        viewModel?.controlsAreVisable = false
+        viewModel?.mapIsVisable = false
+        
         self.scaleMode = .aspectFit
         
         HapticManager.shared.prepare()
@@ -44,11 +48,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         backgroundColor = .black
         
         physicsWorld.contactDelegate = self
-        // Gravity scaled to height
         physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.015)
         
         setupUI()
         setupGameElements()
+        setupTimer()
     }
     
     private func setupUI() {
@@ -69,9 +73,41 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         addChild(backLabel)
     }
     
+    private func setupTimer() {
+        timerLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        timerLabel.fontSize = unit * 0.04
+        timerLabel.text = "Time: \(timeLeft)"
+        timerLabel.position = CGPoint(x: size.width / 2, y: size.height - (unit * 0.18))
+        timerLabel.fontColor = .systemYellow
+        timerLabel.zPosition = 100
+        addChild(timerLabel)
+        
+        let wait = SKAction.wait(forDuration: 1.0)
+        let update = SKAction.run { [weak self] in
+            guard let self = self, !self.isSceneTransitioning else { return }
+            
+            self.timeLeft -= 1
+            self.timerLabel.text = "Time: \(self.timeLeft)"
+            
+            if self.timeLeft <= 5 {
+                self.timerLabel.fontColor = .red
+                self.timerLabel.run(SKAction.sequence([
+                    SKAction.scale(to: 1.2, duration: 0.1),
+                    SKAction.scale(to: 1.0, duration: 0.1)
+                ]))
+                HapticManager.shared.trigger(.selection)
+            }
+            
+            if self.timeLeft <= 0 {
+                self.handleGameOver(success: false)
+            }
+        }
+        
+        run(SKAction.repeatForever(SKAction.sequence([wait, update])), withKey: "gameTimer")
+    }
+    
     private func setupGameElements() {
         let ropeY = size.height * 0.85
-        // Spread ropes across the 'playable width' rather than the full screen width
         let spacing = playableWidth / 4
         
         for i in 1...3 {
@@ -87,6 +123,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         anchor.position = CGPoint(x: xPos, y: yPos)
         anchor.physicsBody = SKPhysicsBody(rectangleOf: anchor.size)
         anchor.physicsBody?.isDynamic = false
+        anchor.zPosition = 5
         addChild(anchor)
         
         var lastNode: SKNode = anchor
@@ -98,6 +135,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             let link = SKSpriteNode(color: .white, size: CGSize(width: linkWidth, height: linkHeight))
             link.position = CGPoint(x: xPos, y: yPos - (CGFloat(i) * linkHeight) - (linkHeight / 2))
             link.name = "rope_link"
+            link.zPosition = 4
             link.physicsBody = SKPhysicsBody(rectangleOf: link.size)
             link.physicsBody?.categoryBitMask = ropeCategory
             link.physicsBody?.collisionBitMask = 0
@@ -115,6 +153,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         let itemNode = SKSpriteNode(color: .orange, size: CGSize(width: foodSize, height: foodSize))
         itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - (foodSize / 2))
         itemNode.name = "food_item"
+        itemNode.zPosition = 6
         itemNode.physicsBody = SKPhysicsBody(circleOfRadius: foodSize / 2)
         itemNode.physicsBody?.categoryBitMask = itemCategory
         itemNode.physicsBody?.contactTestBitMask = bucketCategory
@@ -136,7 +175,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         let container = SKNode()
         container.name = "bucket"
         
-        // Define movement boundaries within the Playable Width
         let leftLimit = marginX + (bucketWidth / 2)
         let rightLimit = (size.width - marginX) - (bucketWidth / 2)
         
@@ -147,6 +185,10 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         leftSide.position = CGPoint(x: -bucketWidth/2, y: bucketHeight/2)
         let rightSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
         rightSide.position = CGPoint(x: bucketWidth/2, y: bucketHeight/2)
+        
+        bottom.zPosition = 10
+        leftSide.zPosition = 10
+        rightSide.zPosition = 10
         
         container.addChild(bottom)
         container.addChild(leftSide)
@@ -170,8 +212,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         container.run(SKAction.repeatForever(SKAction.sequence([moveRight, moveLeft])))
     }
     
-    // MARK: - Interactions
-    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
@@ -186,7 +226,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
-        
         let cuttingRadius: CGFloat = unit * 0.06
         
         enumerateChildNodes(withName: "rope_link") { node, _ in
@@ -219,13 +258,8 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     }
     
     override func update(_ currentTime: TimeInterval) {
-        // Note the [weak self] is often good practice here if the closure
-        // could outlive the scene, though enumerateChildNodes is generally safe.
         enumerateChildNodes(withName: "food_item") { [weak self] node, _ in
-            // Use self? because we captured it weakly
             guard let self = self else { return }
-            
-            // Use self.unit explicitly
             if node.position.y < -self.unit * 0.1 {
                 node.removeFromParent()
                 self.missedCount += 1
@@ -246,11 +280,18 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     func handleGameOver(success: Bool) {
         isSceneTransitioning = true
         physicsWorld.contactDelegate = nil
+        removeAction(forKey: "gameTimer")
+        
         HapticManager.shared.trigger(success ? .heavy : .error)
         
         if success { viewModel?.incrementFeedingForCurrentNest() }
         
-        let endLabel = SKLabelNode(text: success ? "WELL FED!" : "TOO SLOW!")
+        var message = success ? "WELL FED!" : "TOO SLOW!"
+        if !success && timeLeft <= 0 {
+            message = "OUT OF TIME!"
+        }
+        
+        let endLabel = SKLabelNode(text: message)
         endLabel.fontName = "AvenirNext-Bold"
         endLabel.fontSize = unit * 0.08
         endLabel.fontColor = success ? .green : .red
@@ -267,9 +308,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     func returnToMainGame() {
         guard let view = self.view else { return }
         if let existing = viewModel?.mainScene {
+            // Restore visibility of controls before leaving
             viewModel?.joystickVelocity = .zero
             viewModel?.controlsAreVisable = true
             viewModel?.mapIsVisable = true
+            
             let transition = SKTransition.crossFade(withDuration: 0.5)
             view.presentScene(existing, transition: transition)
         }

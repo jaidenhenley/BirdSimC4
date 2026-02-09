@@ -23,8 +23,12 @@ struct MainMenuView: View {
     }
     
     var body: some View {
+        
+        Text("Take Flight - A Bird Life")
+
+        
         VStack(spacing: 24) {
-            Button("Resume Game", action: onResumeGame)
+                        Button("Resume Game", action: onResumeGame)
                 .buttonStyle(.bordered)
                 .font(.title2)
                 .padding(.horizontal, 40)
