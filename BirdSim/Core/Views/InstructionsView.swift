@@ -42,11 +42,19 @@ struct InstructionsView: View {
                             image: .Predator.predator
                         )
                         
-                        MultiImageInstructionRow(
+                        InstructionRow(
                             icon: "hammer.fill",
-                            color: .brown,
+                            color: .blue,
                             title: "Build a Nest",
                             description: "Collect spiderwebs, sticks, leaves, and dandelions. Take them to a nesting tree.",
+                            image: .nest
+                        )
+                        
+                        MultiImageInstructionRow(
+                            icon: "hand.wave",
+                            color: .cyan,
+                            title: "Collect Items to Build a Nest",
+                            description: "These are the items you will need .",
                             images: [.dandelion, .spiderweb, .stick, .leaf]
                         )
                         
@@ -156,7 +164,7 @@ struct MultiImageInstructionRow: View {
                 Spacer()
                 HStack(spacing: 6) {
                     ForEach(0..<images.count, id: \.self) { index in
-                        AssetBox(image: images[index], size: 40)
+                        AssetBox(image: images[index], size: 80)
                     }
                 }
             }
