@@ -184,6 +184,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        let touchedNodes = nodes(at: location)
+        for node in touchedNodes where node.name == "rope_link" {
+            node.removeFromParent()
+        }
+
         
         // Define how "easy" it is to cut (in points)
         // 30-40 points is usually the sweet spot for fingers
@@ -319,14 +324,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         container.run(SKAction.repeatForever(sequence))
     }
     
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let touchedNodes = nodes(at: location)
-        for node in touchedNodes where node.name == "rope_link" {
-            node.removeFromParent()
-        }
-    }
     
     func setupBackButton() {
         let backLabel = SKLabelNode(text: "Tap to go back")
