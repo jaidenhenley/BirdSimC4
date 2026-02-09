@@ -34,6 +34,7 @@ extension MainGameView {
         @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
         @Published var currentBabyAmount: Int = 0
+        @Published var currentDanger: Int = 0
         
         // SwiftData context & model
         private var modelContext: ModelContext?

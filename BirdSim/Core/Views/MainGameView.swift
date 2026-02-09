@@ -58,6 +58,9 @@ struct MainGameView: View {
                                     .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
                                 BabyBarView(viewModel: viewModel, currentBabies: $viewModel.currentBabyAmount)
                                     .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                                PredatorBarView(viewModel: viewModel, currentDanger: $viewModel.currentDanger)
+                                    .padding([.top, .leading], 20) // use 0 if you truly want flush to safe area
+                                
                             }
 
                             Spacer()
