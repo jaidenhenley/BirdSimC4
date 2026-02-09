@@ -73,6 +73,7 @@ struct InstructionsView: View {
                             description: "Once your family is ready, find the bridge to leave the island.",
                             image: .bridge
                         )
+                        
                     }
                 }
                 .padding()

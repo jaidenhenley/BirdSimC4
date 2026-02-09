@@ -14,9 +14,11 @@ class PredatorGame: SKScene {
     // Mini-game nodes
     private let bar = SKSpriteNode(color: .darkGray, size: CGSize(width: 600, height: 40))
     private let needle = SKSpriteNode(color: .white, size: CGSize(width: 8, height: 80))
+    private let timerLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
     private var dangerZones: [SKSpriteNode] = []
     private var isResolved = false
+    private var timeLeft = 10
 
     override func didMove(to view: SKView) {
         // Warm up haptics
@@ -25,12 +27,15 @@ class PredatorGame: SKScene {
         SoundManager.shared.startBackgroundMusic(track: .predator)
         backgroundColor = .black
         
+        // Setup UI and Logic
         setupTimingBar()
+        setupTimer() // Start the countdown
         startNeedleMovement()
     }
     
     private func setupTimingBar() {
         bar.position = CGPoint(x: frame.midX, y: frame.midY - 50)
+        bar.zPosition = 1
         addChild(bar)
         
         let zoneWidth = bar.size.width / 6
@@ -46,6 +51,7 @@ class PredatorGame: SKScene {
             let xPos = (-bar.size.width / 2) + (CGFloat(i) * zoneWidth) + (zoneWidth / 2)
             zone.position = CGPoint(x: xPos, y: 0)
             zone.name = type
+            zone.zPosition = 2
             bar.addChild(zone)
             
             if isDanger {
@@ -53,6 +59,7 @@ class PredatorGame: SKScene {
                 let miniPredator = SKSpriteNode(imageNamed: "Predator/PredatorHead")
                 miniPredator.size = CGSize(width: 70, height: 70)
                 miniPredator.position = CGPoint(x: xPos, y: 70)
+                miniPredator.zPosition = 3
                 bar.addChild(miniPredator)
             }
         }
@@ -61,16 +68,53 @@ class PredatorGame: SKScene {
         needle.zPosition = 100
         addChild(needle)
         
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = "AVOID THE PREDATORS!"
-        label.fontSize = 28
-        label.fontColor = .white
-        label.position = CGPoint(x: frame.midX, y: frame.midY + 180)
-        addChild(label)
+        let instructionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        instructionLabel.text = "AVOID THE PREDATORS!"
+        instructionLabel.fontSize = 28
+        instructionLabel.fontColor = .white
+        instructionLabel.position = CGPoint(x: frame.midX, y: frame.midY + 180)
+        instructionLabel.zPosition = 10
+        addChild(instructionLabel)
+    }
+    
+    private func setupTimer() {
+        timerLabel.text = "TIME: \(timeLeft)"
+        timerLabel.fontSize = 40
+        timerLabel.fontColor = .systemYellow
+        timerLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 100)
+        timerLabel.zPosition = 100 // High z-position to stay on top
+        
+        if timerLabel.parent == nil {
+            addChild(timerLabel)
+        }
+        
+        let wait = SKAction.wait(forDuration: 1.0)
+        let update = SKAction.run { [weak self] in
+            guard let self = self, !self.isResolved else { return }
+            
+            self.timeLeft -= 1
+            self.timerLabel.text = "TIME: \(self.timeLeft)"
+            
+            // Visual feedback for low time
+            if self.timeLeft <= 3 && self.timeLeft > 0 {
+                self.timerLabel.fontColor = .red
+                self.timerLabel.run(SKAction.sequence([
+                    SKAction.scale(to: 1.2, duration: 0.1),
+                    SKAction.scale(to: 1.0, duration: 0.1)
+                ]))
+                HapticManager.shared.trigger(.selection)
+            }
+            
+            if self.timeLeft <= 0 {
+                self.handleTimeout()
+            }
+        }
+        
+        let sequence = SKAction.sequence([wait, update])
+        run(SKAction.repeatForever(sequence), withKey: "gameTimer")
     }
     
     private func startNeedleMovement() {
-        // HAPTIC BEAT: We trigger a light tick every time the needle reverses
         let moveRight = SKAction.moveTo(x: bar.frame.maxX, duration: 0.9)
         let moveLeft = SKAction.moveTo(x: bar.frame.minX, duration: 0.9)
         
@@ -85,8 +129,10 @@ class PredatorGame: SKScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if isResolved { return }
         
-        needle.removeAction(forKey: "needleAnim")
+        // Stop all game loops
         isResolved = true
+        removeAction(forKey: "gameTimer")
+        needle.removeAction(forKey: "needleAnim")
         
         let needleX = needle.position.x
         var caught = false
@@ -110,14 +156,14 @@ class PredatorGame: SKScene {
     }
     
     private func handleWin() {
-        // SUCCESS HAPTIC: A crisp double-pulse
         HapticManager.shared.trigger(.success)
-        
         addPoints()
+        
         let winLabel = SKLabelNode(text: "ESCAPED!")
         winLabel.fontColor = .green
         winLabel.fontName = "AvenirNext-Bold"
         winLabel.position = CGPoint(x: frame.midX, y: frame.midY - 150)
+        winLabel.zPosition = 200
         addChild(winLabel)
         
         run(SKAction.wait(forDuration: 1.2)) { [weak self] in
@@ -126,7 +172,6 @@ class PredatorGame: SKScene {
     }
     
     private func handleLoss() {
-        // ERROR HAPTIC: A heavy, jarring triple-pulse
         HapticManager.shared.trigger(.error)
         
         let lossLabel = SKLabelNode(text: "CAUGHT!")
@@ -148,6 +193,19 @@ class PredatorGame: SKScene {
         run(SKAction.wait(forDuration: 1.5)) { [weak self] in
             self?.triggerGameOver()
         }
+    }
+    
+    private func handleTimeout() {
+        if isResolved { return }
+        isResolved = true
+        
+        needle.removeAction(forKey: "needleAnim")
+        removeAction(forKey: "gameTimer")
+        
+        timerLabel.text = "OUT OF TIME!"
+        timerLabel.fontColor = .red
+        
+        handleLoss()
     }
     
     func returnToMainWorld() {
