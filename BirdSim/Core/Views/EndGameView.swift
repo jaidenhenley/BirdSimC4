@@ -19,6 +19,9 @@ struct EndGameView: View {
                     .font(.largeTitle)
                     .bold()
                     .foregroundStyle(.white)
+                Text(viewModel.currentDeathMessage)
+                    .font(.headline)
+                    .foregroundStyle(.white)
 
                 Button("Back to Start") {
                     

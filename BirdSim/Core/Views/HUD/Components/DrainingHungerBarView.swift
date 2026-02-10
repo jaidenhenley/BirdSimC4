@@ -49,11 +49,14 @@ struct DrainingHungerBarView: View {
         .onAppear {
             if currentHunger <= 0 {
                 viewModel.showGameOver = true
+                viewModel.currentDeathMessage = "You died from Hunger"
             }
         }
         .onChange(of: currentHunger) { _, newValue in
             if newValue <= 0 {
                 viewModel.showGameOver = true
+                viewModel.currentDeathMessage = "You died from Hunger"
+
             }
         }
     }

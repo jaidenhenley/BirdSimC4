@@ -15,6 +15,8 @@ extension GameScene {
         let minigameScene = LeaveIslandScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
+        viewModel?.joystickVelocity = .zero
+
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
@@ -38,6 +40,8 @@ extension GameScene {
         let minigameScene = BuildNestScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = vm
+        viewModel?.joystickVelocity = .zero
+
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
@@ -52,6 +56,8 @@ extension GameScene {
         let minigameScene = FeedUserScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
+        viewModel?.joystickVelocity = .zero
+
         
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)
@@ -64,6 +70,7 @@ extension GameScene {
         let minigameScene = FeedBabyScene(size: view.bounds.size)
         minigameScene.scaleMode = .resizeFill
         minigameScene.viewModel = self.viewModel
+        viewModel?.joystickVelocity = .zero
 
         let transition = SKTransition.fade(withDuration: 0.5)
         view.presentScene(minigameScene, transition: transition)

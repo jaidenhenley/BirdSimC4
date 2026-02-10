@@ -91,6 +91,8 @@ extension GameScene {
     func enterMapNode() {
         viewModel?.isMapMode = true
         viewModel?.controlsAreVisable = false
+        viewModel?.joystickVelocity = .zero
+
         
         HapticManager.shared.trigger(.light)
         

@@ -189,7 +189,10 @@ class PredatorGame: SKScene {
         flash.zPosition = 150
         addChild(flash)
 
-        run(SKAction.wait(forDuration: 1.5)) { [weak self] in self?.triggerGameOver() }
+        run(SKAction.wait(forDuration: 1.5)) { [weak self] in
+            self?.triggerGameOver()
+            self?.triggerDeathMessage(in: "You died from a predator attack.")
+        }
     }
 
     private func handleTimeout() {
@@ -212,6 +215,15 @@ class PredatorGame: SKScene {
         }
     }
 
-    func addPoints() { viewModel?.userScore += 1 }
-    func triggerGameOver() { dismissAction?() }
+    func addPoints() {
+        viewModel?.userScore += 1
+    }
+    
+    func triggerGameOver() {
+        dismissAction?()
+    }
+    
+    func triggerDeathMessage(in message: String) {
+        viewModel?.currentDeathMessage = message
+    }
 }
