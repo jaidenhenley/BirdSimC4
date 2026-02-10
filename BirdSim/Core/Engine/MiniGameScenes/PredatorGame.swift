@@ -192,6 +192,7 @@ class PredatorGame: SKScene {
 
         run(SKAction.wait(forDuration: 1.5)) { [weak self] in
             self?.triggerGameOver()
+            self?.triggerDeathMessage(in: "You died from a predator attack.")
         }
     }
     
@@ -224,5 +225,9 @@ class PredatorGame: SKScene {
     
     func triggerGameOver() {
         dismissAction?()
+    }
+    
+    func triggerDeathMessage(in message: String) {
+        viewModel?.currentDeathMessage = message
     }
 }
