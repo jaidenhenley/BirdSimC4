@@ -143,6 +143,8 @@ extension GameScene {
             DispatchQueue.main.async {
                 self?.viewModel?.showGameOver = true
                 self?.viewModel?.controlsAreVisable = false
+                self?.viewModel?.joystickVelocity = .zero
+
             }
         }
         
