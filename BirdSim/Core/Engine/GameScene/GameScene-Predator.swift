@@ -183,6 +183,7 @@ extension GameScene {
     override func didEvaluateActions() {
         super.didEvaluateActions()
         updatePredatorFacingDirections()
+        updateMaleFacingDirections()
     }
 
 }

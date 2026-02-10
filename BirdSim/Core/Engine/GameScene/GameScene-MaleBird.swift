@@ -30,7 +30,41 @@ extension GameScene {
         maleBird.physicsBody?.categoryBitMask = PhysicsCategory.mate
         // The male bird must be looking for the player
         maleBird.physicsBody?.contactTestBitMask = PhysicsCategory.player
-            
+        
+        // Face right initially
+        maleBird.xScale = abs(maleBird.xScale)
+        maleBird.zRotation = -(.pi / 2)
+
+        // Simple back-and-forth motion. Facing is handled per-frame by `updatePredatorFacingDirections()`.
+        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 12)
+        let moveLeft  = moveRight.reversed()
+        let sequence = SKAction.sequence([moveRight, moveLeft])
+        maleBird.run(SKAction.repeatForever(sequence))
             addChild(maleBird)
         }
+    
+    func updateMaleFacingDirections() {
+        enumerateChildNodes(withName: "MaleBird") { node, _ in
+            guard let male = node as? SKSpriteNode else { return }
+
+            if male.userData == nil { male.userData = [:] }
+
+            let currentX = male.position.x
+            let lastXNumber = male.userData?["lastX"] as? NSNumber
+            let lastX = lastXNumber.map { CGFloat($0.doubleValue) } ?? currentX
+
+            let dx = currentX - lastX
+ 
+            // Small threshold prevents rapid flipping from tiny jitter
+            if dx > 0.5 {
+                male.zRotation = -(.pi / 2)
+            } else if dx < -0.5 {
+                male.zRotation = .pi / 2
+            }
+
+            male.userData?["lastX"] = NSNumber(value: Double(currentX))
+        }
+    }
+    
+    
 }
