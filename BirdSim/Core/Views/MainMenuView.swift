@@ -61,7 +61,7 @@ struct MainMenuView: View {
             SettingsView()
         }
         .sheet(isPresented: $showingInstructions) {
-            InstructionsView()
+            HowToPlayView()
         }
     }
 }
