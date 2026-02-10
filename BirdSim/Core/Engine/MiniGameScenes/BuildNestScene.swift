@@ -187,6 +187,12 @@ class BuildNestScene: SKScene {
             originalPosition = node.position
             draggedNode?.zPosition = 100
         }
+        
+        if node.name == "Back Button" {
+            HapticManager.shared.trigger(.light)
+            returnToMainGame()
+        }
+
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -252,4 +258,18 @@ class BuildNestScene: SKScene {
             self?.exitMiniGame()
         }
     }
+    
+    func returnToMainGame() {
+        guard let view = self.view else { return }
+        if let existing = viewModel?.mainScene {
+            // Restore visibility of controls before leaving
+            viewModel?.joystickVelocity = .zero
+            viewModel?.controlsAreVisable = true
+            viewModel?.mapIsVisable = true
+            
+            let transition = SKTransition.crossFade(withDuration: 0.5)
+            view.presentScene(existing, transition: transition)
+        }
+    }
+
 }
