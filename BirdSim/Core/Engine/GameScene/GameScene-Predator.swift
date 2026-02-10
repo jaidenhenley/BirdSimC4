@@ -22,31 +22,6 @@ extension GameScene {
         return false
     }
     
-    func playerDangerLevel(player: SKNode) -> Int {
-        
-        for node in children where node.name == predatorMini {
-            let dx = player.position.x - node.position.x
-            let dy = player.position.y - node.position.y
-            let distance = sqrt(dx*dx + dy*dy)
-            
-            if distance < 400 {
-                return 5
-            } else if distance < 800 {
-                return 4
-            } else if distance < 1200 {
-                return 3
-            } else if distance < 1600 {
-                return 2
-            } else if distance < 2000 {
-                return 1
-            } else {
-                return 0
-            }
-            
-        }
-        return 0
-    }
-    
     func createRandomPredatorSpawn() -> CGPoint {
         guard let background = self.childNode(withName: "background") as? SKSpriteNode else {
             return .zero
