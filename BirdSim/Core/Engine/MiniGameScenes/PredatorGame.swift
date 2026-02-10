@@ -209,6 +209,7 @@ class PredatorGame: SKScene {
         guard let view = self.view else { return }
         viewModel?.joystickVelocity = .zero
         viewModel?.controlsAreVisable = true
+        viewModel?.mapIsVisable = true
         let transition = SKTransition.crossFade(withDuration: 0.5)
         if let existing = viewModel?.mainScene {
             view.presentScene(existing, transition: transition)
