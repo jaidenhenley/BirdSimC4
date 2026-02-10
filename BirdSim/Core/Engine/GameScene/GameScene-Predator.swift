@@ -92,7 +92,7 @@ extension GameScene {
         let predator = SKSpriteNode(imageNamed: assetName)
         predator.position = position ?? CGPoint(x: 120, y: 150)
         predator.zPosition = 4
-        predator.size = CGSize(width: 150, height: 150)
+        predator.size = CGSize(width: 250, height: 250)
         predator.name = predatorMini
 
         if predator.userData == nil { predator.userData = [:] }
