@@ -27,6 +27,40 @@ struct InstructionsView: View {
                     }
                     .padding(.horizontal)
                     
+                    // MARK: - Controls Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Controls")
+                            .font(.title2)
+                            .bold()
+                        
+                        HStack(spacing: 16) {
+                            ControlButtonPlaceholder(icon: "airplane", label: "Fly / Walk")
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Movement")
+                                    .font(.headline)
+                                Text("Toggle between walking and flying. You move significantly faster while in the air, but it's harder to spot items!")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        HStack(spacing: 16) {
+                            ControlButtonPlaceholder(icon: "hand.tap.fill", label: "Select")
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Interact")
+                                    .font(.headline)
+                                Text("Use this to pick up materials for your nest or to enter specialized mini-games.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemGroupedBackground)))
+                    .padding(.horizontal)
+                    
                     // MARK: - Core Mechanics
                     VStack(spacing: 16) {
                         InstructionRow(icon: "heart.fill", color: .red, title: "Stay Fed", description: "Your hunger bar is constantly draining. Find worms to stay alive!", image: .caterpiller)
@@ -35,7 +69,6 @@ struct InstructionsView: View {
                         
                         InstructionRow(icon: "hammer.fill", color: .blue, title: "Build a Nest", description: "Collect spiderwebs, sticks, leaves, and dandelions. Take them to a nesting tree.", image: .nest)
                         
-                        // Updated to use the Inventory Backgrounds
                         MultiImageInstructionRow(
                             icon: "hand.wave",
                             color: .cyan,
@@ -106,7 +139,37 @@ struct InstructionsView: View {
     }
 }
 
-// MARK: - Inventory Slot Pattern (Used in the Bar and Rows)
+// MARK: - Control Button Placeholder
+struct ControlButtonPlaceholder: View {
+    let icon: String
+    let label: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(Color.black.opacity(0.3))
+                    .frame(width: 60, height: 60)
+                    .overlay {
+                        Circle()
+                            .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                    }
+                
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(.white)
+            }
+            
+            Text(label)
+                .font(.caption2)
+                .bold()
+                .foregroundColor(.primary)
+        }
+        .frame(width: 70)
+    }
+}
+
+// MARK: - Inventory Slot Pattern
 struct InventorySlotPlaceholder: View {
     let image: ImageResource
     var size: CGFloat = 42
@@ -125,7 +188,7 @@ struct InventorySlotPlaceholder: View {
     }
 }
 
-// MARK: - Updated Multi-Image Row with Inventory Backgrounds
+// MARK: - Multi-Image Row
 struct MultiImageInstructionRow: View {
     let icon: String
     let color: Color
@@ -154,7 +217,7 @@ struct MultiImageInstructionRow: View {
     }
 }
 
-// MARK: - Updated Standard Instruction Row
+// MARK: - Standard Instruction Row
 struct InstructionRow: View {
     let icon: String
     let color: Color
@@ -172,7 +235,6 @@ struct InstructionRow: View {
                 Text(description).font(.subheadline).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            // Consistent Inventory Style for single images too
             InventorySlotPlaceholder(image: image, size: 70)
         }
         .padding()
