@@ -180,6 +180,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let maleNode = (nodeA?.name == "MaleBird") ? nodeA : nodeB
             
             if maleNode?.parent != nil {
+                if let male = maleNode {
+                    let worldPos = male.parent?.convert(male.position, to: self) ?? male.position
+                    playMatingHearts(at: worldPos)
+                }
                 maleNode?.removeFromParent()
                 viewModel?.hasFoundMale = true
                 
@@ -672,6 +676,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
 } // End of GameScene Class
+
 
 
 
