@@ -123,6 +123,10 @@ extension GameScene {
         if !resetState {
             restoreReturnStateIfNeeded()
             restorePersistedNestAndBaby()
+            
+            if viewModel?.hasNest == true && viewModel?.hasFoundMale == false {
+                spawnMaleBird()
+            }
         }
     }
     
