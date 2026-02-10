@@ -19,6 +19,9 @@ import SpriteKit
 // - Syncing transient state with the SwiftUI ViewModel
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
+    
+    var spaceWasPressed = false
+    var shiftWasPressed = false
 
     // MARK: - Defaults
     let defaultPlayerStartPosition = CGPoint(x: 800, y: -400)

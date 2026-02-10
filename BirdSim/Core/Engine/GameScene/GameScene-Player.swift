@@ -31,59 +31,98 @@ extension GameScene {
     }
 
     // MARK: - Player Movement
-    func updatePlayerPosition(deltaTime: CGFloat) {
-        guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
+    
+        
+        func updatePlayerPosition(deltaTime: CGFloat) {
+            guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return }
 
-        if viewModel?.isMapMode == true {
-            stopWalking(player)
-            return
+            if viewModel?.isMapMode == true {
+                stopWalking(player)
+                return
+            }
+
+            // 1. Determine Movement Input
+            var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
+
+            // Joystick/Controller Check
+            if inputPoint == .zero,
+               let stick = virtualController?.controller?.extendedGamepad?.leftThumbstick {
+                inputPoint = CGPoint(x: CGFloat(stick.xAxis.value), y: CGFloat(stick.yAxis.value))
+            }
+
+            // --- KEYBOARD ENGINE: WSAD, SPACE, SHIFT ---
+            if let keyboard = GCKeyboard.coalesced?.keyboardInput {
+                var kbVector = CGPoint.zero
+                
+                // WSAD Movement
+                if keyboard.button(forKeyCode: .keyW)?.isPressed == true { kbVector.y += 1 }
+                if keyboard.button(forKeyCode: .keyS)?.isPressed == true { kbVector.y -= 1 }
+                if keyboard.button(forKeyCode: .keyA)?.isPressed == true { kbVector.x -= 1 }
+                if keyboard.button(forKeyCode: .keyD)?.isPressed == true { kbVector.x += 1 }
+                
+                if kbVector != .zero { inputPoint = kbVector }
+                
+                // SPACE: Interact
+                let isSpaceDown = keyboard.button(forKeyCode: .spacebar)?.isPressed ?? false
+                if isSpaceDown && !spaceWasPressed {
+                    attemptInteract() // This will now be called by the Space Bar
+                }
+                spaceWasPressed = isSpaceDown
+                
+                // SHIFT: Flight Toggle
+                let isShiftDown = (keyboard.button(forKeyCode: .leftShift)?.isPressed ?? false) ||
+                                  (keyboard.button(forKeyCode: .rightShift)?.isPressed ?? false)
+                if isShiftDown && !shiftWasPressed {
+                    viewModel?.isFlying.toggle()
+                }
+                shiftWasPressed = isShiftDown
+            }
+
+            // 2. Apply Movement
+            let dx = inputPoint.x
+            let dy = inputPoint.y
+            let rawMag = sqrt(dx * dx + dy * dy)
+            let isMoving = rawMag > joystickDeadzone
+            let isFlyingNow = viewModel?.isFlying ?? false
+
+            if isFlyingNow {
+                stopWalking(player)
+            } else {
+                isMoving ? startWalking(player, speed: rawMag) : stopWalking(player)
+            }
+
+            var mag = rawMag
+            var finalDx = dx
+            var finalDy = dy
+            if mag > 1.0 {
+                finalDx /= mag
+                finalDy /= mag
+                mag = 1.0
+            }
+
+            let velocity = isMoving ? CGVector(dx: finalDx * playerSpeed, dy: finalDy * playerSpeed) : .zero
+            player.position.x += velocity.dx * deltaTime
+            player.position.y += velocity.dy * deltaTime
+
+            // 3. Rotation
+            if isMoving {
+                let target = atan2(velocity.dy, velocity.dx)
+                let assetOrientationOffset: CGFloat = -(.pi / 2)
+                let desired = target + assetOrientationOffset
+                let current = player.zRotation
+                let deltaAngle = atan2(sin(desired - current), cos(desired - current))
+                let turnStiffness: CGFloat = 12.0
+                let rotationFactor = 1 - exp(-turnStiffness * deltaTime)
+                player.zRotation = current + deltaAngle * rotationFactor
+                
+                // Flip sprite based on direction
+                if !isFlyingNow {
+                    if finalDx > 0 { player.xScale = abs(player.xScale) }
+                    else if finalDx < 0 { player.xScale = -abs(player.xScale) }
+                }
+            }
         }
-
-        var inputPoint: CGPoint = viewModel?.joystickVelocity ?? .zero
-
-        if inputPoint == .zero,
-           let xValue = virtualController?.controller?.extendedGamepad?.leftThumbstick.xAxis.value,
-           let yValue = virtualController?.controller?.extendedGamepad?.leftThumbstick.yAxis.value {
-            inputPoint = CGPoint(x: CGFloat(xValue), y: CGFloat(yValue))
-        }
-
-        let dx = inputPoint.x
-        let dy = inputPoint.y
-        let rawMag = sqrt(dx * dx + dy * dy)
-        let isMoving = rawMag > joystickDeadzone
-
-        let isFlyingNow = viewModel?.isFlying ?? false
-        if isFlyingNow {
-            stopWalking(player)
-        } else {
-            isMoving ? startWalking(player, speed: rawMag) : stopWalking(player)
-        }
-
-        var mag = rawMag
-        var finalDx = dx
-        var finalDy = dy
-        if mag > 1.0 {
-            finalDx /= mag
-            finalDy /= mag
-            mag = 1.0
-        }
-
-        let velocity = isMoving ? CGVector(dx: finalDx * playerSpeed, dy: finalDy * playerSpeed) : .zero
-        player.position.x += velocity.dx * deltaTime
-        player.position.y += velocity.dy * deltaTime
-
-        let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
-        if speed > 0.001 {
-            let target = atan2(velocity.dy, velocity.dx)
-            let assetOrientationOffset: CGFloat = -(.pi / 2)
-            let desired = target + assetOrientationOffset
-            let current = player.zRotation
-            let deltaAngle = atan2(sin(desired - current), cos(desired - current))
-            let turnStiffness: CGFloat = 12.0
-            let rotationFactor = 1 - exp(-turnStiffness * deltaTime)
-            player.zRotation = current + deltaAngle * rotationFactor
-        }
-    }
+    
 
     func checkDistance(to nodeName: String, threshold: CGFloat = 200) -> Bool {
         guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return false }
