@@ -51,21 +51,37 @@ extension GameScene {
             }
 
             // --- KEYBOARD ENGINE: WSAD, SPACE, SHIFT ---
+            // --- KEYBOARD ENGINE: WSAD, ARROWS, SPACE, SHIFT ---
             if let keyboard = GCKeyboard.coalesced?.keyboardInput {
                 var kbVector = CGPoint.zero
                 
-                // WSAD Movement
-                if keyboard.button(forKeyCode: .keyW)?.isPressed == true { kbVector.y += 1 }
-                if keyboard.button(forKeyCode: .keyS)?.isPressed == true { kbVector.y -= 1 }
-                if keyboard.button(forKeyCode: .keyA)?.isPressed == true { kbVector.x -= 1 }
-                if keyboard.button(forKeyCode: .keyD)?.isPressed == true { kbVector.x += 1 }
+                // Vertical Movement: W or Up Arrow / S or Down Arrow
+                if keyboard.button(forKeyCode: .keyW)?.isPressed == true ||
+                   keyboard.button(forKeyCode: .upArrow)?.isPressed == true {
+                    kbVector.y += 1
+                }
+                if keyboard.button(forKeyCode: .keyS)?.isPressed == true ||
+                   keyboard.button(forKeyCode: .downArrow)?.isPressed == true {
+                    kbVector.y -= 1
+                }
                 
+                // Horizontal Movement: A or Left Arrow / D or Right Arrow
+                if keyboard.button(forKeyCode: .keyA)?.isPressed == true ||
+                   keyboard.button(forKeyCode: .leftArrow)?.isPressed == true {
+                    kbVector.x -= 1
+                }
+                if keyboard.button(forKeyCode: .keyD)?.isPressed == true ||
+                   keyboard.button(forKeyCode: .rightArrow)?.isPressed == true {
+                    kbVector.x += 1
+                }
+                
+                // Assign to inputPoint if any key is pressed
                 if kbVector != .zero { inputPoint = kbVector }
                 
                 // SPACE: Interact
                 let isSpaceDown = keyboard.button(forKeyCode: .spacebar)?.isPressed ?? false
                 if isSpaceDown && !spaceWasPressed {
-                    attemptInteract() // This will now be called by the Space Bar
+                    attemptInteract()
                 }
                 spaceWasPressed = isSpaceDown
                 
@@ -77,7 +93,6 @@ extension GameScene {
                 }
                 shiftWasPressed = isShiftDown
             }
-
             // 2. Apply Movement
             let dx = inputPoint.x
             let dy = inputPoint.y

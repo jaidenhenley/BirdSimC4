@@ -202,6 +202,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // - Movement & camera follow
     // - UI message updates
     override func update(_ currentTime: TimeInterval) {
+        handleKeyboardMapInput()
         // 1. Reset proximity booleans at the start of every frame
         buildNestMiniIsInRange = false
         feedUserBirdMiniIsInRange = false
