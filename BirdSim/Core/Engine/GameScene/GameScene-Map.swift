@@ -61,6 +61,8 @@ extension GameScene {
     func enterMapNode() {
         viewModel?.isMapMode = true
         viewModel?.controlsAreVisable = false
+        viewModel?.joystickVelocity = .zero
+
         
         guard let background = childNode(withName: "background") else { return }
         // center camera on map

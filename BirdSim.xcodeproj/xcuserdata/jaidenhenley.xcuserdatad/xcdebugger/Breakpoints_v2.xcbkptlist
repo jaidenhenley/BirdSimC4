@@ -13,9 +13,9 @@
             continueAfterRunningActions = "No"
             filePath = "BirdSim/Core/Engine/GameScene/GameScene-Transitions.swift"
             startingColumnNumber = "10"
-            endingColumnNumber = "35"
-            startingLineNumber = "49"
-            endingLineNumber = "49"
+            endingColumnNumber = "10"
+            startingLineNumber = "53"
+            endingLineNumber = "53"
             landmarkName = "transitionToFeedUserScene()"
             landmarkType = "7">
          </BreakpointContent>
