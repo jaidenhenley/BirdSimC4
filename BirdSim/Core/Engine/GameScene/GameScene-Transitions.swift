@@ -10,72 +10,144 @@ import SpriteKit
 extension GameScene {
     // Scene transition helpers for minigames.
     func transitionToLeaveIslandMini() {
-        guard let view = self.view else { return }
+        guard let view = self.view, let vm = self.viewModel else { return }
         saveReturnState()
-        let minigameScene = LeaveIslandScene(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.viewModel = self.viewModel
-        viewModel?.joystickVelocity = .zero
+        vm.controlsAreVisable = false
+        vm.mapIsVisable = false
+        vm.joystickVelocity = .zero
 
-        
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
+        // Present scene first
+        let scene = LeaveIslandScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        scene.viewModel = vm
+        view.presentScene(scene, transition: SKTransition.fade(withDuration: 0.5))
+
+        // Pause scene, store it, and show instructions
+        // Pause scene completely while instructions are visible
+        scene.isPaused = true
+        scene.isUserInteractionEnabled = false
+        scene.speed = 0.0
+        scene.physicsWorld.speed = 0.0
+        vm.currentMiniGameScene = scene
+        vm.showMiniGameInstructions(type: .leaveIsland, startAction: { }, cancelAction: { [weak self] in
+            // Return back to the main world if canceled
+            self?.returnFromMiniGame()
+        })
     }
     
     
     // Scene transition helpers for minigames.
     func transitionToBuildNestScene() {
         guard let vm = viewModel, let view = self.view else { return }
-        
-        // 1. Prepare UI
         vm.controlsAreVisable = false
         vm.mapIsVisable = false
-
         saveReturnState()
-        
-        // 2. Clear the items BEFORE moving (Consuming the materials)
         vm.collectedItems.removeAll()
-        
-        // 3. Initialize and transition
-        let minigameScene = BuildNestScene(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.viewModel = vm
-        viewModel?.joystickVelocity = .zero
+        vm.joystickVelocity = .zero
 
-        
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
-        
-        print("Transitioning to Nest Scene...")
+        let scene = BuildNestScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        scene.viewModel = vm
+        view.presentScene(scene, transition: SKTransition.fade(withDuration: 0.5))
+
+        // Pause scene completely while instructions are visible
+        scene.isPaused = true
+        scene.isUserInteractionEnabled = false
+        scene.speed = 0.0
+        scene.physicsWorld.speed = 0.0
+        vm.currentMiniGameScene = scene
+        vm.showMiniGameInstructions(type: .buildNest, startAction: { }, cancelAction: { [weak self] in
+            self?.returnFromMiniGame()
+        })
     }
     
     // Scene transition helpers for minigames.
     func transitionToFeedUserScene() {
-        guard let view = self.view else { return }
+        guard let view = self.view, let vm = self.viewModel else { return }
         saveReturnState()
-        let minigameScene = FeedUserScene(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.viewModel = self.viewModel
-        viewModel?.joystickVelocity = .zero
+        vm.joystickVelocity = .zero
+        vm.controlsAreVisable = false
+        vm.mapIsVisable = false
 
-        
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
+        let scene = FeedUserScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        scene.viewModel = vm
+        view.presentScene(scene, transition: SKTransition.fade(withDuration: 0.5))
+
+        // Pause scene completely while instructions are visible
+        scene.isPaused = true
+        scene.isUserInteractionEnabled = false
+        scene.speed = 0.0
+        scene.physicsWorld.speed = 0.0
+        vm.currentMiniGameScene = scene
+        vm.showMiniGameInstructions(type: .feedUser, startAction: { }, cancelAction: { [weak self] in
+            self?.returnFromMiniGame()
+        })
     }
     
     func transitionToFeedBabyScene() {
-        guard let view = self.view else { return }
-
+        guard let view = self.view, let vm = self.viewModel else { return }
         saveReturnState()
-        let minigameScene = FeedBabyScene(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.viewModel = self.viewModel
-        viewModel?.joystickVelocity = .zero
+        vm.joystickVelocity = .zero
+        vm.controlsAreVisable = false
+        vm.mapIsVisable = false
 
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
+        let scene = FeedBabyScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        scene.viewModel = vm
+        view.presentScene(scene, transition: SKTransition.fade(withDuration: 0.5))
+
+        // Pause scene completely while instructions are visible
+        scene.isPaused = true
+        scene.isUserInteractionEnabled = false
+        scene.speed = 0.0
+        scene.physicsWorld.speed = 0.0
+        vm.currentMiniGameScene = scene
+        vm.showMiniGameInstructions(type: .feedBaby, startAction: { }, cancelAction: { [weak self] in
+            self?.returnFromMiniGame()
+        })
     }
 
-    
+    func transitionToPredatorGame(triggeringPredator predator: SKNode) {
+        guard let view = self.view, let vm = self.viewModel else { return }
+        saveReturnState()
+        removePredator(predator, banSpawn: true)
+        startPredatorCooldown(duration: 5.0)
+        vm.controlsAreVisable = false
+        vm.mapIsVisable = false
+        vm.joystickVelocity = .zero
 
+        let scene = PredatorGame(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        scene.viewModel = vm
+        scene.dismissAction = { [weak self] in
+            DispatchQueue.main.async {
+                self?.viewModel?.showGameOver = true
+                self?.viewModel?.controlsAreVisable = false
+                self?.viewModel?.joystickVelocity = .zero
+            }
+        }
+        view.presentScene(scene, transition: SKTransition.fade(withDuration: 0.5))
+
+        // Pause scene completely while instructions are visible
+        scene.isPaused = true
+        scene.isUserInteractionEnabled = false
+        scene.speed = 0.0
+        scene.physicsWorld.speed = 0.0
+        vm.currentMiniGameScene = scene
+        vm.showMiniGameInstructions(type: .predator, startAction: { }, cancelAction: { [weak self] in
+            self?.returnFromMiniGame()
+        })
+    }
+
+    func returnFromMiniGame() {
+        guard let view = self.view else { return }
+        viewModel?.joystickVelocity = .zero
+        viewModel?.controlsAreVisable = true
+        viewModel?.mapIsVisable = true
+        if let existing = viewModel?.mainScene {
+            view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
+        }
+    }
 }
+

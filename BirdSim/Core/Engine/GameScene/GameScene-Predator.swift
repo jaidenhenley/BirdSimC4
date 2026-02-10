@@ -126,31 +126,31 @@ extension GameScene {
     }
     
     // Scene transition helpers for minigames.
-    func transitionToPredatorGame(triggeringPredator predator: SKNode) {
-        guard let view = self.view else { return }
-        saveReturnState()
-        removePredator(predator, banSpawn: true)
-        startPredatorCooldown(duration: 5.0)
-        viewModel?.controlsAreVisable = false
-        viewModel?.mapIsVisable = false
-        // Removed these lines as per instructions:
-        // self.childNode(withName: predatorMini)?.removeFromParent()
-        // startPredatorTimer()
-        let minigameScene = PredatorGame(size: view.bounds.size)
-        minigameScene.scaleMode = .resizeFill
-        minigameScene.viewModel = self.viewModel
-        minigameScene.dismissAction = { [weak self] in
-            DispatchQueue.main.async {
-                self?.viewModel?.showGameOver = true
-                self?.viewModel?.controlsAreVisable = false
-                self?.viewModel?.joystickVelocity = .zero
-
-            }
-        }
-        
-        let transition = SKTransition.fade(withDuration: 0.5)
-        view.presentScene(minigameScene, transition: transition)
-    }
+//    func transitionToPredatorGame(triggeringPredator predator: SKNode) {
+//        guard let view = self.view else { return }
+//        saveReturnState()
+//        removePredator(predator, banSpawn: true)
+//        startPredatorCooldown(duration: 5.0)
+//        viewModel?.controlsAreVisable = false
+//        viewModel?.mapIsVisable = false
+//        // Removed these lines as per instructions:
+//        // self.childNode(withName: predatorMini)?.removeFromParent()
+//        // startPredatorTimer()
+//        let minigameScene = PredatorGame(size: view.bounds.size)
+//        minigameScene.scaleMode = .resizeFill
+//        minigameScene.viewModel = self.viewModel
+//        minigameScene.dismissAction = { [weak self] in
+//            DispatchQueue.main.async {
+//                self?.viewModel?.showGameOver = true
+//                self?.viewModel?.controlsAreVisable = false
+//                self?.viewModel?.joystickVelocity = .zero
+//
+//            }
+//        }
+//        
+//        let transition = SKTransition.fade(withDuration: 0.5)
+//        view.presentScene(minigameScene, transition: transition)
+//    }
 
     
     /// Makes every predator flip to face the direction it is moving.

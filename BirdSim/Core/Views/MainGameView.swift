@@ -113,6 +113,12 @@ struct MainGameView: View {
                 }
             }
             .animation(.spring, value: viewModel.showInventory)
+            .sheet(isPresented: Binding(get: { viewModel.showMiniGameSheet }, set: { newVal in
+                if !newVal { return }
+                else { viewModel.controlsAreVisable = false; viewModel.mapIsVisable = false }
+            })) {
+                MinigameOnboardingView(viewModel: viewModel)
+            }
         }
     }
     
