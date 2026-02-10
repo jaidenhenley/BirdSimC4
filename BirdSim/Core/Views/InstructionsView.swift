@@ -71,7 +71,7 @@ struct HowToPlayView: View {
                         }
                         .padding(.horizontal)
                         
-                        // MARK: - 3. Survival Basics (Updated for Minigames)
+                        // MARK: - 3. Survival Basics
                         VStack(alignment: .leading, spacing: 16) {
                             SectionHeader(title: "Daily Survival", icon: "heart.fill")
                             
@@ -95,38 +95,58 @@ struct HowToPlayView: View {
                         }
                         .padding(.horizontal)
 
-                        // MARK: - 4. Building & Legacy
+                        // MARK: - 4. Building & Legacy (Updated with Nesting Tree)
                         VStack(alignment: .leading, spacing: 16) {
                             SectionHeader(title: "Nesting & Growth", icon: "house.fill")
                             
-                            // 1. Build
+                            // Step 1: Materials
+                            InstructionRow(
+                                icon: "leaf.fill",
+                                color: .green,
+                                title: "1. Gather Materials",
+                                description: "Collect a dandelion, spiderweb, stick, and leaf. These are required to start building.",
+                                tip: "Materials appear in your inventory once collected.",
+                                image: .leaf
+                            )
+                            
+                            // Step 2: The Tree (New Requirement)
+                            InstructionRow(
+                                icon: "tree.fill",
+                                color: .brown,
+                                title: "2. Locate Nesting Tree",
+                                description: "Once you have all items, find a special Nesting Tree (Tree1). You can only build in these specific locations.",
+                                tip: "Use the Map (M) to spot these massive trees from afar.",
+                                image: .tree1
+                            )
+                            
+                            // Step 3: Build
                             InstructionRow(
                                 icon: "hammer.fill",
                                 color: .blue,
-                                title: "Build the Nest",
-                                description: "Collect a dandelion, spiderweb, stick, and leaf to complete the Nesting Minigame.",
-                                tip: "Once built, your nest is ready for a family!",
+                                title: "3. Build the Nest",
+                                description: "Interact with the Nesting Tree to start the minigame. Win to establish your home.",
+                                tip: "Your nest is where your legacy begins!",
                                 image: .babyBirdNest
                             )
                             
-                            // 2. Locate Mate (Blue Bird)
+                            // Step 4: Mate
                             InstructionRow(
                                 icon: "heart.fill",
                                 color: .cyan,
-                                title: "Find Your Mate",
-                                description: "Locate the blue bird on the island. Finding them is the only way to spawn the baby in your newly built nest.",
-                                tip: "Keep an eye out for a flash of blue in the trees!",
-                                image: .Predator.maleBird // This is the blue bird image
+                                title: "4. Find Your Mate",
+                                description: "Locate the blue bird. Finding them is the only way to spawn the baby in your nest.",
+                                tip: "Keep an eye out for a flash of blue in the canopy!",
+                                image: .Predator.maleBird
                             )
                             
-                            // 3. Survival Challenge
+                            // Step 5: Challenge
                             InstructionRow(
                                 icon: "timer",
                                 color: .purple,
-                                title: "The 2-Minute Challenge",
-                                description: "Once the baby bird hatches, you must feed it TWICE within 2 minutes.",
-                                tip: "CRITICAL: Fail to feed them in time and you lose the baby and points!",
-                                image: .birdnest // Updated to the birdnest image
+                                title: "5. The 2-Minute Challenge",
+                                description: "Once the baby hatches, you must feed it TWICE within 2 minutes.",
+                                tip: "CRITICAL: If the timer runs out, you lose the baby and points!",
+                                image: .birdnest
                             )
                         }
                         .padding(.horizontal)
@@ -136,7 +156,6 @@ struct HowToPlayView: View {
                             SectionHeader(title: "Heads-Up Display", icon: "eye.fill")
                             
                             VStack(spacing: 20) {
-                                // --- 1. Point Tracker ---
                                 HStack {
                                     Image(systemName: "star.circle.fill").foregroundColor(.yellow).font(.title2)
                                     VStack(alignment: .leading) {
@@ -150,7 +169,6 @@ struct HowToPlayView: View {
                                 
                                 Divider()
                                 
-                                // --- 2. Status Bars ---
                                 HUDRow(iconImage: .hungerBarBird, wordImage: .hungerBarWord, barColor: .green, title: "Hunger Meter", text: "Drains over time. Play the Caterpillar minigame.")
                                 
                                 HUDRow(iconImage: .predatorBarBird, wordImage: .predatorBarWord, barColor: .red, title: "Threat Level", text: "Fills when predators are near. Win the escape game.")
@@ -159,26 +177,23 @@ struct HowToPlayView: View {
                                 
                                 Divider()
                                 
-                                // --- 3. Visual Inventory HUD (The original look) ---
                                 VStack(alignment: .leading, spacing: 12) {
                                     HStack {
                                         Image(systemName: "briefcase.fill").foregroundColor(.secondary).font(.subheadline)
                                         Text("Material Inventory").font(.subheadline.bold())
                                         Spacer()
-                                        Text("Required for Nesting").font(.caption).foregroundColor(.secondary)
+                                        Text("Gather all 4").font(.caption).foregroundColor(.secondary)
                                     }
                                     
-                                    // This is the visual grid you remember
                                     HStack(spacing: 12) {
                                         InventorySlotPlaceholder(image: .dandelion, size: 45)
                                         InventorySlotPlaceholder(image: .spiderweb, size: 45)
                                         InventorySlotPlaceholder(image: .stick, size: 45)
                                         InventorySlotPlaceholder(image: .leaf, size: 45)
-                                        
-                                        Spacer() // Pushes slots to the left
+                                        Spacer()
                                     }
                                     
-                                    Text("Collect one of each to trigger the Nesting Minigame.")
+                                    Text("Bring these to a **Nesting Tree** to start building.")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -212,7 +227,6 @@ struct ControlTypeRow: View {
     
     var body: some View {
         HStack(spacing: 20) {
-            // Fixed-width container for icons to ensure alignment
             ZStack {
                 ForEach(0..<icons.count, id: \.self) { index in
                     Image(systemName: icons[index])
@@ -220,11 +234,10 @@ struct ControlTypeRow: View {
                         .foregroundColor(.blue)
                         .frame(width: 40, height: 40)
                         .background(Circle().fill(Color.blue.opacity(0.1)))
-                        // Offset the second icon slightly for the "stacked" look
                         .offset(x: index == 0 ? -10 : 10)
                 }
             }
-            .frame(width: 70) // This keeps the text aligned perfectly
+            .frame(width: 70)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
@@ -261,7 +274,7 @@ struct ControlRow: View {
     let desc: String
     
     var body: some View {
-        HStack(spacing: 20) { // Increased spacing between icon and text
+        HStack(spacing: 20) {
             ControlButtonPlaceholder(icon: icon, label: title, key: key)
             
             VStack(alignment: .leading, spacing: 4) {
@@ -270,10 +283,10 @@ struct ControlRow: View {
                 Text(desc)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                    .lineLimit(3) // Prevents the description from getting too long
+                    .lineLimit(3)
             }
         }
-        .padding(.vertical, 4) // Add a little vertical padding between rows
+        .padding(.vertical, 4)
     }
 }
 
@@ -296,32 +309,6 @@ struct InstructionRow: View {
             }
             Spacer()
             InventorySlotPlaceholder(image: image, size: 65)
-        }
-        .padding()
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemGroupedBackground)))
-    }
-}
-
-struct MultiImageInstructionRow: View {
-    let icon: String
-    let color: Color
-    let title: String
-    let description: String
-    let tip: String
-    let images: [ImageResource]
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon).foregroundColor(color).font(.headline)
-                Text(title).font(.headline)
-            }
-            Text(description).font(.subheadline).foregroundColor(.secondary)
-            HStack(spacing: 8) {
-                ForEach(images, id: \.self) { img in
-                    InventorySlotPlaceholder(image: img, size: 50)
-                }
-            }
-            Text(tip).font(.caption).italic().foregroundColor(.blue)
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemGroupedBackground)))
@@ -358,9 +345,8 @@ struct ControlButtonPlaceholder: View {
     let key: String
     
     var body: some View {
-        VStack(spacing: 10) { // Increased spacing
+        VStack(spacing: 10) {
             ZStack(alignment: .topTrailing) {
-                // The Main Button Circle
                 Circle()
                     .fill(Color.black.opacity(0.3))
                     .frame(width: 50, height: 50)
@@ -368,31 +354,28 @@ struct ControlButtonPlaceholder: View {
                         Circle().stroke(Color.white.opacity(0.4), lineWidth: 1)
                     )
                 
-                // The Icon
                 Image(systemName: icon)
-                    .font(.system(size: 20)) // Fixed size to prevent smashing
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
-                    .frame(width: 50, height: 50) // Center it in the circle
+                    .frame(width: 50, height: 50)
                 
-                // The Key Label (Keyboard Indicator)
                 Text(key)
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundColor(.black)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
                     .background(RoundedRectangle(cornerRadius: 4).fill(Color.white))
-                    .offset(x: 8, y: -8) // Shifted out slightly to avoid the icon
+                    .offset(x: 8, y: -8)
                     .shadow(radius: 2)
             }
             
-            // The Action Text (Navigation, Flight, etc.)
             Text(label)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true) // Prevents text clipping
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(width: 65) // Ensure the whole column has enough space
+        .frame(width: 65)
     }
 }
 
