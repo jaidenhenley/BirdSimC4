@@ -70,7 +70,8 @@ struct MainGameView: View {
                         
                         HStack {
                             HelpTextView(viewModel: viewModel)
-                                .padding([.top, .leading], 20)
+                                .padding(20)
+                                .frame(width: 250)
                             
                             if let player = scene.childNode(withName: "userBird") {
                                 let x = Int(player.position.x)
@@ -113,6 +114,13 @@ struct MainGameView: View {
                 }
             }
             .animation(.spring, value: viewModel.showInventory)
+            .sheet(isPresented: Binding(get: { viewModel.showMiniGameSheet }, set: { newVal in
+                if !newVal { return }
+                else { viewModel.controlsAreVisable = false; viewModel.mapIsVisable = false }
+            }), onDismiss: viewModel.startPendingMiniGame) {
+                MinigameOnboardingView(viewModel: viewModel)
+                    .presentationDragIndicator(.hidden)
+            }
         }
     }
     

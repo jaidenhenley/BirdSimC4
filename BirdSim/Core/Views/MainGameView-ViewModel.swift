@@ -82,6 +82,66 @@ extension MainGameView {
                 }
             }
         }
+
+        // MARK: - Mini-game Instruction Sheet
+        enum MiniGameType: String {
+            case predator
+            case buildNest
+            case feedUser
+            case feedBaby
+            case leaveIsland
+        }
+
+        @Published var showMiniGameSheet: Bool = false
+        @Published var pendingMiniGameType: MiniGameType? = nil
+        var pendingMiniGameStarter: (() -> Void)? = nil
+        var pendingMiniGameCanceler: (() -> Void)? = nil
+        weak var currentMiniGameScene: SKScene?
+
+        // Present instructions while the mini-game scene is already on screen.
+        // 'startAction' should unpause/start gameplay; 'cancelAction' should return to the main world.
+        func showMiniGameInstructions(type: MiniGameType, startAction: @escaping () -> Void, cancelAction: @escaping () -> Void) {
+            pendingMiniGameType = type
+            pendingMiniGameStarter = startAction
+            pendingMiniGameCanceler = cancelAction
+            showMiniGameSheet = true
+        }
+
+        // Called by the Start button in the sheet
+        func startPendingMiniGame() {
+            showMiniGameSheet = false
+            if let scene = currentMiniGameScene {
+                // Fully resume scene: actions, physics, input
+                scene.isPaused = false
+                scene.isUserInteractionEnabled = true
+                scene.speed = 1.0
+                scene.physicsWorld.speed = 1.0
+            }
+            let action = pendingMiniGameStarter
+            // Clear closures before invoking
+            pendingMiniGameStarter = nil
+            pendingMiniGameCanceler = nil
+            pendingMiniGameType = nil
+            controlsAreVisable = false
+            mapIsVisable = false
+            
+            action?()
+        }
+
+        func instructionsText(for type: MiniGameType) -> String {
+            switch type {
+            case .predator:
+                return "Avoid the red zones. Tap or press Space when the needle is in a green zone to escape."
+            case .buildNest:
+                return "Memorize the item order, then place items in the same sequence to build your nest."
+            case .feedUser:
+                return "Catch good food and avoid bad items. Fill the bar to win. Tilt your device or use controls."
+            case .feedBaby:
+                return "Cut ropes to drop food into the baby bird mouth. Feed the baby twice before time runs out."
+            case .leaveIsland:
+                return "Tap the screen to move bird up. Avoid cars and light poles to escape"
+            }
+        }
         
         func incrementFeedingForCurrentNest() {
             // 1. Identify WHICH nest we are interacting with
