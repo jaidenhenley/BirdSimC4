@@ -6,6 +6,7 @@
 //
 
 import SpriteKit
+import GameController // 1. Added for Keyboard support
 
 class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
@@ -13,7 +14,6 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     private var isGameOver = false
     
     // --- Responsive Constants ---
-    // We base units on screen height to keep vertical gameplay consistent across devices
     private var unit: CGFloat { return size.height }
     private var playableWidth: CGFloat { return size.width }
     
@@ -22,13 +22,11 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     private let pipeCategory: UInt32 = 0x1 << 1
 
     override func didMove(to view: SKView) {
-        // .aspectFit ensures the entire game scene is visible on iPad without cropping
         self.scaleMode = .aspectFit
         
         SoundManager.shared.startBackgroundMusic(track: .leaveMap)
         HapticManager.shared.prepare()
 
-        // Physics: Gravity is now relative to height for consistent fall speed
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.01)
         self.physicsWorld.contactDelegate = self
         
@@ -38,11 +36,10 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func setupBird() {
-        let birdSize = unit * 0.08 // Smaller multiplier since unit is now height
+        let birdSize = unit * 0.08
         bird.position = CGPoint(x: size.width * 0.25, y: size.height * 0.5)
         bird.size = CGSize(width: birdSize, height: birdSize)
         
-        // Physics body
         bird.physicsBody = SKPhysicsBody(circleOfRadius: birdSize * 0.4)
         bird.physicsBody?.isDynamic = true
         bird.physicsBody?.categoryBitMask = birdCategory
@@ -53,17 +50,50 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         addChild(bird)
     }
     
+    // MARK: - Input Handling
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        jump()
+    }
+
+    // 2. Shared Jump Logic
+    private func jump() {
         guard !isGameOver else { return }
         
         HapticManager.shared.trigger(.selection)
         
         // Velocity reset for snappy controls
         bird.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-        // Impulse scaled to height so the "jump" height is the same % of screen
+        // Impulse scaled to height
         bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.045))
     }
+
+    override func update(_ currentTime: TimeInterval) {
+        // 3. Keyboard Listener for Space Bar
+        if let keyboard = GCKeyboard.coalesced?.keyboardInput {
+            // We use .wasPressed or a state check to prevent "fluttering"
+            // if the user holds the key down.
+            let spaceKey = keyboard.button(forKeyCode: .spacebar)
+            if spaceKey?.isPressed == true {
+                jump()
+            }
+        }
+
+        guard !isGameOver else { return }
+        
+        // Screen bounds check
+        if bird.position.y < 0 || bird.position.y > size.height {
+            gameOver()
+        }
+        
+        // Tilt Logic
+        let velocity = bird.physicsBody?.velocity.dy ?? 0
+        let targetRotation = velocity * (velocity < 0 ? 0.002 : 0.001)
+        bird.zRotation = min(max(-1, targetRotation), 0.5)
+    }
     
+    // MARK: - Game State
+
     func didBegin(_ contact: SKPhysicsContact) {
         gameOver()
     }
@@ -93,28 +123,22 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createObstaclePair() {
-        let gapHeight = unit * 0.3 // Gap is 30% of screen height
+        let gapHeight = unit * 0.3
         let pipeWidth = unit * 0.12
-        let pipeHeight = unit // Pipe is at least as tall as the screen
+        let pipeHeight = unit
         
-        // Random offset: Keep the gap within the middle 60% of the screen
-        let playableRange = unit * 0.6
         let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
             
-        // Bottom Pipe
         let bottomPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: pipeHeight))
         bottomPipe.position = CGPoint(x: size.width + pipeWidth,
                                       y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
         setupObstaclePhysics(bottomPipe)
             
-        // Top Pipe
         let topPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: pipeHeight))
         topPipe.position = CGPoint(x: size.width + pipeWidth,
                                    y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
         setupObstaclePhysics(topPipe)
             
-        // Movement: Speed is distance/time. Using a duration relative to width
-        // keeps the speed consistent even on wider iPad screens.
         let distanceToMove = size.width + (pipeWidth * 3)
         let moveLeft = SKAction.moveBy(x: -distanceToMove, y: 0, duration: 3.0)
         let sequence = SKAction.sequence([moveLeft, .removeFromParent()])
@@ -141,19 +165,5 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     
     func addPoints() {
         viewModel?.userScore += 5
-    }
-
-    override func update(_ currentTime: TimeInterval) {
-        guard !isGameOver else { return }
-        
-        // Screen bounds check
-        if bird.position.y < 0 || bird.position.y > size.height {
-            gameOver()
-        }
-        
-        // Tilt Logic
-        let velocity = bird.physicsBody?.velocity.dy ?? 0
-        let targetRotation = velocity * (velocity < 0 ? 0.002 : 0.001)
-        bird.zRotation = min(max(-1, targetRotation), 0.5)
     }
 }

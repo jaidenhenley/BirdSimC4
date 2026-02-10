@@ -6,11 +6,38 @@
 //
 
 import SpriteKit
+import GameController
 
 extension GameScene {
-    // Prevents the camera from leaving the map bounds.
+    
+    // --- Keyboard State Tracking ---
+    // Using a static variable to track the toggle state across frames
+    private static var lastMKeyState: Bool = false
+
+    /// Monitors keyboard input to toggle map mode with the 'M' key
+    /// This MUST be called in the main GameScene's update(_:) method.
+    func handleKeyboardMapInput() {
+        if let keyboard = GCKeyboard.coalesced?.keyboardInput {
+            // GCKeyCode.keyM is the correct member for the 'M' key
+            let isMPressed = keyboard.button(forKeyCode: .keyM)?.isPressed ?? false
+            
+            // Only trigger the toggle when the key is first pressed (transition from false to true)
+            if isMPressed && !GameScene.lastMKeyState {
+                if viewModel?.isMapMode == true {
+                    exitMapMode()
+                } else {
+                    enterMapNode()
+                }
+            }
+            // Update the state tracker for the next frame
+            GameScene.lastMKeyState = isMPressed
+        }
+    }
+
+    // --- Camera & Map Constraints ---
+
     func clampCameraToMap() {
-        guard let camera = camera,
+        guard let camera = self.camera,
               let background = self.childNode(withName: "background") as? SKSpriteNode,
               let view = self.view else { return }
         
@@ -30,7 +57,6 @@ extension GameScene {
         camera.position = pos
     }
     
-    // Prevents the player from leaving the map bounds.
     func clampPlayerToMap() {
         guard let player = self.childNode(withName: "userBird"),
               let background = self.childNode(withName: "background") as? SKSpriteNode else { return }
@@ -47,15 +73,19 @@ extension GameScene {
         player.position.y = max(minY, min(player.position.y, maxY))
     }
     
+    // --- Map Mode Logic ---
+
     func zoomToFitMap() {
-        guard let backgroud = childNode(withName: "background") as? SKSpriteNode,
+        // Ensure the node is actually named "background" in your scene editor
+        guard let background = childNode(withName: "background") as? SKSpriteNode,
               let view = self.view else { return }
         
-        let scaleX = view.bounds.width / backgroud.size.width
-        let scaleY = view.bounds.height / backgroud.size.height
+        let scaleX = view.bounds.width / background.size.width
+        let scaleY = view.bounds.height / background.size.height
         
+        // Calculate the zoom level to fit the entire background sprite
         let zoom = min(scaleX, scaleY)
-        cameraNode.setScale(1 / zoom)
+        self.camera?.setScale(1 / zoom)
     }
     
     func enterMapNode() {
@@ -64,12 +94,17 @@ extension GameScene {
         viewModel?.joystickVelocity = .zero
 
         
-        guard let background = childNode(withName: "background") else { return }
-        // center camera on map
-        cameraNode.position = background.position
-        // zoom out
+        HapticManager.shared.trigger(.light)
+        
+        guard let background = childNode(withName: "background") else {
+            print("Error: Background node not found")
+            return
+        }
+        
+        // Center camera and zoom
+        self.camera?.position = background.position
         zoomToFitMap()
-        // add player marker
+        
         showPlayerMarker()
     }
     
@@ -77,13 +112,13 @@ extension GameScene {
         viewModel?.isMapMode = false
         viewModel?.controlsAreVisable = true
         
-        // Remove marker
+        HapticManager.shared.trigger(.light)
+        
         childNode(withName: "mapMarker")?.removeFromParent()
         
-        // Snap camera back to player
         if let player = childNode(withName: "userBird") {
-            cameraNode.position = player.position
-            cameraNode.setScale(1.25) // your normal zoom
+            self.camera?.position = player.position
+            self.camera?.setScale(1.25)
         }
     }
     
@@ -92,19 +127,28 @@ extension GameScene {
         
         let marker = SKShapeNode(circleOfRadius: 40)
         marker.fillColor = .orange
-        marker.strokeColor = .clear
+        marker.strokeColor = .white
+        marker.lineWidth = 4
         marker.name = "mapMarker"
         marker.zPosition = 1000
         marker.position = player.position
+        
+        let pulse = SKAction.sequence([
+            SKAction.scale(to: 1.2, duration: 0.5),
+            SKAction.scale(to: 1.0, duration: 0.5)
+        ])
+        marker.run(SKAction.repeatForever(pulse))
+        
         addChild(marker)
     }
 }
 
-struct PhysicsCategory { // Physics for male bird
-    static let none:   UInt32 = 0
-    static let player: UInt32 = 0b1      // 1
-    static let mate:   UInt32 = 0b10     // 2
-    static let nest:   UInt32 = 0b100    // 4
-    static let baby:   UInt32 = 0b1000   // 8
-}
+// --- Physics Categories ---
 
+struct PhysicsCategory {
+    static let none:   UInt32 = 0
+    static let player: UInt32 = 0b1
+    static let mate:   UInt32 = 0b10
+    static let nest:   UInt32 = 0b100
+    static let baby:   UInt32 = 0b1000
+}
