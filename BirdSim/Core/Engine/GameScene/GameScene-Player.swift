@@ -204,11 +204,17 @@ extension GameScene {
         // 3) Feed Self / Leave Island
         let interactionSpots = [(feedUserBirdMini, "feed"), (leaveIslandMini, "leave")]
         for (name, type) in interactionSpots {
-            if let spot = self.childNode(withName: name) {
-                if hypot(player.position.x - spot.position.x, player.position.y - spot.position.y) <= 220 {
-                    type == "feed" ? triggerMiniGame(scene: .feedUser) : triggerMiniGame(scene: .leaveIsland)
-                    return
+            var isNearAny = false
+            self.enumerateChildNodes(withName: name) { node, stop in
+                let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
+                if dist <= 220 {
+                    isNearAny = true
+                    stop.pointee = true // stop enumerating once we found a nearby node
                 }
+            }
+            if isNearAny {
+                type == "feed" ? triggerMiniGame(scene: .feedUser) : triggerMiniGame(scene: .leaveIsland)
+                return
             }
         }
 
@@ -256,3 +262,4 @@ extension GameScene {
         label.run(SKAction.sequence([SKAction.group([moveUp, fadeOut]), .removeFromParent()]))
     }
 }
+
