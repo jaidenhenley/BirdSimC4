@@ -137,9 +137,9 @@ extension MainGameView {
             case .feedUser:
                 return "Catch good food and avoid bad items. Fill the bar to win. Tilt your device or use controls."
             case .feedBaby:
-                return "Cut ropes to drop food into the moving bucket. Feed the baby at least twice before time runs out."
+                return "Cut ropes to drop food into the baby bird mouth. Feed the baby twice before time runs out."
             case .leaveIsland:
-                return "Follow the bridge prompts to leave the island."
+                return "Tap the screen to move bird up. Avoid cars and light poles to escape"
             }
         }
         
