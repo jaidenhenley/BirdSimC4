@@ -203,27 +203,55 @@ extension MainGameView {
         func mainInstructionText(for type: InstructionType) -> String {
             switch type {
             case .flight:
-                return "Flight"
+                return "Spread your wings! Use the joystick to fly around and explore the island."
             case .mapView:
-                return "Map View"
+                return "Keep your bearings. This view helps you track your territory and find resources."
             case .hunger:
-                return "Hunger"
+                return "Don't starve! Keep an eye on your hunger bar and find food before your energy runs out."
             case .collectItem:
-                return "Collect Item"
+                return "Foraging: Tap on sticks, leaves, and webs to gather materials for your nest."
             case .nestBuilding:
-                return "Nest Building"
+                return "Home sweet home. Bring your collected items back to the nest site to begin building."
             case .mateFinding:
-                return "Mate Finding"
+                return "The season is here! Search the island to find a mate and start your family."
             case .feedBaby:
-                return "Feed Baby"
+                return "Hungry hatchlings! Feed your baby twice to help it grow up and leave the nest."
             case .avoidPredator:
-                return "Avoid Predator"
+                return "Danger from above! Stay alert and dodge predators to keep yourself safe."
             case .leaveIsland:
-                return "Leave Island"
+                return "The Great Migration. Your journey here is done—it's time to fly to warmer lands."
             case .pickupRemainingItems:
-                return "Pickup Remaining Items"
+                return "Almost there! You still need a few more materials to finish your masterpiece."
             case .retryNest:
-                return "Retry Nest"
+                return "The wind was too strong. Don't give up—gather your materials and try building again!"
+            }
+        }
+        
+        
+        func mainInstructionImage(for type: InstructionType) -> [ImageResource] {
+            switch type {
+            case .flight:
+                    [.birdFlyingOpen]
+            case .mapView:
+                   [.mapLand]
+            case .hunger:
+                    [.hungerBarWord]
+            case .collectItem:
+                [.dandelion,.stick,.spiderweb,.leaf]
+            case .nestBuilding:
+                    [.tree1]
+            case .retryNest:
+                    [.nest]
+            case .mateFinding:
+                    [.Predator.maleBird]
+            case .feedBaby:
+                    [.babyBirdNest]
+            case .avoidPredator:
+                    [.Predator.predator]
+            case .leaveIsland:
+                    [.bridge]
+            case .pickupRemainingItems:
+                    [.dandelion]
             }
         }
         

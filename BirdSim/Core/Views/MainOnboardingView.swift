@@ -12,31 +12,60 @@ struct MainOnboardingView: View {
     @Environment(\.dismiss) var dismiss
     
     let type: MainGameView.ViewModel.InstructionType
-
+    
     
     var body: some View {
-        VStack(spacing: 16) {
-                Text("Instructions")
-                    .font(.system(.title, design: .rounded)).bold()
-                Text(viewModel.mainInstructionText(for: type))
-                    .font(.system(.body, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .padding()
-
-            HStack(spacing: 20) {
-
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Start")
-                        .font(.system(.headline, design: .rounded))
-                        .frame(maxWidth: .infinity)
+        VStack(spacing: 24) {
+            // Header
+            Text("Instructions")
+                .font(.system(.title, design: .rounded)).bold()
+                .padding(.top)
+            
+            // Text Content
+            Text(viewModel.mainInstructionText(for: type))
+                .font(.system(.body, design: .rounded))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            // Image Gallery Logic
+            let resources = viewModel.mainInstructionImage(for: type)
+            
+            HStack(spacing: 12) {
+                ForEach(0..<resources.count, id: \.self) { index in
+                    // The actual image
+                    Image(resources[index])
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: resources.count > 1 ? 100 : 180)
+                        .frame(maxHeight: 120)
+                    
+                    // Optional: Add a "+" sign between multiple images
+                    if index < resources.count - 1 {
+                        Image(systemName: "plus")
+                            .font(.title2.bold())
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
+            .padding()
+            
+            Spacer()
+            
+            // Action Button
+            Button {
+                dismiss()
+            } label: {
+                Text("Start")
+                    .font(.system(.headline, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
             .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.space, modifiers: [])
         }
-        .padding()
-        .presentationDetents([.medium, .large])
-        
+        .padding(30)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.hidden)
     }
 }
