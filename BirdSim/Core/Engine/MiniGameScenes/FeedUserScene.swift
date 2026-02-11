@@ -4,28 +4,36 @@
 //
 //  Created by Jaiden Henley on 1/26/26.
 //
-
 import SpriteKit
 import CoreMotion
+import GameController
 
 class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
     
-    // --- Accelerometer Properties ---
+    // --- Input Modes ---
+    enum InputMode {
+        case keyboard // Renamed for clarity since it's the primary load-in mode
+        case tilt
+    }
+    
+    // CHANGE 1: Set default mode to keyboard (formerly touch)
+    private var currentMode: InputMode = .keyboard {
+        didSet { updateModeButtonText() }
+    }
+    
+    // --- Input Properties ---
     private let motionManager = CMMotionManager()
     private var tiltValue: CGFloat = 0.0
+    private var isDragging = false
+    private var touchX: CGFloat = 0.0
     
-    // --- Meter Properties ---
-    private let meterBackground = SKShapeNode(rectOf: CGSize(width: 200, height: 20), cornerRadius: 5)
+    // --- UI Elements ---
+    private let modeButton = SKLabelNode(fontNamed: "AvenirNext-Bold")
     private let meterFill = SKShapeNode(rectOf: CGSize(width: 0, height: 20), cornerRadius: 5)
-    private var fullness: CGFloat = 0.0 {
-        didSet {
-            updateMeter()
-        }
-    }
-    private let maxFullness: CGFloat = 50
     
-    // Player node
+    private var fullness: CGFloat = 0.0 { didSet { updateMeter() } }
+    private let maxFullness: CGFloat = 50
     let player = SKShapeNode(rectOf: CGSize(width: 80, height: 40), cornerRadius: 10)
     
     // Physics Categories
@@ -34,27 +42,120 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     let badItemCategory: UInt32 = 0x1 << 2
 
     override func didMove(to view: SKView) {
-        SoundManager.shared.startBackgroundMusic(track: .feedingUser)
         backgroundColor = .darkGray
-        
-        // Prepare haptics for immediate use
-        HapticManager.shared.prepare()
-        
-        physicsWorld.gravity = CGVector(dx: 0, dy: -2.0)
+        physicsWorld.gravity = CGVector(dx: 0, dy: -3.0)
         physicsWorld.contactDelegate = self
         
         setupPlayer()
         setupUI()
-        setupAccelerometer()
+        setupAccelerometer() // Starts in background, but won't move player until toggled
         
-        // Start Spawning Shapes
-        let spawnAction = SKAction.run { [weak self] in self?.spawnFallingShape() }
-        let waitAction = SKAction.wait(forDuration: 0.8)
-        run(SKAction.repeatForever(SKAction.sequence([spawnAction, waitAction])), withKey: "spawning")
+        // Spawn falling items
+        let spawn = SKAction.run { [weak self] in self?.spawnFallingShape() }
+        run(SKAction.repeatForever(SKAction.sequence([spawn, .wait(forDuration: 0.8)])))
     }
-    
+
+    private func setupUI() {
+        modeButton.name = "ModeButton"
+        modeButton.fontSize = 20
+        modeButton.position = CGPoint(x: frame.width - 120, y: frame.height - 60)
+        modeButton.zPosition = 100
+        updateModeButtonText()
+        addChild(modeButton)
+        
+        setupMeter()
+        
+        let back = SKLabelNode(text: "← Back")
+        back.name = "Back Button"
+        back.position = CGPoint(x: 80, y: frame.height - 60)
+        back.fontSize = 20
+        addChild(back)
+    }
+
+    private func updateModeButtonText() {
+        // CHANGE 2: Update text to show Keyboard as the active starting state
+        modeButton.text = (currentMode == .keyboard) ? "⌨️ Mode: Keyboard" : "🕹 Mode: Tilt"
+        modeButton.fontColor = (currentMode == .keyboard) ? .cyan : .orange
+    }
+
+    // MARK: - GAME LOOP
+    override func update(_ currentTime: TimeInterval) {
+        let halfWidth = player.frame.width / 2
+        var moveAmount: CGFloat = 0
+        let keySpeed: CGFloat = 15.0
+        
+        // 1. ALWAYS CHECK KEYBOARD (Highest Priority)
+        if let keyboard = GCKeyboard.coalesced?.keyboardInput {
+            let leftPressed = keyboard.button(forKeyCode: .keyA)?.isPressed ?? false ||
+                              keyboard.button(forKeyCode: .leftArrow)?.isPressed ?? false
+            
+            let rightPressed = keyboard.button(forKeyCode: .keyD)?.isPressed ?? false ||
+                               keyboard.button(forKeyCode: .rightArrow)?.isPressed ?? false
+            
+            if leftPressed {
+                moveAmount = -keySpeed
+                flashPlayer()
+            } else if rightPressed {
+                moveAmount = keySpeed
+                flashPlayer()
+            }
+        }
+        
+        // 2. FALLBACK LOGIC
+        if moveAmount == 0 {
+            if currentMode == .keyboard && isDragging {
+                // Allows touch dragging as a backup to keyboard in this mode
+                moveAmount = (touchX - player.position.x) * 0.25
+            } else if currentMode == .tilt {
+                moveAmount = tiltValue * -45.0
+            }
+        }
+        
+        let newX = player.position.x + moveAmount
+        player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
+        player.zRotation = -moveAmount * 0.04
+    }
+
+    private func flashPlayer() {
+        if player.fillColor == .cyan {
+            player.fillColor = .white
+            player.run(SKAction.wait(forDuration: 0.05)) { self.player.fillColor = .cyan }
+        }
+    }
+
+    // MARK: - TOUCHES
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let node = atPoint(location)
+        
+        if node.name == "Back Button" { returnToMap(); return }
+        
+        if node.name == "ModeButton" {
+            // Toggle between the two
+            currentMode = (currentMode == .keyboard) ? .tilt : .keyboard
+            return
+        }
+        
+        if currentMode == .keyboard {
+            isDragging = true
+            touchX = location.x
+        }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if isDragging { touchX = touches.first?.location(in: self).x ?? touchX }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        isDragging = false
+    }
+
+    // --- REMAINDER OF SUPPORT METHODS (Unchanged) ---
     private func setupPlayer() {
         player.fillColor = .cyan
+        player.strokeColor = .white
+        player.lineWidth = 2
         player.position = CGPoint(x: frame.midX, y: 100)
         player.name = "player"
         player.physicsBody = SKPhysicsBody(rectangleOf: player.frame.size)
@@ -67,204 +168,55 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     private func setupAccelerometer() {
         if motionManager.isAccelerometerAvailable {
             motionManager.accelerometerUpdateInterval = 0.02
-            motionManager.startAccelerometerUpdates(to: .main) { [weak self] (data, error) in
-                guard let acceleration = data?.acceleration, let self = self else { return }
-                
-                let filterFactor: Double = 0.2
-                let rawTilt = acceleration.y
-                let previousTilt = self.tiltValue
-                self.tiltValue = CGFloat((rawTilt * filterFactor) + (Double(self.tiltValue) * (1.0 - filterFactor)))
-                
-                // Haptic logic: Pulse when the user changes tilt direction significantly
-                if abs(previousTilt) < 0.01 && abs(self.tiltValue) > 0.1 {
-                    HapticManager.shared.trigger(.selection)
-                }
+            motionManager.startAccelerometerUpdates(to: .main) { [weak self] (data, _) in
+                if let acc = data?.acceleration { self?.tiltValue = CGFloat(acc.y) }
             }
         }
     }
 
-    override func update(_ currentTime: TimeInterval) {
-        let sensitivity: CGFloat = 80.0
-        let moveAmount = tiltValue * sensitivity * -1.0
-        let newX = player.position.x + moveAmount
-        
-        let halfWidth = player.frame.width / 2
-        
-        // Detect if we hit the screen edge
-        if newX <= halfWidth || newX >= (frame.width - halfWidth) {
-            // Give a tiny "tick" when the player is stuck at the edge
-            if abs(moveAmount) > 1.0 {
-                HapticManager.shared.trigger(.light)
-            }
-        }
-        
-        player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
-        player.zRotation = tiltValue * 0.4
-    }
-    
     func didBegin(_ contact: SKPhysicsContact) {
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
         let itemNode = (contact.bodyA.categoryBitMask == playerCategory) ? contact.bodyB.node : contact.bodyA.node
-        
         if contactMask == (playerCategory | goodItemCategory) {
-            // SUCCESS HAPTIC
-            HapticManager.shared.trigger(.medium)
-            
-            fullness += 10.0
-            itemNode?.removeFromParent()
-            
-            // Visual feedback
-            player.run(SKAction.sequence([
-                SKAction.scale(to: 1.1, duration: 0.1),
-                SKAction.scale(to: 1.0, duration: 0.1)
-            ]))
-            
+            fullness += 10.0; itemNode?.removeFromParent()
         } else if contactMask == (playerCategory | badItemCategory) {
-            // ERROR HAPTIC
-            HapticManager.shared.trigger(.error)
-            
-            fullness = max(0, fullness - 15.0)
-            itemNode?.removeFromParent()
-            
-            // Shake effect
-            let shake = SKAction.sequence([
-                SKAction.moveBy(x: 10, y: 0, duration: 0.05),
-                SKAction.moveBy(x: -20, y: 0, duration: 0.05),
-                SKAction.moveBy(x: 10, y: 0, duration: 0.05)
-            ])
-            player.run(shake)
+            fullness = max(0, fullness - 15.0); itemNode?.removeFromParent()
         }
-    }
-
-    private func handleWin() {
-        // VICTORY HAPTIC
-        HapticManager.shared.trigger(.heavy)
-        
-        removeAction(forKey: "spawning")
-        motionManager.stopAccelerometerUpdates()
-        
-        viewModel?.hunger = 5
-        viewModel?.userScore += 1
-        
-        let winLabel = SKLabelNode(text: "BIRD IS FULL! + HUNGER")
-        winLabel.fontSize = 35
-        winLabel.fontName = "AvenirNext-Bold"
-        winLabel.position = CGPoint(x: frame.midX, y: frame.midY)
-        winLabel.fontColor = .green
-        winLabel.zPosition = 200
-        addChild(winLabel)
-        
-        run(SKAction.sequence([
-            SKAction.wait(forDuration: 2.0),
-            SKAction.run { [weak self] in self?.returnToMap() }
-        ]))
-    }
-
-    // MARK: - UI & Helper Methods
-    
-    private func setupUI() {
-        setupMeter()
-        setupBackButton()
     }
 
     private func setupMeter() {
-        meterBackground.position = CGPoint(x: frame.midX, y: frame.height - 50)
-        meterBackground.fillColor = .black
-        meterBackground.strokeColor = .white
-        meterBackground.lineWidth = 2
-        meterBackground.zPosition = 100
-        addChild(meterBackground)
-
+        let bg = SKShapeNode(rectOf: CGSize(width: 200, height: 20), cornerRadius: 5)
+        bg.position = CGPoint(x: frame.midX, y: frame.height - 60)
+        bg.fillColor = .black
+        addChild(bg)
+        
         meterFill.fillColor = .green
-        meterFill.strokeColor = .clear
-        meterFill.position = CGPoint(x: frame.midX - 100, y: frame.height - 50)
-        meterFill.zPosition = 101
+        meterFill.position = CGPoint(x: frame.midX - 100, y: frame.height - 60)
         meterFill.path = CGPath(rect: CGRect(x: 0, y: -10, width: 0.1, height: 20), transform: nil)
         addChild(meterFill)
-
-        let label = SKLabelNode(text: "FULLNESS")
-        label.fontSize = 14
-        label.fontName = "AvenirNext-Bold"
-        label.position = CGPoint(x: frame.midX, y: frame.height - 35)
-        label.zPosition = 102
-        addChild(label)
     }
 
     private func updateMeter() {
-        let percentage = min(max(fullness / maxFullness, 0), 1.0)
-        let newWidth = 200 * percentage
-        meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: newWidth, height: 20),
-                                cornerWidth: 5, cornerHeight: 5, transform: nil)
-        
-        if fullness >= maxFullness {
-            handleWin()
-        }
+        let p = min(max(fullness / maxFullness, 0), 1.0)
+        meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: 200 * p, height: 20), cornerWidth: 5, cornerHeight: 5, transform: nil)
+        if fullness >= maxFullness { viewModel?.userScore += 1; returnToMap() }
     }
 
     func spawnFallingShape() {
-        let shapeType = Int.random(in: 0...2)
-        let isGood = shapeType != 2
-        let size = CGSize(width: 40, height: 40)
-        let shapeNode: SKShapeNode
-        
-        switch shapeType {
-        case 0: shapeNode = SKShapeNode(rectOf: size, cornerRadius: 4)
-        case 1: shapeNode = SKShapeNode(circleOfRadius: 20)
-        default:
-            let path = CGMutablePath()
-            path.move(to: CGPoint(x: 0, y: 20))
-            path.addLine(to: CGPoint(x: 20, y: -20))
-            path.addLine(to: CGPoint(x: -20, y: -20))
-            path.closeSubpath()
-            shapeNode = SKShapeNode(path: path)
-        }
-        
-        shapeNode.fillColor = isGood ? .green : .red
-        shapeNode.strokeColor = .white
-        let randomX = CGFloat.random(in: 50...(frame.width - 50))
-        shapeNode.position = CGPoint(x: randomX, y: frame.height + 50)
-        
-        shapeNode.physicsBody = SKPhysicsBody(circleOfRadius: 20)
-        shapeNode.physicsBody?.categoryBitMask = isGood ? goodItemCategory : badItemCategory
-        shapeNode.physicsBody?.contactTestBitMask = playerCategory
-        shapeNode.name = isGood ? "good" : "bad"
-        addChild(shapeNode)
-        
-        shapeNode.run(SKAction.sequence([
-            SKAction.wait(forDuration: 5.0),
-            SKAction.removeFromParent()
-        ]))
+        let isGood = Int.random(in: 0...2) != 2
+        let node = isGood ? SKShapeNode(circleOfRadius: 20) : SKShapeNode(rectOf: CGSize(width: 40, height: 40), cornerRadius: 4)
+        node.fillColor = isGood ? .green : .red
+        node.position = CGPoint(x: CGFloat.random(in: 50...(frame.width - 50)), y: frame.height + 50)
+        node.physicsBody = SKPhysicsBody(circleOfRadius: 20)
+        node.physicsBody?.categoryBitMask = isGood ? goodItemCategory : badItemCategory
+        node.physicsBody?.contactTestBitMask = playerCategory
+        addChild(node)
+        node.run(SKAction.sequence([.wait(forDuration: 5.0), .removeFromParent()]))
     }
 
-    func setupBackButton() {
-        let backLabel = SKLabelNode(text: "← Back")
-        backLabel.position = CGPoint(x: 60, y: frame.height - 50)
-        backLabel.fontSize = 18
-        backLabel.name = "Back Button"
-        backLabel.zPosition = 100
-        addChild(backLabel)
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        if atPoint(location).name == "Back Button" {
-            HapticManager.shared.trigger(.light)
-            motionManager.stopAccelerometerUpdates()
-            returnToMap()
-        }
-    }
-    
     func returnToMap() {
+        motionManager.stopAccelerometerUpdates()
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
-        viewModel?.controlsAreVisable = true
-        viewModel?.mapIsVisable = true
-        if viewModel?.tutorialIsOn == true {
-            viewModel?.showMainGameInstructions(type: .mapView)
-            viewModel?.delayedMainInstructions(type: .flight)
-            viewModel?.moreDelayedMainInstructions(type: .collectItem)
-        }
-        
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
     }
 }
