@@ -259,6 +259,12 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         viewModel?.controlsAreVisable = true
         viewModel?.mapIsVisable = true
+        if viewModel?.tutorialIsOn == true {
+            viewModel?.showMainGameInstructions(type: .mapView)
+            viewModel?.delayedMainInstructions(type: .flight)
+            viewModel?.moreDelayedMainInstructions(type: .collectItem)
+        }
+        
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
     }
 }

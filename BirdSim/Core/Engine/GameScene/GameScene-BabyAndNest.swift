@@ -143,6 +143,10 @@ extension GameScene {
         // Position and SpawnDate are now managed via Node/Persistence, not global variables
         viewModel?.saveState()
         
+        if viewModel?.tutorialIsOn == true {
+            viewModel?.showMainGameInstructions(type: .feedBaby)
+        }
+        
         viewModel?.currentBabyAmount += 1
 
         baby.alpha = 0

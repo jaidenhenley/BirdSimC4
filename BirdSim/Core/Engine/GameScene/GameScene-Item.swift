@@ -29,6 +29,14 @@ extension GameScene {
 
         // 3. Update State via ViewModel
         viewModel?.collectItem(itemName)
+        if viewModel?.tutorialIsOn == true, viewModel?.pickedUpOnce == false {
+            viewModel?.showMainGameInstructions(type: .pickupRemainingItems)
+            viewModel?.pickedUpOnce = true
+        }
+        // Remove the item from the world
+        node.removeFromParent()
+
+        // Optional: brief feedback
         viewModel?.currentMessage = "Picked up \(itemName.capitalized)"
         
         // 4. Visual Feedback

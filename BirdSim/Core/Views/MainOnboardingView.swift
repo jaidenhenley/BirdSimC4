@@ -1,5 +1,5 @@
 //
-//  MinigameOnboardingView.swift
+//  MainOnboardingView.swift
 //  BirdSim
 //
 //  Created by Jaiden Henley on 2/10/26.
@@ -7,34 +7,26 @@
 
 import SwiftUI
 
-struct MinigameOnboardingView: View {
+struct MainOnboardingView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
-//    let timer: Timer
+    @Environment(\.dismiss) var dismiss
+    
+    let type: MainGameView.ViewModel.InstructionType
+
     
     var body: some View {
         VStack(spacing: 16) {
-            if let type = viewModel.pendingMiniGameType {
                 Text("Instructions")
                     .font(.system(.title, design: .rounded)).bold()
-                Text(viewModel.minigameInstructionsText(for: type))
+                Text(viewModel.mainInstructionText(for: type))
                     .font(.system(.body, design: .rounded))
                     .multilineTextAlignment(.center)
                     .padding()
-            } else {
-                Text("Instructions")
-                    .font(.system(.title, design: .rounded)).bold()
-                Text("Get ready!")
-                    .font(.system(.body, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .padding()
-            }
 
             HStack(spacing: 20) {
 
                 Button {
-                    viewModel.startPendingMiniGame()
-                    viewModel.controlsAreVisable = false
-                    viewModel.mapIsVisable = false
+                    dismiss()
                 } label: {
                     Text("Start")
                         .font(.system(.headline, design: .rounded))
@@ -45,7 +37,6 @@ struct MinigameOnboardingView: View {
         }
         .padding()
         .presentationDetents([.medium, .large])
-        
         
     }
 }

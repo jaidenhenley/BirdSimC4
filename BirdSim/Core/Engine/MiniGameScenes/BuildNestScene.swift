@@ -42,9 +42,17 @@ class BuildNestScene: SKScene {
         
         let filledSlots = viewModel?.slots.compactMap { $0 }.count ?? 0
         if filledSlots == 4 {
+            if viewModel?.tutorialIsOn == true {
+                viewModel?.showMainGameInstructions(type: .retryNest)
+                print("Nest GOod")
+            }
             viewModel?.userScore += 1
             viewModel?.startMatingPhase()
         } else {
+            if viewModel?.tutorialIsOn == true {
+                viewModel?.showMainGameInstructions(type: .mateFinding)
+                print("Nest Bad")
+            }
             viewModel?.inventory = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         }
         

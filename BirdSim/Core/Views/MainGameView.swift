@@ -114,13 +114,21 @@ struct MainGameView: View {
                 }
             }
             .animation(.spring, value: viewModel.showInventory)
-            .sheet(isPresented: Binding(get: { viewModel.showMiniGameSheet }, set: { newVal in
-                if !newVal { return }
-                else { viewModel.controlsAreVisable = false; viewModel.mapIsVisable = false }
-            }), onDismiss: viewModel.startPendingMiniGame) {
+            .sheet(isPresented: $viewModel.showMiniGameSheet, onDismiss: {
+                viewModel.startPendingMiniGame()
+            }) {
                 MinigameOnboardingView(viewModel: viewModel)
+                    .onAppear {
+                        viewModel.controlsAreVisable = false
+                        viewModel.mapIsVisable = false
+                    }
                     .presentationDragIndicator(.hidden)
             }
+            .sheet(isPresented: $viewModel.showMainInstructionSheet) {
+                MainOnboardingView(viewModel: viewModel, type: viewModel.pendingInstructionType!)
+            }
+            
+            
         }
     }
     

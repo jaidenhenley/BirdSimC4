@@ -313,6 +313,11 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             viewModel?.controlsAreVisable = true
             viewModel?.mapIsVisable = true
             
+            if viewModel?.tutorialIsOn == true, viewModel?.fedBabyOnce == false {
+                viewModel?.moreDelayedMainInstructions(type: .avoidPredator)
+                viewModel?.fedBabyOnce = true
+            }
+            
             let transition = SKTransition.crossFade(withDuration: 0.5)
             view.presentScene(existing, transition: transition)
         }

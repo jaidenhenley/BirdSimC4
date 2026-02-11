@@ -137,7 +137,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let backgroundTexture = SKTexture(imageNamed: "map_land")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
-                    self?.initializeGame(resetState: false)
+                    self?.initializeGame(resetState: false, tutorialOn: true)
                 }
             }
         } else {
@@ -436,6 +436,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 if viewModel?.inventory == ["stick": 1, "leaf": 1, "spiderweb": 1, "dandelion": 1]  {
                     viewModel?.currentMessage = "Inventory is full Build a nest"
+                    if viewModel?.tutorialIsOn == true, viewModel?.inventoryFullOnce == false {
+                        viewModel?.showMainGameInstructions(type: .nestBuilding)
+                        viewModel?.inventoryFullOnce = true
+                    }
                 }
             }
         } else {

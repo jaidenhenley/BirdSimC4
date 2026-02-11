@@ -10,8 +10,12 @@ import SpriteKit
 extension GameScene {
     // Initializes or resets the entire world state.
     // Spawns background, player, predators, items, and restores save state.
-    func initializeGame(resetState: Bool = false) {
+    func initializeGame(resetState: Bool = false, tutorialOn: Bool) {
         viewModel?.joystickVelocity = .zero
+        
+        if viewModel?.tutorialIsOn == true {
+            viewModel?.showMainGameInstructions(type: .hunger)
+        }
         
         if resetState {
             viewModel?.controlsAreVisable = true
