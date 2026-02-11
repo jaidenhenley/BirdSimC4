@@ -10,16 +10,24 @@ import SpriteKit
 extension GameScene {
     func pickupItem(_ node: SKNode) {
         guard let rawName = node.name else { return }
-        // Standardize to lowercase so set membership is consistent
         let itemName = rawName.lowercased()
 
-        // Drive inventory UI from collectedItems via the ViewModel helper
-        // This also persists and optionally updates counts if you still track them
-        if viewModel?.collectedItems.contains(itemName) == true {
-            viewModel?.currentMessage = " You already have \(itemName)"
+        // 1. Check BEFORE doing anything else
+        // Use a local check to see if the item is already in the list
+        let alreadyOwned = viewModel?.collectedItems.contains(itemName) ?? false
+
+        if alreadyOwned {
+            print("DEBUG: Already owned \(itemName), playing tink.")
+            viewModel?.currentMessage = "You already have a \(itemName)"
+            SoundManager.shared.playEffect(.tink)
             return
         }
         
+        // 2. Play the success sound IMMEDIATELY
+        // We do this before the ViewModel update to ensure no race conditions
+        SoundManager.shared.playEffect(.pickUp)
+
+        // 3. Update State via ViewModel
         viewModel?.collectItem(itemName)
         if viewModel?.tutorialIsOn == true, viewModel?.pickedUpOnce == false {
             viewModel?.showMainGameInstructions(type: .pickupRemainingItems)
@@ -30,7 +38,24 @@ extension GameScene {
 
         // Optional: brief feedback
         viewModel?.currentMessage = "Picked up \(itemName.capitalized)"
-        scheduleRespawn(for: node.name!)
+        
+        // 4. Visual Feedback
+        // We hide the node immediately so it feels "picked up" even while animating
+        node.name = "picked_up_inactive" // Rename so it can't be double-tapped
+        
+        let scaleDown = SKAction.scale(to: 0.1, duration: 0.15)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.15)
+        let group = SKAction.group([scaleDown, fadeOut])
+        
+        node.run(SKAction.sequence([
+            group,
+            SKAction.removeFromParent()
+        ]))
+
+        // 5. Logic and Respawn
+        scheduleRespawn(for: rawName)
+        SoundManager.shared.playEffect(.alert)
+
         print("Successfully added \(itemName) to collected items.")
     }
     
