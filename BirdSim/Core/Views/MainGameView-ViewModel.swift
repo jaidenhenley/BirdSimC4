@@ -30,8 +30,7 @@ extension MainGameView {
             didSet {
                 // Use existing instruction system to show predator tips once
                 guard tutorialIsOn else { return }
-                if predatorProximitySegments >= 1,
-                   !hasShownPredatorInstruction,
+                if predatorProximitySegments >= 2,
                    !shownInstructionTypes.contains(.avoidPredator),
                    !showMainInstructionSheet,
                    !showMiniGameSheet {
