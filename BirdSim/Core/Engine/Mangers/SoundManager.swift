@@ -19,10 +19,26 @@ enum GameTrack: String {
     var fileName: String { self.rawValue }
 }
 
+enum SoundEffect: String {
+    // --- Custom Sounds (Your files in Assets) ---
+    case pickUp = "grab_effect"
+    case building = "hammer_tap"
+    case feedSuccess = "swallow"
+    
+    // --- Apple System Sounds (Built-in) ---
+    case tap = "1104"           // Standard UI Tap
+    case tink = "1057"          // Light metallic "tink"
+    case bloom = "1025"         // Soft chime (good for UI appearing)
+    case alert = "1050"         // Soft pulse
+    case complete = "1301"      // "Task Finished" chime
+    case error = "1053"         // Low-pitched negative alert
+    case swoosh = "1322"        // Air sound (good for scene transitions)
+}
+
 class SoundManager {
     static let shared = SoundManager()
     
-    // Two players to allow for overlapping transitions
+    // Background Music Players (Do not change)
     private var musicPlayerA: AVAudioPlayer?
     private var musicPlayerB: AVAudioPlayer?
     private var isUsingPlayerA = true
@@ -34,18 +50,18 @@ class SoundManager {
     private var musicVolume: Float = 0.5
 
     private init() {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        // Changed to .ambient so the game doesn't stop user's podcasts/Spotify unless you play music
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
     }
     
+    // MARK: - Background Music (Original Logic)
+    
     func startBackgroundMusic(track: GameTrack, fadeDuration: TimeInterval = 1.5) {
         let filename = track.fileName
-        
-        // Don't restart if already playing
         guard currentTrack != filename else { return }
         guard isMusicEnabled else { return }
 
-        // Find file
         let extensions = ["wav", "mp3", "m4a"]
         var foundURL: URL?
         for ext in extensions {
@@ -57,26 +73,20 @@ class SoundManager {
         guard let url = foundURL else { return }
 
         do {
-            // 1. Identify which player is new and which is old
             let oldPlayer = isUsingPlayerA ? musicPlayerA : musicPlayerB
-            
-            // 2. Setup the new player
             let freshlyLoadedPlayer = try AVAudioPlayer(contentsOf: url)
             freshlyLoadedPlayer.numberOfLoops = -1
             freshlyLoadedPlayer.volume = 0
             freshlyLoadedPlayer.prepareToPlay()
             freshlyLoadedPlayer.play()
             
-            // 3. Crossfade
             freshlyLoadedPlayer.setVolume(musicVolume, fadeDuration: fadeDuration)
             oldPlayer?.setVolume(0, fadeDuration: fadeDuration)
             
-            // 4. Clean up the old player after the fade
             DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
                 oldPlayer?.stop()
             }
             
-            // 5. Update state
             if isUsingPlayerA { musicPlayerB = freshlyLoadedPlayer } else { musicPlayerA = freshlyLoadedPlayer }
             isUsingPlayerA.toggle()
             currentTrack = filename
@@ -94,9 +104,7 @@ class SoundManager {
     
     func setMusicEnabled(_ enabled: Bool) {
         isMusicEnabled = enabled
-        if !enabled {
-            stopMusic()
-        }
+        if !enabled { stopMusic() }
     }
 
     func setMusicVolume(_ volume: Float) {
@@ -105,22 +113,60 @@ class SoundManager {
         musicPlayerB?.volume = volume
     }
     
-    // MARK: - Sound Effects
+    // MARK: - Sound Effects Logic
+    
+    /// Plays an effect from the SoundEffect enum. Automatically handles System IDs vs Files.
+    func playEffect(_ effect: SoundEffect) {
+        guard isMusicEnabled else { return }
+
+        // Check if the value is a numeric SystemSoundID
+        if let systemID = UInt32(effect.rawValue), systemID >= 1000 {
+            AudioServicesPlaySystemSound(systemID)
+        } else {
+            // Otherwise, treat as a custom filename
+            playSoundEffect(named: effect.rawValue)
+        }
+    }
+    
+    /// Internal helper to manage AVAudioPlayers for custom effect files
     func playSoundEffect(named filename: String) {
         guard isMusicEnabled else { return }
         
         if let player = effectPlayers[filename] {
             player.currentTime = 0
             player.play()
-        } else if let url = Bundle.main.url(forResource: filename, withExtension: "mp3") {
+        } else {
+            // Support multiple extensions for effects too
+            let extensions = ["mp3", "wav", "m4a", "caf"]
+            var foundURL: URL?
+            
+            for ext in extensions {
+                if let url = Bundle.main.url(forResource: filename, withExtension: ext) {
+                    foundURL = url
+                    break
+                }
+            }
+            
+            guard let url = foundURL else {
+                print("⚠️ Sound effect file not found: \(filename)")
+                return
+            }
+            
             do {
                 let newPlayer = try AVAudioPlayer(contentsOf: url)
+                newPlayer.prepareToPlay()
                 effectPlayers[filename] = newPlayer
                 newPlayer.play()
             } catch {
-                print("Effect error: \(error)")
+                print("❌ Effect error: \(error)")
             }
         }
     }
-} 
+}
 
+
+//// Apple's built-in "Tink" sound
+//SoundManager.shared.playEffect(.tink)
+//
+//// Your custom "swallow" sound file
+//SoundManager.shared.playEffect(.feedSuccess)
