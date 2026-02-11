@@ -38,6 +38,12 @@ extension MainGameView {
         @Published var currentBabyAmount: Int = 0
         @Published var currentDanger: Int = 0
         
+        @Published var tutorialIsOn: Bool = true
+        
+        @Published var inventoryFullOnce: Bool = false
+        @Published var pickedUpOnce: Bool = false
+        @Published var fedBabyOnce: Bool = false
+        
         // SwiftData context & model
         private var modelContext: ModelContext?
         private var gameState: GameState?
@@ -83,7 +89,7 @@ extension MainGameView {
             }
         }
 
-        // MARK: - Mini-game Instruction Sheet
+        // MARK: - Onboarding Instruction Sheet
         enum MiniGameType: String {
             case predator
             case buildNest
@@ -91,7 +97,24 @@ extension MainGameView {
             case feedBaby
             case leaveIsland
         }
+        
+        enum InstructionType: String {
+            case flight
+            case mapView
+            case hunger
+            case collectItem
+            case nestBuilding
+            case retryNest
+            case mateFinding
+            case feedBaby
+            case avoidPredator
+            case leaveIsland
+            case pickupRemainingItems
+        }
 
+        @Published var showMainInstructionSheet: Bool = false
+        @Published var pendingInstructionType: InstructionType? = nil
+        
         @Published var showMiniGameSheet: Bool = false
         @Published var pendingMiniGameType: MiniGameType? = nil
         var pendingMiniGameStarter: (() -> Void)? = nil
@@ -106,6 +129,40 @@ extension MainGameView {
             pendingMiniGameCanceler = cancelAction
             showMiniGameSheet = true
         }
+        
+        // 'startAction' should unpause/start gameplay; 'cancelAction' should return to the main world.
+        func showMainGameInstructions(type: InstructionType) {
+            joystickVelocity = .zero
+            pendingInstructionType = type
+            showMainInstructionSheet = true
+        }
+        
+        func delayedMainInstructions(type: InstructionType) {
+            let delayInSeconds = 5.0
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + delayInSeconds) {
+                self.showMainGameInstructions(type: type)
+            }
+            
+        }
+        
+        func moreDelayedMainInstructions(type: InstructionType) {
+            let delayInSeconds = 10.0
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + delayInSeconds) {
+                self.showMainGameInstructions(type: type)
+            }
+            
+        }
+        
+        func showNextInstruction(type: InstructionType) {
+            
+            
+            pendingInstructionType = type
+            showMainGameInstructions(type: type)
+        }
+
+        
 
         // Called by the Start button in the sheet
         func startPendingMiniGame() {
@@ -128,7 +185,7 @@ extension MainGameView {
             action?()
         }
 
-        func instructionsText(for type: MiniGameType) -> String {
+        func minigameInstructionsText(for type: MiniGameType) -> String {
             switch type {
             case .predator:
                 return "Avoid the red zones. Tap or press Space when the needle is in a green zone to escape."
@@ -140,6 +197,33 @@ extension MainGameView {
                 return "Cut ropes to drop food into the baby bird mouth. Feed the baby twice before time runs out."
             case .leaveIsland:
                 return "Tap the screen to move bird up. Avoid cars and light poles to escape"
+            }
+        }
+        
+        func mainInstructionText(for type: InstructionType) -> String {
+            switch type {
+            case .flight:
+                return "Flight"
+            case .mapView:
+                return "Map View"
+            case .hunger:
+                return "Hunger"
+            case .collectItem:
+                return "Collect Item"
+            case .nestBuilding:
+                return "Nest Building"
+            case .mateFinding:
+                return "Mate Finding"
+            case .feedBaby:
+                return "Feed Baby"
+            case .avoidPredator:
+                return "Avoid Predator"
+            case .leaveIsland:
+                return "Leave Island"
+            case .pickupRemainingItems:
+                return "Pickup Remaining Items"
+            case .retryNest:
+                return "Retry Nest"
             }
         }
         
@@ -538,6 +622,10 @@ extension MainGameView {
             // 1. Reset the high-level flags
             hasBaby = false
             hasNest = false
+            
+            if tutorialIsOn == true {
+                showMainGameInstructions(type: .leaveIsland)
+            }
             
             // 2. Clear the nest position
             nestPosition = nil
