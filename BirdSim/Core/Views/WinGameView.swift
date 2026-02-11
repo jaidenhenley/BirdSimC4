@@ -13,20 +13,42 @@ struct WinGameView: View {
     
     var body: some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
-            VStack(spacing: 20) {
-                Text("Game Win")
-                    .font(.largeTitle)
-                    .bold()
-                    .foregroundStyle(.white)
-                Text("\(viewModel.userScore)")
-                
-                Button("Back to Start") {
-                    onExit()
+            // Brighter overlay for winning
+            Color.black.opacity(0.75).ignoresSafeArea()
+            
+            VStack(spacing: 30) {
+                VStack(spacing: 10) {
+                    Text("Victory!")
+                        .font(.system(.largeTitle, design: .rounded))
+                        .bold()
+                        .foregroundStyle(.yellow) // Gold/Yellow for winning
+                    
+                    Text("Final Score: \(viewModel.userScore)")
+                        .font(.system(.title2, design: .rounded))
+                        .bold()
+                        .foregroundStyle(.white)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(Capsule().fill(.ultraThinMaterial))
+                
+                Button(action: {
+                    HapticManager.shared.trigger(.heavy) // Stronger haptic for win
+                    onExit()
+                }) {
+                    Text("Back to Start")
+                        .font(.headline)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 15)
+                        .frame(minWidth: 200)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green) // Green for "Win" theme
+                // Listen for Spacebar
+                .keyboardShortcut(.space, modifiers: [])
+                // Support Enter/Return
+                .keyboardShortcut(.defaultAction)
+                
+                Text("Press Space to Continue")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
             }
             .padding()
         }

@@ -13,23 +13,42 @@ struct EndGameView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
-            VStack(spacing: 20) {
-                Text("Game Over")
-                    .font(.largeTitle)
-                    .bold()
-                    .foregroundStyle(.white)
-                Text(viewModel.currentDeathMessage)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-
-                Button("Back to Start") {
+            Color.black.opacity(0.85).ignoresSafeArea()
+            
+            VStack(spacing: 30) {
+                VStack(spacing: 10) {
+                    Text("Game Over")
+                        .font(.system(.largeTitle, design: .rounded))
+                        .bold()
+                        .foregroundStyle(.white)
                     
-                    onExit()
+                    Text(viewModel.currentDeathMessage)
+                        .font(.system(.headline, design: .rounded))
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(Capsule().fill(.ultraThinMaterial))
+
+                Button(action: {
+                    HapticManager.shared.trigger(.medium)
+                    onExit()
+                }) {
+                    Text("Back to Start")
+                        .font(.headline)
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 15)
+                        .frame(minWidth: 200)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red) // Red for "End Game" theme
+                // Key addition: Listen for Spacebar
+                .keyboardShortcut(.space, modifiers: [])
+                // Also support Enter/Return
+                .keyboardShortcut(.defaultAction)
+                
+                VStack(spacing: 4) {
+                    Text("Press Space to Restart")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
             }
             .padding()
         }
