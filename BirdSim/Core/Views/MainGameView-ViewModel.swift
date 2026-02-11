@@ -63,6 +63,7 @@ extension MainGameView {
         // SwiftData context & model
         private var modelContext: ModelContext?
         private var gameState: GameState?
+        private var gameSettings: GameSettings?
         private var cancellables = Set<AnyCancellable>()
         private var saveWorkItem: DispatchWorkItem?
         
@@ -501,6 +502,20 @@ extension MainGameView {
                 self.gameState = gs
                 try? context.save()
             }
+            
+            // Fetch or create GameSettings and map tutorial flag
+            if let existingSettings = try? context.fetch(FetchDescriptor<GameSettings>()).first {
+                self.gameSettings = existingSettings
+            } else {
+                let settings = GameSettings(soundOn: true, soundVolume: 0.8, hapticsOn: true, tutorialOn: true)
+                context.insert(settings)
+                self.gameSettings = settings
+                try? context.save()
+            }
+            // Initialize tutorial flag from persisted settings
+            if let settings = self.gameSettings {
+                self.tutorialIsOn = settings.tutorialOn
+            }
 
             if let gs = gameState {
                 mapFromModel(gs)
@@ -561,7 +576,14 @@ extension MainGameView {
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
             
-            // REMOVED: $userFedBabyCount, $babyPosition, $babySpawnDate
+            $tutorialIsOn
+                .sink { [weak self] newValue in
+                    guard let self else { return }
+                    self.gameSettings?.tutorialOn = newValue
+                    do { try self.modelContext?.save() } catch { print("Failed to save settings: \(error)") }
+                }
+                .store(in: &cancellables)
+            
         }
 
         deinit {
