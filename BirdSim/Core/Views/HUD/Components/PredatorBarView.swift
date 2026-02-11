@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PredatorBarView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
-
+    
     let totalSegments = 5
     
     @Binding var currentDanger: Int
@@ -46,5 +46,7 @@ struct PredatorBarView: View {
                 }
             }
         }
-    }}
+    }
+    
+}
 
