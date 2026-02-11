@@ -103,6 +103,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         isGameOver = true
         
         HapticManager.shared.trigger(.error)
+        viewModel?.currentDeathMessage = "You failed to escape."
         viewModel?.showGameOver = true
         self.isPaused = true
     }
