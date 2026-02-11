@@ -135,7 +135,7 @@ extension GameScene {
         scene.speed = 0.0
         scene.physicsWorld.speed = 0.0
         vm.currentMiniGameScene = scene
-        vm.showMiniGameInstructions(type: .predator, startAction: { }, cancelAction: { [weak self] in
+        vm.showMiniGameInstructions(type: .predator, startAction: { self.viewModel?.gameStarted = true }, cancelAction: { [weak self] in
             self?.returnFromMiniGame()
         })
     }
