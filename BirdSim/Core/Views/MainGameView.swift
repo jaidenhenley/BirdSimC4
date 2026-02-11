@@ -124,7 +124,9 @@ struct MainGameView: View {
                     }
                     .presentationDragIndicator(.hidden)
             }
-            .sheet(isPresented: $viewModel.showMainInstructionSheet) {
+            .sheet(isPresented: $viewModel.showMainInstructionSheet, onDismiss: {
+                viewModel.resumeAfterMainInstruction()
+            }) {
                 MainOnboardingView(viewModel: viewModel, type: viewModel.pendingInstructionType!)
             }
             

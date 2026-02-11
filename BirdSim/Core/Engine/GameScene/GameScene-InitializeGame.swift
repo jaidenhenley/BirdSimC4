@@ -41,10 +41,20 @@ extension GameScene {
         self.predatorCooldownEnd = nil
         occupiedPredatorSpawns.removeAll()
         bannedPredatorSpawns.removeAll()
-        // Spawn up to desiredPredatorCount unique predators
-        var spawned = 0
-        while spawned < min(desiredPredatorCount, predatorSpawnPoints.count) && spawnPredatorAtAvailableSpot() {
-            spawned += 1
+        
+        if tutorialOn {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
+                var spawned = 0
+                while spawned < min(self.desiredPredatorCount, self.predatorSpawnPoints.count) && self.spawnPredatorAtAvailableSpot() {
+                    spawned += 1
+                }
+            }
+        } else {
+            // Spawn up to desiredPredatorCount unique predators
+            var spawned = 0
+            while spawned < min(desiredPredatorCount, predatorSpawnPoints.count) && spawnPredatorAtAvailableSpot() {
+                spawned += 1
+            }
         }
         setupBuildNestTree(in: CGPoint(x: -200, y: 0))
         setupBuildNestTree(in: CGPoint(x: -2000, y: 1100))
