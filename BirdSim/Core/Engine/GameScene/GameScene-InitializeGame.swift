@@ -16,9 +16,7 @@ extension GameScene {
         self.removeAllChildren()
 
         
-        if viewModel?.tutorialIsOn == true {
-            viewModel?.showMainGameInstructions(type: .hunger)
-        }
+     
         
         if resetState {
             viewModel?.controlsAreVisable = true
@@ -34,12 +32,18 @@ extension GameScene {
             viewModel?.showGameWin = false
             viewModel?.clearNestAndBabyState()
             babySpawnTime = nil
-                        
         }
         
         
+        if viewModel?.tutorialIsOn == true {
+            viewModel?.showMainGameInstructions(type: .hunger)
+            setupUserBird(in: true)
+            viewModel?.hunger = 2
+        } else {
+            setupUserBird(in: false)
+        }
+        
         setupBackground()
-        setupUserBird()
         self.predatorHit = false
         self.predatorCooldownEnd = nil
         occupiedPredatorSpawns.removeAll()

@@ -152,14 +152,19 @@ extension GameScene {
     }
 
     // MARK: - Player Spawn & Texture
-    func setupUserBird() {
+    func setupUserBird(in tutorial: Bool) {
         if self.childNode(withName: "userBird") != nil { return }
         
         let player = SKSpriteNode(imageNamed: birdImage)
         let shadow = SKSpriteNode(imageNamed: birdImage)
         
         player.size = CGSize(width: 100, height: 100)
-        player.position = defaultPlayerStartPosition
+        
+        if tutorial == true  {
+            player.position = tutorialStartPosition
+        } else {
+            player.position = defaultPlayerStartPosition
+        }
         player.zPosition = 100
         player.name = "userBird"
         

@@ -25,6 +25,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // MARK: - Defaults
     let defaultPlayerStartPosition = CGPoint(x: 800, y: -400)
+    let tutorialStartPosition = CGPoint(x: -220, y: 1663)
+    
     let defaultCameraScale: CGFloat = 1.25
 
     // MARK: - ViewModel Bridge
@@ -137,7 +139,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let backgroundTexture = SKTexture(imageNamed: "map_land")
             SKTexture.preload([backgroundTexture]) { [weak self] in
                 DispatchQueue.main.async {
-                    self?.initializeGame(resetState: false, tutorialOn: true)
+                    guard let self = self else { return }
+                    self.initializeGame(resetState: false, tutorialOn: (self.viewModel?.tutorialIsOn ?? false))
+                    // After initialization, either restore saved position or force tutorial start position
+                    if self.viewModel?.tutorialIsOn == true {
+                        if let player = self.childNode(withName: "userBird") {
+                            player.position = self.tutorialStartPosition
+                            self.cameraNode.position = self.tutorialStartPosition
+                            self.viewModel?.savedPlayerPosition = self.tutorialStartPosition
+                            self.viewModel?.savedCameraPosition = self.cameraNode.position
+                        }
+                    } else {
+                        self.restoreReturnStateIfNeeded()
+                    }
                 }
             }
         } else {
@@ -152,7 +166,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         
-        restoreReturnStateIfNeeded()
         viewModel?.controlsAreVisable = true
         checkBabyWinCondition()
     }
@@ -592,7 +605,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         let dx = player.position.x - node.position.x
                         let dy = player.position.y - node.position.y
                         let distance = sqrt(dx*dx + dy*dy)
-                        if distance > 220 || viewModel?.isFlying == true { continue }
+                        if distance > 220 { continue }
                     }
                     transitionToLeaveIslandMini()
                     viewModel?.controlsAreVisable = false
@@ -680,6 +693,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
 } // End of GameScene Class
+
+
 
 
 
