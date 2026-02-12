@@ -79,43 +79,15 @@ extension GameScene {
         spawnItem(at: CGPoint(x: -4500, y: 300), type: "dandelion")
         
         
-        //Spawns building
-        spawnItem(at: CGPoint(x: -1650, y: -1100), type: "aquarium")
-        spawnItem(at: CGPoint(x: -500, y: -1100), type: "casino")
-        spawnItem(at: CGPoint(x: -865, y: 1000), type: "fountain")
+        //Spawns buildings
+        setupMapBuilding(size: CGSize(width: 1000, height: 800), assetName: "casino", position: CGPoint(x: -245, y: 77))
+        setupMapBuilding(size: CGSize(width: 1300, height: 1000), assetName: "whiteHouse", position: CGPoint(x: -220, y: -1350))
+        setupMapBuilding(size: CGSize(width: 1000, height: 800), assetName: "conservatory", position: CGPoint(x: -1558, y: -252))
+        setupMapBuilding(size: CGSize(width: 800, height: 600), assetName: "aquarium", position: CGPoint(x: -636, y: 2100))
+        setupMapBuilding(size: CGSize(width: 600, height: 600), assetName: "fountain", position: CGPoint(x: 1375, y: 746))
+//        setupMapBuilding(size: CGSize(width: 2400, height: 1600), assetName: "bridge", position: CGPoint(x: 3167, y: 1746))
 
-        
-        
-        //Spawns the path
-        
-        
-        
-        spawnItem(at: CGPoint(x: -450, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -550, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -650, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -750, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -850, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -950, y: -1313), type: "stonePath")
-        
-        spawnItem(at: CGPoint(x: -950, y: -1213), type: "stonePath")
-        spawnItem(at: CGPoint(x: -950, y: -1113), type: "stonePath")
-        spawnItem(at: CGPoint(x: -950, y: -1013), type: "stonePath")
-        spawnItem(at: CGPoint(x: -950, y: -913), type: "stonePath")
-        spawnItem(at: CGPoint(x: -950, y: -813), type: "stonePath")
 
-        spawnItem(at: CGPoint(x: -1050, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1150, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1250, y: -1313), type: "stonePath")
-        
-        spawnItem(at: CGPoint(x: -1350, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1450, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1550, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1650, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1750, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1850, y: -1313), type: "stonePath")
-        spawnItem(at: CGPoint(x: -1950, y: -1313), type: "stonePath")
-
-        
         
         // If we're resetting, force the player + camera back to defaults and
         // overwrite any previously persisted return state.
@@ -147,7 +119,8 @@ extension GameScene {
     func setupLeaveIslandSpot() {
         if self.childNode(withName: leaveIslandMini) != nil { return }
         let spot = SKSpriteNode(imageNamed: "bridge")
-        spot.position = CGPoint(x: 0, y: -2150)
+        spot.position = CGPoint(x: 3167, y: 1746)
+        spot.size = CGSize(width: 2400, height: 1600)
         spot.name = leaveIslandMini
         addChild(spot)
     }
@@ -164,6 +137,15 @@ extension GameScene {
         spot.position = position
         spot.name = feedUserBirdMini
         spot.size = CGSize(width: 120, height: 120)
+        addChild(spot)
+    }
+    
+    func setupMapBuilding(size: CGSize, assetName: String, position: CGPoint) {
+        let spot = SKSpriteNode(imageNamed: assetName)
+        spot.position = position
+        spot.name = assetName
+        spot.size = size
+        spot.zPosition = 1
         addChild(spot)
     }
     

@@ -199,7 +199,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     private func updateMeter() {
         let p = min(max(fullness / maxFullness, 0), 1.0)
         meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: 200 * p, height: 20), cornerWidth: 5, cornerHeight: 5, transform: nil)
-        if fullness >= maxFullness { viewModel?.userScore += 1; returnToMap() }
+        if fullness >= maxFullness { viewModel?.userScore += 1; returnToMap()}
     }
 
     func spawnFallingShape() {
