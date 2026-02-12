@@ -153,17 +153,6 @@ extension GameScene {
         baby.run(SKAction.fadeIn(withDuration: 1.0))
     }
 
-//    func removeSpecificNest(_ nest: SKNode) {
-//        nest.name = "nest_removing"
-//        let fadeOut = SKAction.fadeOut(withDuration: 0.8)
-//        let scaleDown = SKAction.scale(to: 0.2, duration: 0.8)
-//        let group = SKAction.group([fadeOut, scaleDown])
-//        viewModel?.userScore -= 1
-//        viewModel?.currentBabyAmount -= 1
-//        let remove = SKAction.removeFromParent()
-//        nest.run(SKAction.sequence([group, remove]))
-//    }
-//    
     func restorePersistedNestAndBaby() {
         guard let viewModel = viewModel else { return }
 

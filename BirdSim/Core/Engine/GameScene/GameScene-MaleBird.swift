@@ -14,7 +14,7 @@ extension GameScene {
             let maleBird = SKSpriteNode(imageNamed: "Predator/MaleBird")
             maleBird.name = "MaleBird"
             maleBird.size = CGSize(width: 200, height: 200)
-            maleBird.zPosition = 5
+            maleBird.zPosition = 100
             
             // Position him somewhere random but far enough away to be a "quest"
             let randomX = CGFloat.random(in: 500...1000) * (Bool.random() ? 1 : -1)

@@ -160,7 +160,7 @@ extension GameScene {
         
         player.size = CGSize(width: 100, height: 100)
         player.position = defaultPlayerStartPosition
-        player.zPosition = 10
+        player.zPosition = 100
         player.name = "userBird"
         
         shadow.size = CGSize(width: 100, height: 100)
