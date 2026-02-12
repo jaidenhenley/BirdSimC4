@@ -23,45 +23,91 @@ struct MainMenuView: View {
     }
     
     var body: some View {
-        
-        Text("Take Flight - A Bird Life")
-
-        
-        VStack(spacing: 24) {
-                        Button("Resume Game", action: onResumeGame)
-                .buttonStyle(.bordered)
+        ZStack {
+            Image(.loadingScreen)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                Button(action: onResumeGame) {
+                    Text("Resume Game")
+                        .foregroundStyle(.white)
+                        .bold()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .frame(width: 250, height: 50)
+                                .foregroundStyle(.black)
+                        )
+                }
                 .font(.title2)
                 .padding(.horizontal, 40)
+                .padding(.bottom, 10)
                 .disabled(!hasSavedGame)
-            Button("Start New Game", action: onStartNewGame)
-                .buttonStyle(.borderedProminent)
+                .opacity(hasSavedGame ? 1.0 : 0.4)
+                
+                Button(action: onStartNewGame) {
+                    Text("Start New Game")
+                        .foregroundStyle(.white)
+                        .bold()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .frame(width: 250, height: 50)
+                                .foregroundStyle(.blue)
+                        )
+                }
                 .font(.title2.bold())
                 .padding(.horizontal, 40)
-            Button("Instructions") {
-                showingInstructions.toggle()
+                .padding(.bottom, 10)
+                
+                
+                Button {
+                    showingInstructions.toggle()
+                } label: {
+                    Text("Instructions")
+                        .foregroundStyle(.white)
+                        .bold()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .frame(width: 250, height: 50)
+                                .foregroundStyle(.black)
+                        )
+                }
+                .font(.title2.bold())
+                .padding(.horizontal, 40)
+                .padding(.bottom, 10)
+                
+                
+                Button {
+                    showingSettings.toggle()
+                } label: {
+                    Text("Settings")
+                        .foregroundStyle(.white)
+                        .bold()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .frame(width: 250, height: 50)
+                                .foregroundStyle(.black)
+                        )
+                }
+                .font(.title2.bold())
+                .padding(.horizontal, 40)
+                .padding(.bottom, 10)
+                
             }
-                .buttonStyle(.borderedProminent)
-                .font(.title2.bold())
-                .padding(.horizontal, 40)
-            Button("Settings") {
-                showingSettings.toggle()
+            .padding(40)
+            .background(.ultraThinMaterial)
+            .cornerRadius(20)
+            .shadow(radius: 10)
+            .frame(maxWidth: 400)
+            .frame(maxHeight: .infinity)
+            .ignoresSafeArea(edges: .all)
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
             }
-                .buttonStyle(.borderedProminent)
-                .font(.title2.bold())
-                .padding(.horizontal, 40)
-        }
-        .padding(40)
-        .background(.thinMaterial)
-        .cornerRadius(20)
-        .shadow(radius: 10)
-        .frame(maxWidth: 400)
-        .frame(maxHeight: .infinity)
-        .ignoresSafeArea(edges: .all)
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-        }
-        .sheet(isPresented: $showingInstructions) {
-            HowToPlayView()
+            .sheet(isPresented: $showingInstructions) {
+                HowToPlayView()
+            }
         }
     }
 }
