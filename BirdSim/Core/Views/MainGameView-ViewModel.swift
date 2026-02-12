@@ -43,6 +43,7 @@ extension MainGameView {
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
         @Published var gameStarted: Bool = false
+        @Published var minigameStarted: Bool = false
         @Published var showGameOver: Bool = false
         @Published var showGameWin: Bool = false
         @Published var currentMessage: String = ""
@@ -146,6 +147,14 @@ extension MainGameView {
             pendingMiniGameStarter = startAction
             pendingMiniGameCanceler = cancelAction
             showMiniGameSheet = true
+            // Ensure gameplay doesn't accept input while instructions are visible
+            minigameStarted = false
+            if let scene = currentMiniGameScene {
+                scene.isPaused = true
+                scene.isUserInteractionEnabled = false
+                scene.speed = 0.0
+                scene.physicsWorld.speed = 0.0
+            }
         }
         
         // 'startAction' should unpause/start gameplay; 'cancelAction' should return to the main world.
@@ -210,6 +219,7 @@ extension MainGameView {
         // Called by the Start button in the sheet
         func startPendingMiniGame() {
             showMiniGameSheet = false
+            minigameStarted = true
             if let scene = currentMiniGameScene {
                 // Fully resume scene: actions, physics, input
                 scene.isPaused = false
@@ -754,4 +764,5 @@ extension MainGameView: GameDelegate {
 }
 
 
-extension ImageResource: Equatable {}
+extension ImageResource: Equatable { }
+

@@ -62,8 +62,10 @@ struct MinigameOnboardingView: View {
     
     private func startMiniGame() {
         HapticManager.shared.trigger(.medium)
+        viewModel.minigameStarted = true
         viewModel.startPendingMiniGame()
         viewModel.controlsAreVisable = false
         viewModel.mapIsVisable = false
     }
 }
+
