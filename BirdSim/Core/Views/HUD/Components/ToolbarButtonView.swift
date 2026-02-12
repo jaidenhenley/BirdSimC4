@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SpriteKit
 struct ToolbarButtonView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
     
@@ -22,9 +23,13 @@ struct ToolbarButtonView: View {
                 Button {
                     if viewModel.isMapMode == false {
                         viewModel.mainScene?.enterMapNode()
+                        viewModel.mainScene?.scene?.isPaused = true
                     } else {
                         viewModel.mainScene?.exitMapMode()
+                        viewModel.mainScene?.scene?.isPaused = false
+
                     }
+                    
                 } label: {
                     Image(systemName: "map.fill")
                         .font(.largeTitle)
@@ -38,7 +43,7 @@ struct ToolbarButtonView: View {
             Button {
                 onExit()
             } label: {
-                Image(systemName: "xmark.circle.fill")
+                Image(systemName: "pause.fill")
                     .font(.largeTitle)
                     .padding()
                     .background(Circle().fill(.ultraThinMaterial))

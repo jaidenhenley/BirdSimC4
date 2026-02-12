@@ -202,6 +202,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         
         if fullness >= maxFullness {
             viewModel?.userScore += 1
+            viewModel?.hunger = 5
             
             if viewModel?.tutorialIsOn == true {
                 // This triggers the UI logic in your ViewModel

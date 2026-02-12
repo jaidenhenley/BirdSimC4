@@ -235,6 +235,20 @@ extension GameScene {
         let tree = SKSpriteNode(imageNamed: "tree1")
         tree.position = position
         tree.name = buildNestMini
+        
+        
+        if viewModel?.tutorialIsOn == true {
+            let moveUp = SKAction.moveBy(x: 0, y: 10, duration: 0.2)
+            let moveDown = SKAction.moveBy(x: 0, y: -10, duration: 0.2)
+            let wait = SKAction.wait(forDuration: 0.1)
+            
+            let bounceSequence = SKAction.sequence([moveUp, moveDown, wait])
+            
+            let repeatBounce = SKAction.repeatForever(bounceSequence)
+            
+            tree.run(repeatBounce)
+        }
+        
         addChild(tree)
     }
     

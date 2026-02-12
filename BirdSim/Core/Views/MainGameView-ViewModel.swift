@@ -272,11 +272,11 @@ extension MainGameView {
             case .avoidPredator:
                 return "Danger from above! Stay alert and dodge predators to keep yourself safe."
             case .leaveIsland:
-                return "The Great Migration. Your journey here is done—it's time to fly to warmer lands."
+                return "You've completed the basics. When your journey here is done it's time to fly to warmer lands. Go to the bridge to begin the final minigame."
             case .pickupRemainingItems:
                 return "Almost there! You still need a few more materials to finish your masterpiece."
             case .retryNest:
-                return "The wind was too strong. Don't give up—gather your materials and try building again!"
+                return "The wind was too strong. Don't give up gather your materials and try building again!"
             }
         }
         

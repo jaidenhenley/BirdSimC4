@@ -25,8 +25,11 @@ extension GameScene {
             if isMPressed && !GameScene.lastMKeyState {
                 if viewModel?.isMapMode == true {
                     exitMapMode()
+                    viewModel?.mainScene?.isPaused = false
                 } else {
                     enterMapNode()
+                    viewModel?.mainScene?.isPaused = true
+
                 }
             }
             // Update the state tracker for the next frame
