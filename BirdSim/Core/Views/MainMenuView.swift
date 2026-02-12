@@ -44,6 +44,7 @@ struct MainMenuView: View {
                 .padding(.horizontal, 40)
                 .padding(.bottom, 10)
                 .disabled(!hasSavedGame)
+                .opacity(hasSavedGame ? 1.0 : 0.4)
                 
                 Button(action: onStartNewGame) {
                     Text("Start New Game")
