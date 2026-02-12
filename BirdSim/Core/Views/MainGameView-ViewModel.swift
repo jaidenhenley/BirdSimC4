@@ -50,6 +50,8 @@ extension MainGameView {
         @Published var currentBabyAmount: Int = 0
         @Published var currentDanger: Int = 0
         
+        @Published var collectedItemsArray: [ImageResource] = []
+        
         @Published var tutorialIsOn: Bool = true
         
         @Published var inventoryFullOnce: Bool = false
@@ -244,27 +246,62 @@ extension MainGameView {
         func mainInstructionText(for type: InstructionType) -> String {
             switch type {
             case .flight:
-                return "Flight"
+                return "Spread your wings! Use the joystick to fly around and explore the island."
             case .mapView:
-                return "Map View"
+                return "Keep your bearings. This view helps you track your territory and find resources."
             case .hunger:
-                return "Hunger"
+                return "Don't starve! Keep an eye on your hunger bar and find food before your energy runs out."
             case .collectItem:
-                return "Collect Item"
+                return "Foraging: Tap on sticks, leaves, and webs to gather materials for your nest."
             case .nestBuilding:
-                return "Nest Building"
+                return "Home sweet home. Bring your collected items back to the nest site to begin building."
             case .mateFinding:
-                return "Mate Finding"
+                return "The season is here! Search the island to find a mate and start your family."
             case .feedBaby:
-                return "Feed Baby"
+                return "Hungry hatchlings! Feed your baby twice to help it grow up and leave the nest."
             case .avoidPredator:
-                return "Avoid Predator"
+                return "Danger from above! Stay alert and dodge predators to keep yourself safe."
             case .leaveIsland:
-                return "Leave Island"
+                return "The Great Migration. Your journey here is done—it's time to fly to warmer lands."
             case .pickupRemainingItems:
-                return "Pickup Remaining Items"
+                return "Almost there! You still need a few more materials to finish your masterpiece."
             case .retryNest:
-                return "Retry Nest"
+                return "The wind was too strong. Don't give up—gather your materials and try building again!"
+            }
+        }
+        
+        func mainInstructionImage(for type: InstructionType) -> [ImageResource] {
+            switch type {
+            case .flight:           return [.birdFlyingOpen]
+            case .mapView:          return [.mapLand]
+            case .hunger:           return [.hungerBarWord]
+            case .nestBuilding:     return [.tree1]
+            case .retryNest:        return [.nest]
+            case .mateFinding:      return [.Predator.maleBird]
+            case .feedBaby:         return [.babyBirdNest]
+            case .avoidPredator:    return [.Predator.predator]
+            case .leaveIsland:      return [.bridge]
+                
+            case .collectItem, .pickupRemainingItems:
+                let allItems: [ImageResource] = [.dandelion, .stick, .spiderweb, .leaf]
+                
+                let remaining = allItems.filter { item in
+                    // 1. Manually map each resource to its inventory key
+                    let inventoryKey: String
+                    switch item {
+                    case .dandelion: inventoryKey = "dandelion"
+                    case .stick:     inventoryKey = "stick"
+                    case .spiderweb: inventoryKey = "spiderweb"
+                    case .leaf:      inventoryKey = "leaf"
+                    default:         inventoryKey = ""
+                    }
+                    
+                    // 2. Only keep the item if the count in inventory is 0
+                    let count = self.inventory[inventoryKey] ?? 0
+                    return count == 0
+                }
+                
+                return remaining.isEmpty ? [.nest] : remaining
             }
         }
         
@@ -716,3 +753,5 @@ extension MainGameView: GameDelegate {
     }
 }
 
+
+extension ImageResource: Equatable {}
