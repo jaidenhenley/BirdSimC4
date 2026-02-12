@@ -17,14 +17,22 @@ struct MainOnboardingView: View {
     var body: some View {
         VStack(spacing: 24) {
             // Header
-            Text("Instructions")
-                .font(.system(.title, design: .rounded)).bold()
-                .padding(.top)
+            VStack(spacing: 8) {
+                Text("Instructions")
+                    .font(.system(.title, design: .rounded))
+                    .bold()
+                
+                // Visual separator for better hierarchy
+                Capsule()
+                    .fill(Color.secondary.opacity(0.3))
+                    .frame(width: 40, height: 4)
+            }
             
-            // Text Content
+            // Instruction Content
             Text(viewModel.mainInstructionText(for: type))
                 .font(.system(.body, design: .rounded))
                 .multilineTextAlignment(.center)
+                .lineSpacing(4)
                 .padding(.horizontal)
                 .fixedSize(horizontal: false, vertical: true)
             

@@ -26,7 +26,19 @@ extension MainGameView {
         @Published var isMapMode: Bool = false
         @Published var mainScene: GameScene?
         @Published var hunger = 1
-        @Published var predatorProximitySegments: Int = 0
+        @Published var predatorProximitySegments: Int = 0 {
+            didSet {
+                // Use existing instruction system to show predator tips once
+                guard tutorialIsOn else { return }
+                if predatorProximitySegments >= 2,
+                   !shownInstructionTypes.contains(.avoidPredator),
+                   !showMainInstructionSheet,
+                   !showMiniGameSheet {
+                    showMainGameInstructions(type: .avoidPredator)
+                    hasShownPredatorInstruction = true
+                }
+            }
+        }
         @Published var showInventory: Bool = false
         @Published var inventory: [String: Int] = ["stick": 0, "leaf": 0, "spiderweb": 0, "dandelion": 0]
         @Published var collectedItems: Set<String> = [] { didSet { scheduleSave() } }
@@ -44,9 +56,13 @@ extension MainGameView {
         @Published var pickedUpOnce: Bool = false
         @Published var fedBabyOnce: Bool = false
         
+        @Published var hasShownPredatorInstruction: Bool = false
+        @Published var shownInstructionTypes: Set<InstructionType> = []
+
         // SwiftData context & model
         private var modelContext: ModelContext?
         private var gameState: GameState?
+        private var gameSettings: GameSettings?
         private var cancellables = Set<AnyCancellable>()
         private var saveWorkItem: DispatchWorkItem?
         
@@ -132,9 +148,34 @@ extension MainGameView {
         
         // 'startAction' should unpause/start gameplay; 'cancelAction' should return to the main world.
         func showMainGameInstructions(type: InstructionType) {
+            guard tutorialIsOn else { return }
+            // Avoid duplicates or conflicts with other sheets
+            if shownInstructionTypes.contains(type) || showMainInstructionSheet || showMiniGameSheet { return }
             joystickVelocity = .zero
+            controlsAreVisable = false
+            mapIsVisable = false
             pendingInstructionType = type
             showMainInstructionSheet = true
+            // Pause the main world while instructions are visible
+            if let scene = mainScene {
+                scene.isPaused = true
+                scene.isUserInteractionEnabled = false
+                scene.speed = 0.0
+                scene.physicsWorld.speed = 0.0
+            }
+            // Mark as shown so we don't show this instruction type again
+            shownInstructionTypes.insert(type)
+        }
+        
+        func resumeAfterMainInstruction() {
+            if let scene = mainScene {
+                scene.isPaused = false
+                scene.isUserInteractionEnabled = true
+                scene.speed = 1.0
+                scene.physicsWorld.speed = 1.0
+            }
+            controlsAreVisable = true
+            mapIsVisable = true
         }
         
         func delayedMainInstructions(type: InstructionType) {
@@ -488,6 +529,20 @@ extension MainGameView {
                 self.gameState = gs
                 try? context.save()
             }
+            
+            // Fetch or create GameSettings and map tutorial flag
+            if let existingSettings = try? context.fetch(FetchDescriptor<GameSettings>()).first {
+                self.gameSettings = existingSettings
+            } else {
+                let settings = GameSettings(soundOn: true, soundVolume: 0.8, hapticsOn: true, tutorialOn: true)
+                context.insert(settings)
+                self.gameSettings = settings
+                try? context.save()
+            }
+            // Initialize tutorial flag from persisted settings
+            if let settings = self.gameSettings {
+                self.tutorialIsOn = settings.tutorialOn
+            }
 
             if let gs = gameState {
                 mapFromModel(gs)
@@ -548,7 +603,14 @@ extension MainGameView {
                 .sink { [weak self] _ in self?.scheduleSave() }
                 .store(in: &cancellables)
             
-            // REMOVED: $userFedBabyCount, $babyPosition, $babySpawnDate
+            $tutorialIsOn
+                .sink { [weak self] newValue in
+                    guard let self else { return }
+                    self.gameSettings?.tutorialOn = newValue
+                    do { try self.modelContext?.save() } catch { print("Failed to save settings: \(error)") }
+                }
+                .store(in: &cancellables)
+            
         }
 
         deinit {

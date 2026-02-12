@@ -20,6 +20,7 @@ class PredatorGame: SKScene {
     private var dangerZones: [SKSpriteNode] = []
     private var isResolved = false
     private var timeLeft = 10
+    private var gameStarted: Bool = false
 
     override func didMove(to view: SKView) {
         HapticManager.shared.prepare()
@@ -34,7 +35,9 @@ class PredatorGame: SKScene {
     // MARK: - Input Handling
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        attemptResolve()
+        if gameStarted {
+            attemptResolve()
+        }
     }
 
     override func update(_ currentTime: TimeInterval) {
