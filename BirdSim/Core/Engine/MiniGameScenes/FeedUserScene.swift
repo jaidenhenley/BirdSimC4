@@ -195,13 +195,23 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         meterFill.path = CGPath(rect: CGRect(x: 0, y: -10, width: 0.1, height: 20), transform: nil)
         addChild(meterFill)
     }
-
     private func updateMeter() {
         let p = min(max(fullness / maxFullness, 0), 1.0)
-        meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: 200 * p, height: 20), cornerWidth: 5, cornerHeight: 5, transform: nil)
-        if fullness >= maxFullness { viewModel?.userScore += 1; returnToMap() }
+        meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: 200 * p, height: 20),
+                                cornerWidth: 5, cornerHeight: 5, transform: nil)
+        
+        if fullness >= maxFullness {
+            viewModel?.userScore += 1
+            
+            if viewModel?.tutorialIsOn == true {
+                // This triggers the UI logic in your ViewModel
+                viewModel?.showMainGameInstructions(type: .collectItem)
+            }
+            
+            // Return to the map AFTER setting up the instruction state
+            returnToMap()
+        }
     }
-
     func spawnFallingShape() {
         let isGood = Int.random(in: 0...2) != 2
         let node = isGood ? SKShapeNode(circleOfRadius: 20) : SKShapeNode(rectOf: CGSize(width: 40, height: 40), cornerRadius: 4)
@@ -216,6 +226,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     func returnToMap() {
         motionManager.stopAccelerometerUpdates()
+        viewModel?.mapIsVisable = true
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
     }

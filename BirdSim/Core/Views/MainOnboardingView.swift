@@ -13,6 +13,7 @@ struct MainOnboardingView: View {
     
     let type: MainGameView.ViewModel.InstructionType
     
+    
     var body: some View {
         VStack(spacing: 24) {
             // Header
@@ -33,32 +34,46 @@ struct MainOnboardingView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .padding(.horizontal)
-                .fixedSize(horizontal: false, vertical: true) // Prevents text clipping
+                .fixedSize(horizontal: false, vertical: true)
+            
+            // Image Gallery Logic
+            let resources = viewModel.mainInstructionImage(for: type)
+            
+            HStack(spacing: 12) {
+                ForEach(0..<resources.count, id: \.self) { index in
+                    // The actual image
+                    Image(resources[index])
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: resources.count > 1 ? 100 : 180)
+                        .frame(maxHeight: 120)
+                    
+                    // Optional: Add a "+" sign between multiple images
+                    if index < resources.count - 1 {
+                        Image(systemName: "plus")
+                            .font(.title2.bold())
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding()
             
             Spacer()
-
-            // Actions
-            VStack(spacing: 12) {
-                Button(action: handleDismiss) {
-                    Text("Got it!")
-                        .font(.system(.headline, design: .rounded))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue) // Different color to distinguish from "Game Start"
-                .keyboardShortcut(.space, modifiers: [])
-                .keyboardShortcut(.defaultAction)
+            
+            // Action Button
+            Button {
+                dismiss()
+            } label: {
+                Text("Start")
+                    .font(.system(.headline, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
             }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.space, modifiers: [])
         }
         .padding(30)
         .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-    }
-    
-    private func handleDismiss() {
-        // Satisfying haptic click
-        HapticManager.shared.trigger(.light)
-        dismiss()
+        .presentationDragIndicator(.hidden)
     }
 }
