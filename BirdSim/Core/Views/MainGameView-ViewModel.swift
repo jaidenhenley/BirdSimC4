@@ -50,6 +50,8 @@ extension MainGameView {
         @Published var currentBabyAmount: Int = 0
         @Published var currentDanger: Int = 0
         
+        @Published var collectedItemsArray: [ImageResource] = []
+        
         @Published var tutorialIsOn: Bool = true
         
         @Published var inventoryFullOnce: Bool = false
@@ -268,31 +270,38 @@ extension MainGameView {
             }
         }
         
-        
         func mainInstructionImage(for type: InstructionType) -> [ImageResource] {
             switch type {
-            case .flight:
-                    [.birdFlyingOpen]
-            case .mapView:
-                   [.mapLand]
-            case .hunger:
-                    [.hungerBarWord]
-            case .collectItem:
-                [.dandelion,.stick,.spiderweb,.leaf]
-            case .nestBuilding:
-                    [.tree1]
-            case .retryNest:
-                    [.nest]
-            case .mateFinding:
-                    [.Predator.maleBird]
-            case .feedBaby:
-                    [.babyBirdNest]
-            case .avoidPredator:
-                    [.Predator.predator]
-            case .leaveIsland:
-                    [.bridge]
-            case .pickupRemainingItems:
-                    [.dandelion]
+            case .flight:           return [.birdFlyingOpen]
+            case .mapView:          return [.mapLand]
+            case .hunger:           return [.hungerBarWord]
+            case .nestBuilding:     return [.tree1]
+            case .retryNest:        return [.nest]
+            case .mateFinding:      return [.Predator.maleBird]
+            case .feedBaby:         return [.babyBirdNest]
+            case .avoidPredator:    return [.Predator.predator]
+            case .leaveIsland:      return [.bridge]
+                
+            case .collectItem, .pickupRemainingItems:
+                let allItems: [ImageResource] = [.dandelion, .stick, .spiderweb, .leaf]
+                
+                let remaining = allItems.filter { item in
+                    // 1. Manually map each resource to its inventory key
+                    let inventoryKey: String
+                    switch item {
+                    case .dandelion: inventoryKey = "dandelion"
+                    case .stick:     inventoryKey = "stick"
+                    case .spiderweb: inventoryKey = "spiderweb"
+                    case .leaf:      inventoryKey = "leaf"
+                    default:         inventoryKey = ""
+                    }
+                    
+                    // 2. Only keep the item if the count in inventory is 0
+                    let count = self.inventory[inventoryKey] ?? 0
+                    return count == 0
+                }
+                
+                return remaining.isEmpty ? [.nest] : remaining
             }
         }
         
@@ -744,3 +753,5 @@ extension MainGameView: GameDelegate {
     }
 }
 
+
+extension ImageResource: Equatable {}
