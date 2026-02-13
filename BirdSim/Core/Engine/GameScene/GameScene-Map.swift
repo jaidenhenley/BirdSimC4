@@ -23,17 +23,30 @@ extension GameScene {
             
             // Only trigger the toggle when the key is first pressed (transition from false to true)
             if isMPressed && !GameScene.lastMKeyState {
-                if viewModel?.isMapMode == true {
-                    exitMapMode()
-                    viewModel?.mainScene?.isPaused = false
-                } else {
-                    enterMapNode()
-                    viewModel?.mainScene?.isPaused = true
-
-                }
+                toggleMapMode()
             }
             // Update the state tracker for the next frame
             GameScene.lastMKeyState = isMPressed
+        }
+    }
+
+    func installKeyboardMapHandler() {
+        guard let keyboard = GCKeyboard.coalesced?.keyboardInput else { return }
+        guard let mKey = keyboard.button(forKeyCode: .keyM) else { return }
+
+        mKey.pressedChangedHandler = { [weak self] _, _, pressed in
+            if pressed && !GameScene.lastMKeyState {
+                self?.toggleMapMode()
+            }
+            GameScene.lastMKeyState = pressed
+        }
+    }
+
+    private func toggleMapMode() {
+        if viewModel?.isMapMode == true {
+            exitMapMode()
+        } else {
+            enterMapNode()
         }
     }
 
@@ -96,7 +109,8 @@ extension GameScene {
         viewModel?.controlsAreVisable = false
         viewModel?.joystickVelocity = .zero
 
-        
+        GameScene.lastMKeyState = false
+
         HapticManager.shared.trigger(.light)
         
         guard let background = childNode(withName: "background") else {
@@ -108,20 +122,35 @@ extension GameScene {
         self.camera?.position = background.position
         zoomToFitMap()
         
+        pauseNPC(isPaused: true)
         showPlayerMarker()
     }
     
     func exitMapMode() {
         viewModel?.isMapMode = false
         viewModel?.controlsAreVisable = true
+
+        GameScene.lastMKeyState = false
         
         HapticManager.shared.trigger(.light)
+
+        pauseNPC(isPaused: false)
         
         childNode(withName: "mapMarker")?.removeFromParent()
         
         if let player = childNode(withName: "userBird") {
             self.camera?.position = player.position
             self.camera?.setScale(1.25)
+        }
+    }
+
+    private func pauseNPC(isPaused: Bool) {
+        enumerateChildNodes(withName: "//\(predatorMini)") { node, _ in
+            node.isPaused = isPaused
+        }
+        
+        enumerateChildNodes(withName: "//MaleBird") { node, _ in
+            node.isPaused = isPaused
         }
     }
     
