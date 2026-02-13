@@ -1,4 +1,4 @@
-//
+import SpriteKit//
 //  GameScene-Item.swift
 //  BirdSim
 //
@@ -53,7 +53,8 @@ extension GameScene {
         ]))
 
         // 5. Logic and Respawn
-        scheduleRespawn(for: rawName)
+        let pickupPosition = node.position
+        scheduleRespawn(for: rawName, at: pickupPosition)
         SoundManager.shared.playEffect(.alert)
 
         print("Successfully added \(itemName) to collected items.")
@@ -75,12 +76,11 @@ extension GameScene {
         
         item.run(repeatBounce)
         
-        
         self.addChild(item)
     }
     
     
-    func scheduleRespawn(for itemName: String) {
+    func scheduleRespawn(for itemName: String, at: CGPoint) {
         print("⏰ Respawn timer started for: \(itemName). Will appear in 30s.")
         
         // Create a sequence of 5-second waits to print progress
@@ -96,18 +96,9 @@ extension GameScene {
         
         let spawn = SKAction.run { [weak self] in
             guard let self = self, let player = self.childNode(withName: "userBird") else { return }
-            
-            // DEBUG: Instead of totally random, spawn it within 500 pixels of the player
-            // so you can actually see it happen!
-            let randomX = player.position.x + CGFloat.random(in: -500...500)
-            let randomY = player.position.y + CGFloat.random(in: -500...500)
-            let spawnPoint = CGPoint(x: randomX, y: randomY)
-            
-            self.spawnItem(at: spawnPoint, type: itemName)
-            
-            
-            print("✅ SUCCESS: \(itemName) respawned at \(spawnPoint)")
-        }
+            // respawns item at the exact spot it was picked up at
+            self.spawnItem(at: CGPoint(x: at.x, y: at.y), type: itemName)
+            }
         
         self.run(SKAction.sequence([segment, spawn]))
     }

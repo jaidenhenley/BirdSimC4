@@ -15,7 +15,7 @@ struct MainOnboardingView: View {
     
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             // Header
             VStack(spacing: 8) {
                 Text("Instructions")
@@ -39,26 +39,46 @@ struct MainOnboardingView: View {
             // Image Gallery Logic
             let resources = viewModel.mainInstructionImage(for: type)
             
-            HStack(spacing: 12) {
-                ForEach(0..<resources.count, id: \.self) { index in
-                    // The actual image
-                    Image(resources[index])
+            GeometryReader { proxy in
+                let totalWidth = proxy.size.width
+                let spacing: CGFloat = 12
+                let hasMultiple = resources.count > 1
+                let maxCardWidth: CGFloat = hasMultiple ? 150 : 190
+                let cardWidth = min(maxCardWidth, totalWidth - 24)
+                let heightScale: CGFloat = hasMultiple ? 0.72 : 0.58
+                
+                if hasMultiple {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: spacing) {
+                            ForEach(0..<resources.count, id: \.self) { index in
+                                Image(resources[index])
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: cardWidth, height: cardWidth * heightScale)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 4)
+                                
+                                if index < resources.count - 1 {
+                                    Image(systemName: "plus")
+                                        .font(.title3.weight(.bold))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                    }
+                } else if let imageName = resources.first {
+                    Image(imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(maxWidth: resources.count > 1 ? 100 : 180)
-                        .frame(maxHeight: 120)
-                    
-                    // Optional: Add a "+" sign between multiple images
-                    if index < resources.count - 1 {
-                        Image(systemName: "plus")
-                            .font(.title2.bold())
-                            .foregroundColor(.secondary)
-                    }
+                        .frame(width: cardWidth, height: cardWidth * heightScale)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 4)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .padding()
+            .frame(height: resources.count > 1 ? 130 : 150)
             
-            Spacer()
             
             // Action Button
             Button {

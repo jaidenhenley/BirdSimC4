@@ -125,6 +125,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // Start background music if it isn't already playing
         SoundManager.shared.startBackgroundMusic(track: .mainMap)
+        installKeyboardMapHandler()
         
         self.physicsWorld.contactDelegate = self
         // Setup camera first
@@ -220,6 +221,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // - UI message updates
     override func update(_ currentTime: TimeInterval) {
         handleKeyboardMapInput()
+        if viewModel?.isMapMode == true { return }
+
         // 1. Reset proximity booleans at the start of every frame
         buildNestMiniIsInRange = false
         feedUserBirdMiniIsInRange = false
