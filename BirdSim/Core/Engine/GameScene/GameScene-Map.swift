@@ -87,7 +87,7 @@ extension GameScene {
         let scaleY = view.bounds.height / background.size.height
         
         // Calculate the zoom level to fit the entire background sprite
-        let zoom = min(scaleX, scaleY)
+        let zoom = max(scaleX, scaleY)
         self.camera?.setScale(1 / zoom)
     }
     

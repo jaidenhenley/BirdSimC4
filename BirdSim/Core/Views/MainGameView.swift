@@ -128,6 +128,7 @@ struct MainGameView: View {
                 viewModel.resumeAfterMainInstruction()
             }) {
                 MainOnboardingView(viewModel: viewModel, type: viewModel.pendingInstructionType!)
+                    .presentationDragIndicator(.hidden)
             }
             
             
@@ -160,4 +161,3 @@ struct MainGameView: View {
         return scene
     }
 }
-

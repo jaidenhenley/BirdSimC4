@@ -284,7 +284,7 @@ extension MainGameView {
             switch type {
             case .flight:           return [.birdFlyingOpen]
             case .mapView:          return [.mapLand]
-            case .hunger:           return [.hungerBarWord]
+            case .hunger:           return [.caterpiller]
             case .nestBuilding:     return [.tree1]
             case .retryNest:        return [.nest]
             case .mateFinding:      return [.Predator.maleBird]
