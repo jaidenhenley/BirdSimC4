@@ -219,6 +219,9 @@ extension GameScene {
     func attemptInteract() {
         guard let viewModel = viewModel, let player = self.childNode(withName: "userBird") else { return }
         
+        
+        
+        
         // Flight check: Grounded only
         guard !viewModel.isFlying else { return }
 
@@ -276,6 +279,7 @@ extension GameScene {
                 return
             }
         }
+        
 
         // 4) Item Pickup
         let itemsToPick = ["stick", "leaf", "spiderweb", "dandelion"]

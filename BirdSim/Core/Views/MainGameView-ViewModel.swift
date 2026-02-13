@@ -734,6 +734,7 @@ extension MainGameView {
             
             if tutorialIsOn == true {
                 showMainGameInstructions(type: .leaveIsland)
+                tutorialIsOn = false
             }
             
             // 2. Clear the nest position

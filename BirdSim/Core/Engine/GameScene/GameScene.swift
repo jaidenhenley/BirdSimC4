@@ -417,10 +417,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     feedUserBirdMiniIsInRange = true
                     viewModel?.currentMessage = "Tap to feed"
                     
-                } else if checkDistance(to: leaveIslandMini) {
-                    leaveIslandMiniIsInRange = true
-                    viewModel?.currentMessage = "Tap to leave island"
-                    
                 } else {
                     // Secondary: Item Pickups
                     var closestItem: SKNode?
@@ -605,7 +601,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         let dx = player.position.x - node.position.x
                         let dy = player.position.y - node.position.y
                         let distance = sqrt(dx*dx + dy*dy)
-                        if distance > 220 { continue }
+                        if distance > 220  { continue }
                     }
                     transitionToLeaveIslandMini()
                     viewModel?.controlsAreVisable = false
@@ -693,6 +689,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
 } // End of GameScene Class
+
 
 
 

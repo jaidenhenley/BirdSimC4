@@ -24,7 +24,7 @@ struct EndGameView: View {
                     
                     Text(viewModel.currentDeathMessage)
                         .font(.system(.headline, design: .rounded))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white)
                 }
 
                 Button(action: {
