@@ -83,7 +83,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var feedBabyBirdMiniIsInRange: Bool = false
     var leaveIslandMiniIsInRange: Bool = false
     var predatorHit: Bool = false
-    let desiredPredatorCount: Int = 4
+    let desiredPredatorCount: Int = 10
 
     var predatorCooldownEnd: Date?
 

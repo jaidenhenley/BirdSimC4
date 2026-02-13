@@ -59,7 +59,16 @@ extension GameScene {
         let position = CGPoint(x: randomX, y: randomY)
 
         occupiedPredatorSpawns.insert(index)
-        setupPredator(at: position, spawnIndex: index, assetName: "Predator/Predator")
+
+        // 1. Roll a "dice" to decide movement type (50% chance for vertical)
+        let shouldMoveVertical = Bool.random()
+
+        // 2. Pass that random result into your setup function
+        setupPredator(at: position,
+                      spawnIndex: index,
+                      assetName: "Predator/Predator",
+                      isVertical: shouldMoveVertical)
+
         return true
     }
     
@@ -88,7 +97,7 @@ extension GameScene {
         return closest
     }
     
-    func setupPredator(at position: CGPoint? = nil, spawnIndex: Int? = nil, assetName: String) {
+    func setupPredator(at position: CGPoint? = nil, spawnIndex: Int? = nil, assetName: String, isVertical: Bool) {
         let predator = SKSpriteNode(imageNamed: assetName)
         predator.position = position ?? CGPoint(x: 120, y: 150)
         predator.zPosition = 4
@@ -96,20 +105,27 @@ extension GameScene {
         predator.name = predatorMini
 
         if predator.userData == nil { predator.userData = [:] }
-        if let idx = spawnIndex {
-            predator.userData?["spawnIndex"] = idx
-        }
+        
+        // Store the movement type so the update function knows what to check
+        predator.userData?["isVertical"] = isVertical
         predator.userData?["lastX"] = NSNumber(value: Double(predator.position.x))
+        predator.userData?["lastY"] = NSNumber(value: Double(predator.position.y))
 
-        // Face right initially
-        predator.xScale = abs(predator.xScale)
-        predator.zRotation = -(.pi / 2)
+        let moveDist: CGFloat = 4000
+        let duration: TimeInterval = 12
 
-        // Simple back-and-forth motion. Facing is handled per-frame by `updatePredatorFacingDirections()`.
-        let moveRight = SKAction.moveBy(x: 4000, y: 0, duration: 12)
-        let moveLeft  = moveRight.reversed()
-        let sequence = SKAction.sequence([moveRight, moveLeft])
-        predator.run(SKAction.repeatForever(sequence))
+        if isVertical {
+            // UP AND DOWN
+            let moveUp = SKAction.moveBy(x: 0, y: moveDist, duration: duration)
+            let moveDown = moveUp.reversed()
+            predator.run(SKAction.repeatForever(SKAction.sequence([moveUp, moveDown])))
+        } else {
+            // LEFT AND RIGHT
+            let moveRight = SKAction.moveBy(x: moveDist, y: 0, duration: duration)
+            let moveLeft = moveRight.reversed()
+            predator.run(SKAction.repeatForever(SKAction.sequence([moveRight, moveLeft])))
+        }
+
         addChild(predator)
     }
     
@@ -132,23 +148,31 @@ extension GameScene {
     func updatePredatorFacingDirections() {
         enumerateChildNodes(withName: "//\(predatorMini)") { node, _ in
             guard let predator = node as? SKSpriteNode else { return }
+            let isVertical = predator.userData?["isVertical"] as? Bool ?? false
 
-            if predator.userData == nil { predator.userData = [:] }
+            if isVertical {
+                let currentY = predator.position.y
+                let lastY = (predator.userData?["lastY"] as? NSNumber)?.doubleValue ?? Double(currentY)
+                let dy = currentY - CGFloat(lastY)
 
-            let currentX = predator.position.x
-            let lastXNumber = predator.userData?["lastX"] as? NSNumber
-            let lastX = lastXNumber.map { CGFloat($0.doubleValue) } ?? currentX
+                if dy > 0.5 {
+                    predator.zRotation = 0 // Facing Up
+                } else if dy < -0.5 {
+                    predator.zRotation = .pi // Facing Down
+                }
+                predator.userData?["lastY"] = NSNumber(value: Double(currentY))
+            } else {
+                let currentX = predator.position.x
+                let lastX = (predator.userData?["lastX"] as? NSNumber)?.doubleValue ?? Double(currentX)
+                let dx = currentX - CGFloat(lastX)
 
-            let dx = currentX - lastX
- 
-            // Small threshold prevents rapid flipping from tiny jitter
-            if dx > 0.5 {
-                predator.zRotation = -(.pi / 2)
-            } else if dx < -0.5 {
-                predator.zRotation = .pi / 2
+                if dx > 0.5 {
+                    predator.zRotation = -(.pi / 2) // Facing Right
+                } else if dx < -0.5 {
+                    predator.zRotation = .pi / 2  // Facing Left
+                }
+                predator.userData?["lastX"] = NSNumber(value: Double(currentX))
             }
-
-            predator.userData?["lastX"] = NSNumber(value: Double(currentX))
         }
     }
     
