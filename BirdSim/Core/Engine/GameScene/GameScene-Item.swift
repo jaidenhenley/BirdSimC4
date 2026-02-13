@@ -64,6 +64,17 @@ extension GameScene {
         item.position = position
         item.name = type
         item.setScale(0.5)
+            
+        let moveUp = SKAction.moveBy(x: 0, y: 10, duration: 0.2)
+        let moveDown = SKAction.moveBy(x: 0, y: -10, duration: 0.2)
+        let wait = SKAction.wait(forDuration: 0.1)
+        
+        let bounceSequence = SKAction.sequence([moveUp, moveDown, wait])
+        
+        let repeatBounce = SKAction.repeatForever(bounceSequence)
+        
+        item.run(repeatBounce)
+        
         
         self.addChild(item)
     }

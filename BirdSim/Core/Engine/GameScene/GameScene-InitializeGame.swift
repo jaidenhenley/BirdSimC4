@@ -16,9 +16,7 @@ extension GameScene {
         self.removeAllChildren()
 
         
-        if viewModel?.tutorialIsOn == true {
-            viewModel?.showMainGameInstructions(type: .hunger)
-        }
+     
         
         if resetState {
             viewModel?.controlsAreVisable = true
@@ -34,12 +32,18 @@ extension GameScene {
             viewModel?.showGameWin = false
             viewModel?.clearNestAndBabyState()
             babySpawnTime = nil
-                        
         }
         
         
+        if viewModel?.tutorialIsOn == true {
+            viewModel?.showMainGameInstructions(type: .hunger)
+            setupUserBird(in: true)
+            viewModel?.hunger = 2
+        } else {
+            setupUserBird(in: false)
+        }
+        
         setupBackground()
-        setupUserBird()
         self.predatorHit = false
         self.predatorCooldownEnd = nil
         occupiedPredatorSpawns.removeAll()
@@ -234,7 +238,21 @@ extension GameScene {
     func setupBuildNestTree(in position: CGPoint) {
         let tree = SKSpriteNode(imageNamed: "tree1")
         tree.position = position
-        tree.name = buildNestMini
+        tree.name = "\(buildNestMini)_\(UUID().uuidString)"
+        
+        
+        if viewModel?.tutorialIsOn == true {
+            let moveUp = SKAction.moveBy(x: 0, y: 10, duration: 0.2)
+            let moveDown = SKAction.moveBy(x: 0, y: -10, duration: 0.2)
+            let wait = SKAction.wait(forDuration: 0.1)
+            
+            let bounceSequence = SKAction.sequence([moveUp, moveDown, wait])
+            
+            let repeatBounce = SKAction.repeatForever(bounceSequence)
+            
+            tree.run(repeatBounce)
+        }
+        
         addChild(tree)
     }
     

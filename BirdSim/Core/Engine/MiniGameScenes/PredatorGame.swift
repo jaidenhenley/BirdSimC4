@@ -20,7 +20,6 @@ class PredatorGame: SKScene {
     private var dangerZones: [SKSpriteNode] = []
     private var isResolved = false
     private var timeLeft = 10
-    private var gameStarted: Bool = false
 
     override func didMove(to view: SKView) {
         HapticManager.shared.prepare()
@@ -35,7 +34,7 @@ class PredatorGame: SKScene {
     // MARK: - Input Handling
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if gameStarted {
+        if viewModel?.minigameStarted == true && viewModel?.showMiniGameSheet == false {
             attemptResolve()
         }
     }
@@ -44,7 +43,9 @@ class PredatorGame: SKScene {
         // Check for Space Bar press via GameController
         if let keyboard = GCKeyboard.coalesced?.keyboardInput {
             if keyboard.button(forKeyCode: .spacebar)?.isPressed == true {
-                attemptResolve()
+                if viewModel?.minigameStarted == true && viewModel?.showMiniGameSheet == false {
+                    attemptResolve()
+                }
             }
         }
     }
@@ -210,6 +211,7 @@ class PredatorGame: SKScene {
 
     func returnToMainWorld() {
         guard let view = self.view else { return }
+        viewModel?.minigameStarted = false
         viewModel?.joystickVelocity = .zero
         viewModel?.controlsAreVisable = true
         viewModel?.mapIsVisable = true
@@ -231,3 +233,4 @@ class PredatorGame: SKScene {
         viewModel?.currentDeathMessage = message
     }
 }
+
