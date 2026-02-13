@@ -238,7 +238,7 @@ extension GameScene {
     func setupBuildNestTree(in position: CGPoint) {
         let tree = SKSpriteNode(imageNamed: "tree1")
         tree.position = position
-        tree.name = buildNestMini
+        tree.name = "\(buildNestMini)_\(UUID().uuidString)"
         
         
         if viewModel?.tutorialIsOn == true {

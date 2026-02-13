@@ -409,7 +409,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                     
                 // Priority 3: Other Mini-games (Stays the same)
-                } else if checkDistance(to: buildNestMini) {
+                } else if checkDistanceToBuildNestTree() {
                     buildNestMiniIsInRange = true
                     viewModel?.currentMessage = "Tap to build a nest"
                     
@@ -512,7 +512,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
                 
                 // Build Nest Logic
-                if (node.name == buildNestMini || node.name == "final_nest") {
+                if ((node.name?.hasPrefix(buildNestMini) ?? false) || node.name == "final_nest") {
                     if let player = self.childNode(withName: "userBird") {
                         let dx = player.position.x - node.position.x
                         let dy = player.position.y - node.position.y
@@ -534,7 +534,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                        items.contains("dandelion") {
 
                         // Prefer the tapped tree's bottom if available; otherwise fall back to nearest tree to player
-                        if node.name == self.buildNestMini {
+                        if node.name?.hasPrefix(self.buildNestMini) == true {
                             let frame = node.calculateAccumulatedFrame()
                             let bottom = CGPoint(x: frame.midX, y: frame.minY)
                             self.viewModel?.pendingNestWorldPosition = bottom
@@ -639,7 +639,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for node in children {
             guard let rawName = node.name else { continue }
             let name = rawName.lowercased()
-            let isTreeByName = name.contains("tree") || rawName == buildNestMini
+            let isTreeByName = name.contains("tree") || rawName.hasPrefix(buildNestMini)
             guard isTreeByName else { continue }
             // Use world-space position of the node's frame bottom
             let frame = node.calculateAccumulatedFrame()

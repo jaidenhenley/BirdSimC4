@@ -57,7 +57,16 @@ extension GameScene {
         }
         nest.position = spawnPoint
         
-        addChild(nest)
+        if let anchorName = viewModel?.pendingNestAnchorTreeName,
+           let tree = childNode(withName: anchorName) {
+            // Convert world position to the tree's local space
+            let localPos = tree.convert(spawnPoint, from: self)
+            nest.position = localPos
+            tree.addChild(nest)
+        } else {
+            addChild(nest)
+        }
+
         registerActiveNest(nest)
         
         // Persist the nest position and clear the temporary pending values

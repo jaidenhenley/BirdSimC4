@@ -235,7 +235,7 @@ extension GameScene {
         var nearestNestNode: SKNode?
         var bestNestDist: CGFloat = 220
         for node in children {
-            if node.name == buildNestMini || node.name == "final_nest" {
+            if (node.name?.hasPrefix(buildNestMini) ?? false) || node.name == "final_nest" {
                 let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
                 if dist < bestNestDist {
                     bestNestDist = dist
@@ -323,6 +323,17 @@ extension GameScene {
         let moveUp = SKAction.moveBy(x: 0, y: 50, duration: 1.2)
         let fadeOut = SKAction.fadeOut(withDuration: 1.2)
         label.run(SKAction.sequence([SKAction.group([moveUp, fadeOut]), .removeFromParent()]))
+    }
+    
+    func checkDistanceToBuildNestTree(threshold: CGFloat = 200) -> Bool {
+        guard let player = self.childNode(withName: "userBird") as? SKSpriteNode else { return false }
+        for node in children {
+            if node.name?.hasPrefix(buildNestMini) == true {
+                let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
+                if dist < threshold { return true }
+            }
+        }
+        return false
     }
 }
 
