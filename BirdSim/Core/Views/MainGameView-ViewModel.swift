@@ -777,8 +777,9 @@ extension MainGameView {
                 let key = name.lowercased()
                 if inventory.keys.contains(key) {
                     inventory[key, default: 0] += 1
+                    HapticManager.shared.trigger(.soft)
                 }
-            
+
             scheduleSave()
             }
         

@@ -13,22 +13,25 @@ class HapticManager {
     // Keep generators in memory for instant response
     private let selectionFeedback = UISelectionFeedbackGenerator()
     private let notificationFeedback = UINotificationFeedbackGenerator()
+    private let softImpact = UIImpactFeedbackGenerator(style: .soft)
     private let lightImpact = UIImpactFeedbackGenerator(style: .light)
     private let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
     private let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
-    
+
     private init() {}
-    
+
     enum HapticType {
-        case light, medium, heavy, success, error, selection
+        case soft, light, medium, heavy, success, error, selection
     }
-    
+
     func trigger(_ type: HapticType) {
         // FIX: Default to TRUE if the key has never been set
         let hapticsEnabled = UserDefaults.standard.object(forKey: "haptics_enabled") as? Bool ?? true
         guard hapticsEnabled else { return }
-        
+
         switch type {
+        case .soft:
+            softImpact.impactOccurred()
         case .light:
             lightImpact.impactOccurred()
         case .medium:
@@ -42,15 +45,16 @@ class HapticManager {
         case .selection:
             selectionFeedback.selectionChanged()
         }
-        
+
         // Prepare for the next potential tap to reduce latency
         prepare()
     }
-    
+
     /// Call this when a touch starts to "wake up" the haptic engine
     func prepare() {
         selectionFeedback.prepare()
         notificationFeedback.prepare()
+        softImpact.prepare()
         lightImpact.prepare()
         mediumImpact.prepare()
         heavyImpact.prepare()

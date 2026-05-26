@@ -13,6 +13,7 @@ struct EndGameView: View {
     
     @State private var scanlineOffset: CGFloat = -200
     @State private var textGlitch = false
+    @State private var glitchTimer: Timer?
 
     var body: some View {
         ZStack {
@@ -63,9 +64,13 @@ struct EndGameView: View {
                         .padding(.horizontal, 40)
                 }
                 .onAppear {
-                    Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                    glitchTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
                         textGlitch.toggle()
                     }
+                }
+                .onDisappear {
+                    glitchTimer?.invalidate()
+                    glitchTimer = nil
                 }
 
                 // Mission Data Box
@@ -85,7 +90,7 @@ struct EndGameView: View {
 
                 // "Hard Industrial" Button
                 Button(action: {
-                    HapticManager.shared.trigger(.heavy)
+                    HapticManager.shared.trigger(.medium)
                     onExit()
                 }) {
                     ZStack {

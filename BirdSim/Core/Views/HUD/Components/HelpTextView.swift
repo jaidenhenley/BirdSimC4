@@ -12,9 +12,10 @@ struct HelpTextView: View {
     var body: some View {
         
         if viewModel.currentMessage != "" {
+            let isiPad = UIDevice.current.userInterfaceIdiom == .pad
             Text(viewModel.currentMessage)
-                .font(.system(size: 30))
-                .padding(20)
+                .font(.system(size: isiPad ? 30 : 16))
+                .padding(isiPad ? 20 : 10)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .foregroundStyle(.white.opacity(0.3))

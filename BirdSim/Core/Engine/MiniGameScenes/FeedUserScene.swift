@@ -37,6 +37,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     
     private var fullness: CGFloat = 0.0 { didSet { updateMeter() } }
     private let maxFullness: CGFloat = 50
+    private var isFinished = false
+    private var unit: CGFloat { size.height }
     let player = SKSpriteNode(imageNamed: "minigameBird")
     
     // Physics Categories
@@ -126,8 +128,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     private func setupUI() {
         modeButton.name = "ModeButton"
-        modeButton.fontSize = 20
-        modeButton.position = CGPoint(x: frame.width - 120, y: frame.height - 60)
+        modeButton.fontSize = unit * 0.05
+        modeButton.position = CGPoint(x: frame.width - size.width * 0.15, y: frame.height - unit * 0.08)
         modeButton.zPosition = 100
         updateModeButtonText()
         addChild(modeButton)
@@ -136,8 +138,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         
         let back = SKLabelNode(text: "← Back")
         back.name = "Back Button"
-        back.position = CGPoint(x: 80, y: frame.height - 60)
-        back.fontSize = 20
+        back.position = CGPoint(x: size.width * 0.1, y: frame.height - unit * 0.08)
+        back.fontSize = unit * 0.05
         addChild(back)
     }
 
@@ -149,8 +151,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     // --- REMAINDER OF SUPPORT METHODS (Unchanged) ---
     private func setupPlayer() {
-        player.size = CGSize(width: 250, height: 250)
-        player.position = CGPoint(x: frame.midX, y: 100)
+        player.size = CGSize(width: unit * 0.24, height: unit * 0.24)
+        player.position = CGPoint(x: frame.midX, y: unit * 0.1)
         player.name = "player"
         player.physicsBody = SKPhysicsBody(rectangleOf: player.frame.size)
         player.physicsBody?.isDynamic = false
@@ -198,22 +200,28 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func setupMeter() {
-        let bg = SKShapeNode(rectOf: CGSize(width: 200, height: 20), cornerRadius: 5)
-        bg.position = CGPoint(x: frame.midX, y: frame.height - 60)
+        let mw = size.width * 0.25
+        let mh = unit * 0.04
+        let my = frame.height - unit * 0.08
+        let bg = SKShapeNode(rectOf: CGSize(width: mw, height: mh), cornerRadius: 5)
+        bg.position = CGPoint(x: frame.midX, y: my)
         bg.fillColor = .black
         addChild(bg)
-        
+
         meterFill.fillColor = .green
-        meterFill.position = CGPoint(x: frame.midX - 100, y: frame.height - 60)
-        meterFill.path = CGPath(rect: CGRect(x: 0, y: -10, width: 0.1, height: 20), transform: nil)
+        meterFill.position = CGPoint(x: frame.midX - mw / 2, y: my)
+        meterFill.path = CGPath(rect: CGRect(x: 0, y: -mh / 2, width: 0.1, height: mh), transform: nil)
         addChild(meterFill)
     }
     private func updateMeter() {
+        let mw = size.width * 0.25
+        let mh = unit * 0.04
         let p = min(max(fullness / maxFullness, 0), 1.0)
-        meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -10, width: 200 * p, height: 20),
+        meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -mh / 2, width: mw * p, height: mh),
                                 cornerWidth: 5, cornerHeight: 5, transform: nil)
-        
-        if fullness >= maxFullness {
+
+        if fullness >= maxFullness && !isFinished {
+            isFinished = true
             viewModel?.userScore += 1
             viewModel?.hunger = 5
             disableHunger()
@@ -230,8 +238,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     func spawnFallingShape() {
         let isGood = Int.random(in: 0...2) != 2
         let node = isGood ? SKSpriteNode(imageNamed: randomGoodItem()) : SKSpriteNode(imageNamed: "spider")
-        node.size = CGSize(width: 100, height: 100)
-        node.position = CGPoint(x: CGFloat.random(in: 50...(frame.width - 50)), y: frame.height + 50)
+        node.size = CGSize(width: unit * 0.1, height: unit * 0.1)
+        node.position = CGPoint(x: CGFloat.random(in: size.width * 0.05...(frame.width - size.width * 0.05)), y: frame.height + unit * 0.1)
         node.physicsBody = SKPhysicsBody(circleOfRadius: 20)
         node.physicsBody?.categoryBitMask = isGood ? goodItemCategory : badItemCategory
         node.physicsBody?.contactTestBitMask = playerCategory

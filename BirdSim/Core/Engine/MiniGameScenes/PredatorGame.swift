@@ -20,9 +20,11 @@ class PredatorGame: SKScene {
     private var isResolved = false
     private var timeLeft = 10
     
+    private var unit: CGFloat { max(size.width, size.height) }
+
     // Mini-game nodes
-    private let bar = SKSpriteNode(color: .darkGray, size: CGSize(width: 600, height: 40))
-    private let needle = SKSpriteNode(color: .white, size: CGSize(width: 8, height: 80))
+    private let bar = SKSpriteNode(color: .darkGray, size: .zero)
+    private let needle = SKSpriteNode(color: .white, size: .zero)
     private let timerLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     private let countdownLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     private let instructionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
@@ -71,9 +73,9 @@ class PredatorGame: SKScene {
         currentState = .countingDown
         instructionLabel.run(SKAction.fadeOut(withDuration: 0.3))
         
-        countdownLabel.fontSize = 80
+        countdownLabel.fontSize = unit * 0.06
         countdownLabel.fontColor = .systemYellow
-        countdownLabel.position = CGPoint(x: frame.midX, y: frame.midY + 50)
+        countdownLabel.position = CGPoint(x: frame.midX, y: frame.midY + size.height * 0.05)
         countdownLabel.zPosition = 300
         addChild(countdownLabel)
         
@@ -115,7 +117,8 @@ class PredatorGame: SKScene {
         var caught = false
         
         for zone in dangerZones {
-            let zoneWorldPos = zone.parent!.convert(zone.position, to: self)
+            guard let zoneParent = zone.parent else { continue }
+            let zoneWorldPos = zoneParent.convert(zone.position, to: self)
             let halfWidth = zone.size.width / 2
             let range = (zoneWorldPos.x - halfWidth)...(zoneWorldPos.x + halfWidth)
             
@@ -131,51 +134,53 @@ class PredatorGame: SKScene {
     // MARK: - Setup & Logic
     
     private func setupTimingBar() {
-        bar.position = CGPoint(x: frame.midX, y: frame.midY - 50)
+        bar.size = CGSize(width: size.width * 0.55, height: unit * 0.03)
+        bar.position = CGPoint(x: frame.midX, y: frame.midY - size.height * 0.05)
         bar.zPosition = 1
         addChild(bar)
-        
+
         let zoneWidth = bar.size.width / 6
         let zoneTypes = ["danger", "safe", "danger", "safe", "danger", "safe"].shuffled()
-        
+
         for i in 0..<6 {
             let type = zoneTypes[i]
             let isDanger = type == "danger"
             let zone = SKSpriteNode(color: isDanger ? .systemRed : .systemGreen,
-                                    size: CGSize(width: zoneWidth - 4, height: 40))
-            
+                                    size: CGSize(width: zoneWidth - 4, height: bar.size.height))
+
             let xPos = (-bar.size.width / 2) + (CGFloat(i) * zoneWidth) + (zoneWidth / 2)
             zone.position = CGPoint(x: xPos, y: 0)
             zone.zPosition = 2
             bar.addChild(zone)
-            
+
             if isDanger {
                 dangerZones.append(zone)
                 let miniPredator = SKSpriteNode(imageNamed: "Predator/PredatorHead")
-                miniPredator.size = CGSize(width: 70, height: 70)
-                miniPredator.position = CGPoint(x: xPos, y: 70)
+                miniPredator.size = CGSize(width: unit * 0.05, height: unit * 0.05)
+                miniPredator.position = CGPoint(x: xPos, y: unit * 0.05)
                 miniPredator.zPosition = 3
                 bar.addChild(miniPredator)
             }
         }
-        
+
+        needle.size = CGSize(width: size.width * 0.006, height: unit * 0.06)
         needle.position = CGPoint(x: bar.frame.minX, y: bar.position.y)
         needle.zPosition = 100
         addChild(needle)
-        
+
         instructionLabel.text = "PRESS SPACE OR TAP TO START"
-        instructionLabel.fontSize = 24
+        instructionLabel.fontSize = unit * 0.02
         instructionLabel.fontColor = .white
-        instructionLabel.position = CGPoint(x: frame.midX, y: frame.midY + 180)
+        instructionLabel.position = CGPoint(x: frame.midX, y: frame.midY + size.height * 0.20)
         instructionLabel.zPosition = 10
         addChild(instructionLabel)
     }
 
     private func setupTimer() {
         timerLabel.text = "TIME: \(timeLeft)"
-        timerLabel.fontSize = 40
+        timerLabel.fontSize = unit * 0.03
         timerLabel.fontColor = .systemYellow
-        timerLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 100)
+        timerLabel.position = CGPoint(x: frame.midX, y: frame.maxY - size.height * 0.1)
         timerLabel.zPosition = 100
         if timerLabel.parent == nil { addChild(timerLabel) }
         
@@ -230,7 +235,7 @@ class PredatorGame: SKScene {
         let winLabel = SKLabelNode(text: "ESCAPED!")
         winLabel.fontColor = .green
         winLabel.fontName = "AvenirNext-Bold"
-        winLabel.position = CGPoint(x: frame.midX, y: frame.midY - 150)
+        winLabel.position = CGPoint(x: frame.midX, y: frame.midY - size.height * 0.15)
         winLabel.zPosition = 200
         addChild(winLabel)
         run(SKAction.wait(forDuration: 1.2)) { [weak self] in self?.returnToMainWorld() }
@@ -241,10 +246,10 @@ class PredatorGame: SKScene {
         let lossLabel = SKLabelNode(text: "CAUGHT!")
         lossLabel.fontColor = .red
         lossLabel.fontName = "AvenirNext-Bold"
-        lossLabel.fontSize = 40
-        lossLabel.position = CGPoint(x: frame.midX, y: frame.midY - 150)
+        lossLabel.fontSize = unit * 0.03
+        lossLabel.position = CGPoint(x: frame.midX, y: frame.midY - size.height * 0.15)
         lossLabel.zPosition = 200
-        viewModel?.submitScore(value: viewModel!.userScore) // Ensure score is submitted even on loss
+        viewModel?.submitScore(value: viewModel?.userScore ?? 0)
         addChild(lossLabel)
         
         SoundManager.shared.playSoundEffect(named: "error_buzz")
