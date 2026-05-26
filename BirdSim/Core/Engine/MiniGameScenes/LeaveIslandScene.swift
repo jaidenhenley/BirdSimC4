@@ -206,17 +206,18 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     
     
     func createObstaclePair() {
-        let gapHeight = unit * 0.001
-        let pipeWidth = unit * 0.12
-        let pipeHeight = unit
-        let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
-        
-            
+        let gapHeight = size.height * 0.35
+        let pipeWidth = size.width * 0.08
+        let pipeHeight = size.height
+        let randomCenterY = CGFloat.random(in: (size.height * 0.3)...(size.height * 0.7))
+
         let bottomPipe = SKSpriteNode(imageNamed: pipeType(at: false))
+        bottomPipe.size = CGSize(width: pipeWidth, height: pipeHeight)
         bottomPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
         setupObstaclePhysics(bottomPipe)
-            
+
         let topPipe = SKSpriteNode(imageNamed: pipeType(at: true))
+        topPipe.size = CGSize(width: pipeWidth, height: pipeHeight)
         topPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
         setupObstaclePhysics(topPipe)
             

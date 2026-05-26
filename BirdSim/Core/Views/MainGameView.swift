@@ -72,12 +72,12 @@ struct MainGameView: View {
                                     }
                                     
                                     DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger, isIPad: deviceType)
-                                        .padding([.top, .leading], 20)
+                                        .padding([.top, .leading], 10)
                                     Spacer().frame(height: 6)
                                     BabyBarView(viewModel: viewModel, currentBabies: $viewModel.currentBabyAmount, isIPad: deviceType)
-                                        .padding([.top, .leading], 20)
+                                        .padding([.top, .leading], 10)
                                     PredatorBarView(viewModel: viewModel, isIPad: deviceType, currentDanger: $viewModel.predatorProximitySegments)
-                                        .padding([.top, .leading], 20)
+                                        .padding([.top, .leading], 10)
                                     
                                 }
                                 Spacer()
