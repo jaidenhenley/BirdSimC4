@@ -229,7 +229,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         
         bottom.zPosition = 10
         
-        bottom.size = CGSize(width: 150, height: 150)
+        bottom.size = CGSize(width: unit * 0.15, height: unit * 0.15)
         
         container.addChild(bottom)
         
