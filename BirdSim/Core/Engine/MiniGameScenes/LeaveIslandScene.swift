@@ -145,6 +145,10 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.045))
     }
 
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        jump()
+    }
+
     func didBegin(_ contact: SKPhysicsContact) {
         gameOver()
     }
