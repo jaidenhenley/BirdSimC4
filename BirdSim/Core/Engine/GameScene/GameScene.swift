@@ -29,7 +29,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let defaultPlayerStartPosition = CGPoint(x: 800, y: -400)
     let tutorialStartPosition = CGPoint(x: -220, y: 1663)
     
-    let defaultCameraScale: CGFloat = 1.25
+    var defaultCameraScale: CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad ? 1.25 : 1.75
+    }
 
     // MARK: - ViewModel Bridge
     // Reference to SwiftUI ViewModel for shared game state & persistence

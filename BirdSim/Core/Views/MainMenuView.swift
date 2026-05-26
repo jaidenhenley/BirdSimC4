@@ -51,10 +51,11 @@ struct MainMenuView: View {
     }
     
     var body: some View {
+        GeometryReader { geo in
         ZStack {
             Image(.loadingScreen)
                 .resizable()
-                .scaledToFill()
+                .frame(width: geo.size.width, height: geo.size.height)
                 .ignoresSafeArea()
             
             // 1. HIDDEN KEYBOARD LISTENER (Moved behind buttons)
@@ -82,10 +83,10 @@ struct MainMenuView: View {
                     return .handled
                 }
 
-            VStack(spacing: 24) {
+            let isiPad = UIDevice.current.userInterfaceIdiom == .pad
+            VStack(spacing: isiPad ? 24 : 12) {
                 ForEach(availableFields, id: \.self) { field in
                     Button(action: {
-                        // Update index when tapped so keyboard selection matches touch selection
                         if let index = availableFields.firstIndex(of: field) {
                             selectedIndex = index
                         }
@@ -98,7 +99,7 @@ struct MainMenuView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(40)
+            .padding(isiPad ? 40 : 16)
             .background(.ultraThinMaterial)
             .cornerRadius(20)
             .shadow(radius: 10)
@@ -117,6 +118,8 @@ struct MainMenuView: View {
         .sheet(isPresented: $showingCredits) {
             CreditsView()
         }
+        } // GeometryReader
+        .ignoresSafeArea()
     }
 
     private func labelTitle(for field: MenuField) -> String {
@@ -159,11 +162,12 @@ struct MainMenuView: View {
 
     @ViewBuilder
     private func menuLabel(text: String, color: Color, isSelected: Bool) -> some View {
+        let isiPad = UIDevice.current.userInterfaceIdiom == .pad
         Text(text)
             .foregroundStyle(isSelected ? .black : .white)
             .bold()
-            .font(.title2)
-            .frame(width: 250, height: 50)
+            .font(isiPad ? .title2 : .callout)
+            .frame(width: isiPad ? 250 : 200, height: isiPad ? 50 : 38)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .foregroundStyle(isSelected ? Color.yellow : color)

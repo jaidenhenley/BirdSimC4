@@ -11,12 +11,13 @@ struct BabyBarView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
     @Binding var currentBabies: Int
     let totalSegments = 5
+    let isIPad: Bool
     
     var body: some View {
         let screen = UIScreen.main.bounds
         let longEdge = max(screen.width, screen.height)
         let shortEdge = min(screen.width, screen.height)
-        let barWidth = longEdge * 0.22
+        let barWidth = longEdge * (isIPad ? 0.22 : 0.14)
         let barHeight = shortEdge * 0.08
         let segmentWidth = barWidth * 0.08
         let segmentHeight = barHeight * 0.3
@@ -36,11 +37,12 @@ struct BabyBarView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: barHeight * 0.7, height: barHeight * 0.7)
-                
-                Image(.babyBirdWord)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: barWidth * 0.28, height: barHeight * 0.5)
+                if isIPad {
+                    Image(.babyBirdWord)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: barWidth * 0.28, height: barHeight * 0.5)
+                }
                 
                 ForEach(0..<totalSegments, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 2)

@@ -21,10 +21,11 @@ struct PickupButtonView: View {
                     .fill(Color(.systemGray6)) // background color
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 
+                let iconSize: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? 80 : 46
                 Image(.pointer)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 80, height: 80)
+                    .frame(width: iconSize, height: iconSize)
             }
         }
         .disabled(viewModel.isFlying) // disable while flying
