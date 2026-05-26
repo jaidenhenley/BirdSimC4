@@ -90,7 +90,7 @@ struct EndGameView: View {
 
                 // "Hard Industrial" Button
                 Button(action: {
-                    HapticManager.shared.trigger(.heavy)
+                    HapticManager.shared.trigger(.medium)
                     onExit()
                 }) {
                     ZStack {

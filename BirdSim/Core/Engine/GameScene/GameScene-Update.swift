@@ -264,6 +264,7 @@ extension GameScene {
                 if viewModel?.inventory == ["stick": 1, "leaf": 1, "spiderweb": 1, "dandelion": 1]  {
                     viewModel?.currentMessage = "Inventory is full Build a nest"
                     if viewModel?.tutorialIsOn == true, viewModel?.inventoryFullOnce == false {
+                        HapticManager.shared.trigger(.success)
                         viewModel?.showMainGameInstructions(type: .nestBuilding)
                         viewModel?.inventoryFullOnce = true
                     }

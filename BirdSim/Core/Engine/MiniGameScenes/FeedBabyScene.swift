@@ -296,7 +296,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = nil
         removeAction(forKey: "gameTimer")
         
-        HapticManager.shared.trigger(success ? .heavy : .error)
+        HapticManager.shared.trigger(success ? .success : .error)
         
         if success {
             if let targetNestID {
