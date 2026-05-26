@@ -196,8 +196,9 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             lastNode = link
         }
         
-        let foodSize = unit * 0.005
+        let foodSize = unit * 0.07
         let itemNode = SKSpriteNode(imageNamed: randomItem())
+        itemNode.size = CGSize(width: foodSize, height: foodSize)
         itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - (foodSize / 2))
         itemNode.name = "food_item"
         itemNode.zPosition = 6
