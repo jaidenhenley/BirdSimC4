@@ -145,6 +145,10 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.045))
     }
 
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        jump()
+    }
+
     func didBegin(_ contact: SKPhysicsContact) {
         gameOver()
     }
@@ -154,7 +158,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         
         isGameOver = true
         HapticManager.shared.trigger(.error)
-        viewModel?.submitScore(value: viewModel!.userScore) // Ensure score is submitted even on loss
+        viewModel?.submitScore(value: viewModel?.userScore ?? 0) // Ensure score is submitted even on loss
         viewModel?.currentDeathMessage = "You failed to escape."
         viewModel?.showGameOver = true
         self.isPaused = true
@@ -174,7 +178,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         
         HapticManager.shared.trigger(.success)
         viewModel?.userScore += 5
-        viewModel?.submitScore(value: viewModel!.userScore) // Ensure score is submitted even on loss
+        viewModel?.submitScore(value: viewModel?.userScore ?? 0) // Ensure score is submitted even on loss
         viewModel?.showGameWin = true
     }
     
@@ -206,17 +210,18 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     
     
     func createObstaclePair() {
-        let gapHeight = unit * 0.001
-        let pipeWidth = unit * 0.12
-        let pipeHeight = unit
-        let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
-        
-            
+        let gapHeight = size.height * 0.35
+        let pipeWidth = size.width * 0.08
+        let pipeHeight = size.height
+        let randomCenterY = CGFloat.random(in: (size.height * 0.3)...(size.height * 0.7))
+
         let bottomPipe = SKSpriteNode(imageNamed: pipeType(at: false))
+        bottomPipe.size = CGSize(width: pipeWidth, height: pipeHeight)
         bottomPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
         setupObstaclePhysics(bottomPipe)
-            
+
         let topPipe = SKSpriteNode(imageNamed: pipeType(at: true))
+        topPipe.size = CGSize(width: pipeWidth, height: pipeHeight)
         topPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
         setupObstaclePhysics(topPipe)
             

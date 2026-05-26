@@ -17,6 +17,10 @@ struct MainGameView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @StateObject var viewModel: ViewModel
     @State private var scene = GameScene()
+    var deviceType: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad ? true : false
+    }
+
     
     
     init(container: ModelContainer, newGame: Bool, onExit: @escaping () -> Void) {
@@ -62,18 +66,18 @@ struct MainGameView: View {
                             HStack {
                                 VStack(alignment: .leading) {
                                     if !isLandscape {
-                                        InventoryView(viewModel: viewModel)
+                                        InventoryView(viewModel: viewModel, isIPad: deviceType)
                                             .padding([.top, .leading], 20)
                                             .transition(.scale.combined(with: .opacity))
                                     }
                                     
-                                    DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger)
-                                        .padding([.top, .leading], 20)
+                                    DrainingHungerBarView(viewModel: viewModel, currentHunger: $viewModel.hunger, isIPad: deviceType)
+                                        .padding([.top, .leading], 10)
                                     Spacer().frame(height: 6)
-                                    BabyBarView(viewModel: viewModel, currentBabies: $viewModel.currentBabyAmount)
-                                        .padding([.top, .leading], 20)
-                                    PredatorBarView(viewModel: viewModel, currentDanger: $viewModel.predatorProximitySegments)
-                                        .padding([.top, .leading], 20)
+                                    BabyBarView(viewModel: viewModel, currentBabies: $viewModel.currentBabyAmount, isIPad: deviceType)
+                                        .padding([.top, .leading], 10)
+                                    PredatorBarView(viewModel: viewModel, isIPad: deviceType, currentDanger: $viewModel.predatorProximitySegments)
+                                        .padding([.top, .leading], 10)
                                     
                                 }
                                 Spacer()
@@ -82,10 +86,12 @@ struct MainGameView: View {
                             }
                             
                             HStack {
-                                HelpTextView(viewModel: viewModel)
-                                    .padding(20)
-                                    .frame(width: 250)
-                                
+                                if deviceType {
+                                    HelpTextView(viewModel: viewModel)
+                                        .padding(20)
+                                        .frame(width: 250)
+                                }
+
                                 if viewModel.coordinatesOn,
                                    let player = scene.childNode(withName: "userBird") {
                                     let x = Int(player.position.x)
@@ -107,50 +113,60 @@ struct MainGameView: View {
                     }
                     
                     VStack {
-                        HStack(alignment: .top) {
-                            Spacer()
-                            
-                            if isLandscape {
-                                InventoryView(viewModel: viewModel)
-                                    .padding(.top, 20)
-                                    .transition(.scale.combined(with: .opacity))
-                            }
-                            
-                            if viewModel.mapIsVisable {
-                                Button {
-                                    if viewModel.isMapMode == false {
-                                        viewModel.mainScene?.enterMapNode()
-                                        viewModel.mainScene?.scene?.isPaused = true
-                                    } else {
-                                        viewModel.mainScene?.exitMapMode()
-                                        viewModel.mainScene?.scene?.isPaused = false
+                        ZStack(alignment: .top) {
+                            let topButtonSize: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? 80 : 52
+                            HStack(alignment: .top) {
+                                Spacer()
+
+                                if viewModel.mapIsVisable {
+                                    Button {
+                                        if viewModel.isMapMode == false {
+                                            viewModel.mainScene?.enterMapNode()
+                                            viewModel.mainScene?.scene?.isPaused = true
+                                        } else {
+                                            viewModel.mainScene?.exitMapMode()
+                                            viewModel.mainScene?.scene?.isPaused = false
+                                        }
+                                    } label: {
+                                        Image(.compass)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: topButtonSize, height: topButtonSize)
+                                            .background(Circle().fill(.black.opacity(0.7)))
+                                            .padding()
                                     }
-                                } label: {
-                                    Image(.compass)
+                                    .padding()
+                                }
+
+                                Button { onExit() } label: {
+                                    Image(.pause)
                                         .resizable()
                                         .scaledToFill()
-                                        .frame(width: 80, height: 80)
-                                        .background(Circle().fill(.black.opacity(0.7)))
+                                        .frame(width: topButtonSize, height: topButtonSize)
                                         .padding()
                                 }
                                 .padding()
                             }
-                            
-                            Button { onExit() } label: {
-                                Image(.pause)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 80, height: 80)
-                                    .padding()
+
+                            if isLandscape {
+                                VStack(spacing: 4) {
+                                    InventoryView(viewModel: viewModel, isIPad: deviceType)
+                                    if !deviceType {
+                                        HelpTextView(viewModel: viewModel)
+                                    }
+                                }
+                                .padding(.top, 20)
+                                .transition(.scale.combined(with: .opacity))
                             }
-                            .padding()
                         }
-                        
+
                         Spacer()
-                        
+
                         if viewModel.controlsAreVisable {
+                            let isiPad = UIDevice.current.userInterfaceIdiom == .pad
                             HUDControls(viewModel: viewModel)
-                                .padding(60)
+                                .padding(.horizontal, isiPad ? 60 : 16)
+                                .padding(.vertical, isiPad ? 60 : 8)
                         }
                     }
                 }
@@ -168,8 +184,10 @@ struct MainGameView: View {
                 .sheet(isPresented: $viewModel.showMainInstructionSheet, onDismiss: {
                     viewModel.resumeAfterMainInstruction()
                 }) {
-                    MainOnboardingView(viewModel: viewModel, type: viewModel.pendingInstructionType!)
-                        .presentationDragIndicator(.hidden)
+                    if let instructionType = viewModel.pendingInstructionType {
+                        MainOnboardingView(viewModel: viewModel, type: instructionType)
+                            .presentationDragIndicator(.hidden)
+                    }
                 }
                 
                 

@@ -234,7 +234,7 @@ extension GameScene {
         self.camera = cameraNode
         if cameraNode.parent == nil {
             self.addChild(cameraNode)
-            cameraNode.setScale(1.25)
+            cameraNode.setScale(defaultCameraScale)
         }
 
         if !hasInitializedWorld {

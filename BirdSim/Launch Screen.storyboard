@@ -21,12 +21,8 @@
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LoadingScreen" translatesAutoresizingMaskIntoConstraints="NO" id="8nf-cC-1TL">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LoadingScreen" translatesAutoresizingMaskIntoConstraints="NO" id="8nf-cC-1TL">
                                 <rect key="frame" x="0.0" y="0.0" width="1032" height="1376"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="1376" id="gCF-yt-7hQ"/>
-                                    <constraint firstAttribute="width" constant="1032" id="sZO-NJ-gD6"/>
-                                </constraints>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
@@ -36,9 +32,9 @@
                             <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="obG-Y5-kRd" secondAttribute="centerX" id="5cz-MP-9tL"/>
                             <constraint firstItem="obG-Y5-kRd" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" constant="20" symbolic="YES" id="SfN-ll-jLj"/>
                             <constraint firstAttribute="bottom" secondItem="obG-Y5-kRd" secondAttribute="bottom" constant="20" id="Y44-ml-fuU"/>
-                            <constraint firstItem="8nf-cC-1TL" firstAttribute="trailing" secondItem="Bcu-3y-fUS" secondAttribute="trailing" id="cJL-n3-VEL"/>
+                            <constraint firstItem="8nf-cC-1TL" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailing" id="cJL-n3-VEL"/>
                             <constraint firstAttribute="bottom" secondItem="8nf-cC-1TL" secondAttribute="bottom" id="iuP-bp-xnb"/>
-                            <constraint firstItem="8nf-cC-1TL" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" id="nF3-fl-b3T"/>
+                            <constraint firstItem="8nf-cC-1TL" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="nF3-fl-b3T"/>
                         </constraints>
                     </view>
                 </viewController>

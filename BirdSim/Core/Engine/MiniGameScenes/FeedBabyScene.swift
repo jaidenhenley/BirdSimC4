@@ -196,8 +196,9 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             lastNode = link
         }
         
-        let foodSize = unit * 0.005
+        let foodSize = unit * 0.07
         let itemNode = SKSpriteNode(imageNamed: randomItem())
+        itemNode.size = CGSize(width: foodSize, height: foodSize)
         itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - (foodSize / 2))
         itemNode.name = "food_item"
         itemNode.zPosition = 6
@@ -229,7 +230,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         
         bottom.zPosition = 10
         
-        bottom.size = CGSize(width: 150, height: 150)
+        bottom.size = CGSize(width: unit * 0.15, height: unit * 0.15)
         
         container.addChild(bottom)
         
@@ -295,7 +296,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = nil
         removeAction(forKey: "gameTimer")
         
-        HapticManager.shared.trigger(success ? .heavy : .error)
+        HapticManager.shared.trigger(success ? .success : .error)
         
         if success {
             if let targetNestID {

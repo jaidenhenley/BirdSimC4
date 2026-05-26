@@ -21,6 +21,8 @@ struct VisualEffectBlur: UIViewRepresentable {
 
 struct InventoryView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
+    let isIPad: Bool
+
     var body: some View {
         if viewModel.controlsAreVisable {
             let screen = UIScreen.main.bounds
@@ -31,14 +33,16 @@ struct InventoryView: View {
             
             
             HStack(spacing: screen.width * 0.008) {
-                Image(.inventoryWord)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: wordWidth)
-                
-                Divider()
-                    .frame(height: barHeight * 0.6)
-                    .overlay(Color.white.opacity(0.3))
+                if isIPad {
+                    Image(.inventoryWord)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: wordWidth)
+                    
+                    Divider()
+                        .frame(height: barHeight * 0.6)
+                        .overlay(Color.white.opacity(0.3))
+                }
                 
                 ForEach(["leaf", "stick", "dandelion", "spiderweb"], id: \.self) { item in
                     ZStack {

@@ -140,7 +140,7 @@ extension GameScene {
         
         if let player = childNode(withName: "userBird") {
             self.camera?.position = player.position
-            self.camera?.setScale(1.25)
+            self.camera?.setScale(defaultCameraScale)
         }
     }
 

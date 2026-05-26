@@ -14,6 +14,7 @@ class BuildNestScene: SKScene {
     private var backgroundNode: SKSpriteNode?
     
     let itemTypes = ["stick", "leaf", "spiderweb", "dandelion"]
+    private var unit: CGFloat { max(size.width, size.height) }
 
     override func didMove(to view: SKView) {
         self.scaleMode = .resizeFill
@@ -79,7 +80,7 @@ class BuildNestScene: SKScene {
                 HapticManager.shared.trigger(.success)
                 
                 let placedItem = SKSpriteNode(imageNamed: draggedNode.name!)
-                placedItem.size = CGSize(width: 75, height: 75)
+                placedItem.size = CGSize(width: unit * 0.065, height: unit * 0.065)
                 placedItem.position = .zero
                 placedItem.zPosition = 15
                 slotNode.addChild(placedItem)
@@ -139,9 +140,9 @@ class BuildNestScene: SKScene {
     func setupGame() {
         setupBackground()
         let backLabel = SKLabelNode(text: "EXIT MINI-GAME")
-        backLabel.position = CGPoint(x: frame.minX + 120, y: frame.maxY - 60)
+        backLabel.position = CGPoint(x: frame.minX + size.width * 0.12, y: frame.maxY - size.height * 0.07)
         backLabel.fontName = "AvenirNext-Bold"
-        backLabel.fontSize = 20
+        backLabel.fontSize = size.height * 0.04
         backLabel.name = "Back Button"
         backLabel.zPosition = 100
         addChild(backLabel)
@@ -172,8 +173,8 @@ class BuildNestScene: SKScene {
         addChild(cardContainerNode)
         
         for (index, itemName) in sequence.enumerated() {
-            let xPos = frame.midX + (CGFloat(index) - 1.5) * 115
-            let yPos = frame.midY + 120
+            let xPos = frame.midX + (CGFloat(index) - 1.5) * (unit * 0.085)
+            let yPos = frame.midY + size.height * 0.14
             
             let cardSlot = SKNode()
             cardSlot.position = CGPoint(x: xPos, y: yPos)
@@ -183,21 +184,23 @@ class BuildNestScene: SKScene {
             // FRONT SIDE (Visible first)
             let frontGroup = SKNode()
             frontGroup.name = "frontGroup"
-            let frontBase = SKShapeNode(rectOf: CGSize(width: 95, height: 95), cornerRadius: 12)
+            let cardSize = unit * 0.07
+            let frontBase = SKShapeNode(rectOf: CGSize(width: cardSize, height: cardSize), cornerRadius: 12)
             frontBase.fillColor = SKColor(white: 0, alpha: 0.6)
             frontBase.strokeColor = .gray
             frontBase.lineWidth = 2
             let frontIcon = SKSpriteNode(imageNamed: itemName)
-            frontIcon.size = CGSize(width: 70, height: 70)
+            frontIcon.size = CGSize(width: cardSize * 0.75, height: cardSize * 0.75)
             frontIcon.zPosition = 1
             frontGroup.addChild(frontBase)
             frontGroup.addChild(frontIcon)
             frontGroup.zPosition = 11
-            
+
             // BACK SIDE (Hidden first)
             let backGroup = SKNode()
             backGroup.name = "back"
             let backBase = SKSpriteNode(imageNamed: "PuzzleBirdGame")
+            backBase.size = CGSize(width: cardSize, height: cardSize)
             backGroup.addChild(backBase)
             backGroup.zPosition = 10
             backGroup.xScale = 0
@@ -224,11 +227,11 @@ class BuildNestScene: SKScene {
 
     func setupDraggableTray() {
         self.childNode(withName: "TrayBG")?.removeFromParent()
-        let trayY = frame.minY + 100
-        let spacingX: CGFloat = 110
+        let trayY = frame.minY + size.height * 0.12
+        let spacingX = unit * 0.085
         let trayWidth = (CGFloat(itemTypes.count) * spacingX) + 40
-        
-        let tray = SKShapeNode(rectOf: CGSize(width: trayWidth, height: 120), cornerRadius: 20)
+
+        let tray = SKShapeNode(rectOf: CGSize(width: trayWidth, height: unit * 0.10), cornerRadius: 20)
         tray.name = "TrayBG"
         tray.fillColor = SKColor(white: 0, alpha: 0.6)
         tray.position = CGPoint(x: frame.midX, y: trayY)
@@ -238,7 +241,7 @@ class BuildNestScene: SKScene {
         for (index, name) in itemTypes.enumerated() {
             let draggable = SKSpriteNode(imageNamed: name)
             draggable.name = name
-            draggable.size = CGSize(width: 75, height: 75)
+            draggable.size = CGSize(width: unit * 0.065, height: unit * 0.065)
             let x = (CGFloat(index) - 1.5) * spacingX
             draggable.position = CGPoint(x: frame.midX + x, y: trayY)
             draggable.zPosition = 20

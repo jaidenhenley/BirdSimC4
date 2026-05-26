@@ -11,6 +11,12 @@ struct UserScoreView: View {
     @ObservedObject var viewModel: MainGameView.ViewModel
 
     var body: some View {
+        let isiPad = UIDevice.current.userInterfaceIdiom == .pad
+        let starSize: CGFloat = isiPad ? 30 : 20
+        let fontSize: CGFloat = isiPad ? 35 : 22
+        let hPad: CGFloat = isiPad ? 25 : 14
+        let vPad: CGFloat = isiPad ? 10 : 6
+
         VStack(spacing: -5) {
             if viewModel.isNewRecord {
                 Text("NEW RECORD!")
@@ -20,26 +26,20 @@ struct UserScoreView: View {
             }
 
             HStack(spacing: 15) {
-                // The Bouncing Mario Star
                 Image(systemName: "star.fill")
                     .resizable()
-                    .frame(width: 30, height: 30)
+                    .frame(width: starSize, height: starSize)
                     .foregroundColor(.yellow)
-                    // Hard "Zelda" outline
-//                    .shadow(color: .black, radius: 0, x: 2, y: 2)
                     .symbolEffect(.bounce, value: viewModel.userScore)
-                
-                // The Chunky Score
+
                 Text("\(viewModel.userScore)")
-                    .font(.system(size: 35, weight: .black, design: .rounded))
+                    .font(.system(size: fontSize, weight: .black, design: .rounded))
                     .italic()
                     .foregroundColor(.white)
-                    // Layered shadows create a "sticker" or "game logo" effect
-//                    .shadow(color: .black, radius: 0, x: 3, y: 3)
                     .contentTransition(.numericText(value: Double(viewModel.userScore)))
             }
-            .padding(.horizontal, 25)
-            .padding(.vertical, 10)
+            .padding(.horizontal, hPad)
+            .padding(.vertical, vPad)
             .background {
                 ZStack {
                     // Main Box - Mario Blue/Zelda Green

@@ -55,7 +55,6 @@ extension GameScene {
         // 5. Logic and Respawn
         let pickupPosition = node.position
         scheduleRespawn(for: rawName, at: pickupPosition)
-        SoundManager.shared.playEffect(.alert)
 
         print("Successfully added \(itemName) to collected items.")
     }
