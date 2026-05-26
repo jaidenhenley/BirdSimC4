@@ -86,10 +86,12 @@ struct MainGameView: View {
                             }
                             
                             HStack {
-                                HelpTextView(viewModel: viewModel)
-                                    .padding(20)
-                                    .frame(width: 250)
-                                
+                                if deviceType {
+                                    HelpTextView(viewModel: viewModel)
+                                        .padding(20)
+                                        .frame(width: 250)
+                                }
+
                                 if viewModel.coordinatesOn,
                                    let player = scene.childNode(withName: "userBird") {
                                     let x = Int(player.position.x)
@@ -147,9 +149,14 @@ struct MainGameView: View {
                             }
 
                             if isLandscape {
-                                InventoryView(viewModel: viewModel, isIPad: deviceType)
-                                    .padding(.top, 20)
-                                    .transition(.scale.combined(with: .opacity))
+                                VStack(spacing: 4) {
+                                    InventoryView(viewModel: viewModel, isIPad: deviceType)
+                                    if !deviceType {
+                                        HelpTextView(viewModel: viewModel)
+                                    }
+                                }
+                                .padding(.top, 20)
+                                .transition(.scale.combined(with: .opacity))
                             }
                         }
 

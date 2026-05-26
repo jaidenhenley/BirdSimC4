@@ -38,11 +38,11 @@ struct InventoryView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: wordWidth)
+                    
+                    Divider()
+                        .frame(height: barHeight * 0.6)
+                        .overlay(Color.white.opacity(0.3))
                 }
-                
-                Divider()
-                    .frame(height: barHeight * 0.6)
-                    .overlay(Color.white.opacity(0.3))
                 
                 ForEach(["leaf", "stick", "dandelion", "spiderweb"], id: \.self) { item in
                     ZStack {
