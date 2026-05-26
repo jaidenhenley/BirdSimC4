@@ -37,6 +37,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     
     private var fullness: CGFloat = 0.0 { didSet { updateMeter() } }
     private let maxFullness: CGFloat = 50
+    private var isFinished = false
     private var unit: CGFloat { size.height }
     let player = SKSpriteNode(imageNamed: "minigameBird")
     
@@ -218,8 +219,9 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         let p = min(max(fullness / maxFullness, 0), 1.0)
         meterFill.path = CGPath(roundedRect: CGRect(x: 0, y: -mh / 2, width: mw * p, height: mh),
                                 cornerWidth: 5, cornerHeight: 5, transform: nil)
-        
-        if fullness >= maxFullness {
+
+        if fullness >= maxFullness && !isFinished {
+            isFinished = true
             viewModel?.userScore += 1
             viewModel?.hunger = 5
             disableHunger()

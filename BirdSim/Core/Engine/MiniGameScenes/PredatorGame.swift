@@ -117,7 +117,8 @@ class PredatorGame: SKScene {
         var caught = false
         
         for zone in dangerZones {
-            let zoneWorldPos = zone.parent!.convert(zone.position, to: self)
+            guard let zoneParent = zone.parent else { continue }
+            let zoneWorldPos = zoneParent.convert(zone.position, to: self)
             let halfWidth = zone.size.width / 2
             let range = (zoneWorldPos.x - halfWidth)...(zoneWorldPos.x + halfWidth)
             
@@ -248,7 +249,7 @@ class PredatorGame: SKScene {
         lossLabel.fontSize = unit * 0.03
         lossLabel.position = CGPoint(x: frame.midX, y: frame.midY - size.height * 0.15)
         lossLabel.zPosition = 200
-        viewModel?.submitScore(value: viewModel!.userScore) // Ensure score is submitted even on loss
+        viewModel?.submitScore(value: viewModel?.userScore ?? 0)
         addChild(lossLabel)
         
         SoundManager.shared.playSoundEffect(named: "error_buzz")

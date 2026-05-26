@@ -184,8 +184,10 @@ struct MainGameView: View {
                 .sheet(isPresented: $viewModel.showMainInstructionSheet, onDismiss: {
                     viewModel.resumeAfterMainInstruction()
                 }) {
-                    MainOnboardingView(viewModel: viewModel, type: viewModel.pendingInstructionType!)
-                        .presentationDragIndicator(.hidden)
+                    if let instructionType = viewModel.pendingInstructionType {
+                        MainOnboardingView(viewModel: viewModel, type: instructionType)
+                            .presentationDragIndicator(.hidden)
+                    }
                 }
                 
                 

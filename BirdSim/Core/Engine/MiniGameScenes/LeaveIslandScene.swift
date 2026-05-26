@@ -158,7 +158,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         
         isGameOver = true
         HapticManager.shared.trigger(.error)
-        viewModel?.submitScore(value: viewModel!.userScore) // Ensure score is submitted even on loss
+        viewModel?.submitScore(value: viewModel?.userScore ?? 0) // Ensure score is submitted even on loss
         viewModel?.currentDeathMessage = "You failed to escape."
         viewModel?.showGameOver = true
         self.isPaused = true
@@ -178,7 +178,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         
         HapticManager.shared.trigger(.success)
         viewModel?.userScore += 5
-        viewModel?.submitScore(value: viewModel!.userScore) // Ensure score is submitted even on loss
+        viewModel?.submitScore(value: viewModel?.userScore ?? 0) // Ensure score is submitted even on loss
         viewModel?.showGameWin = true
     }
     
